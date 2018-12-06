@@ -29,7 +29,18 @@
     <None Include="Scripts\Deploy-FabricApplication.ps1" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="ApplicationParameters\CI.xml" />
+    <Content Include="ApplicationParameters\Development.xml" />
+    <Content Include="ApplicationParameters\PREP.xml" />
+    <Content Include="ApplicationParameters\PROD.xml" />
+    <Content Include="ApplicationParameters\SAND.xml" />
+    <Content Include="ApplicationParameters\TEST.xml" />
     <Content Include="packages.config" />
+    <Content Include="PublishProfiles\CI.xml" />
+    <Content Include="PublishProfiles\PREP.xml" />
+    <Content Include="PublishProfiles\PROD.xml" />
+    <Content Include="PublishProfiles\SAND.xml" />
+    <Content Include="PublishProfiles\TEST.xml" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Bullfrog.Actor\Bullfrog.Actor.csproj" />
