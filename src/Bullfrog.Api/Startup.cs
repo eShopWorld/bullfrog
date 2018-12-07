@@ -55,7 +55,7 @@ namespace Bullfrog.Api
                 services.AddApplicationInsightsTelemetry(_configuration);
                 services.AddSwaggerGen(c =>
                 {
-                    c.SwaggerDoc(BullfrogVersion.LatestApi, new Info { Title = "Sierra Api", Version = BullfrogVersion.Bullfrog });
+                    c.SwaggerDoc(BullfrogVersion.LatestApi, new Info { Title = "Bullfrog Api", Version = BullfrogVersion.Bullfrog });
                     c.AddSecurityDefinition("Bearer",
                         new ApiKeyScheme
                         {
@@ -66,7 +66,7 @@ namespace Bullfrog.Api
                         });
                     var filePath = Path.Combine(
                         Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? throw new InvalidOperationException("Wrong check for the swagger XML file! 'Assembly.GetExecutingAssembly().Location' came back null!"),
-                        "Sierra.Api.xml");
+                        "Bullfrog.Api.xml");
 
                     if (File.Exists(filePath))
                     {
@@ -85,7 +85,7 @@ namespace Bullfrog.Api
                 services.AddAuthorization(options =>
                 {
                     options.AddPolicy("AssertScope", policy =>
-                        policy.RequireClaim("scope", "esw.sierra.api.all"));
+                        policy.RequireClaim("scope", "esw.bullfrog.api.all"));
                 });
 
                 services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddIdentityServerAuthentication(x =>
@@ -96,7 +96,7 @@ namespace Bullfrog.Api
 
                 services.AddMvc(options =>
                 {
-                    var policy = ScopePolicy.Create("esw.sierra.api.all");
+                    var policy = ScopePolicy.Create("esw.bullfrog.api.all");
                     options.Filters.Add(new AuthorizeFilter(policy));
                 }).SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
             }
@@ -144,7 +144,7 @@ namespace Bullfrog.Api
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
                 {
-                    c.SwaggerEndpoint($"/swagger/{BullfrogVersion.LatestApi}/swagger.json", $"Sierra Api {BullfrogVersion.LatestApi}");
+                    c.SwaggerEndpoint($"/swagger/{BullfrogVersion.LatestApi}/swagger.json", $"Bullfrog Api {BullfrogVersion.LatestApi}");
                 });
             }
             catch (Exception e)
