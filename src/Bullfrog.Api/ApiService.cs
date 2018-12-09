@@ -49,6 +49,7 @@ namespace Bullfrog.Api
                                 .UseStartup<Startup>()
                                 .UseServiceFabricIntegration(listener, ServiceFabricIntegrationOptions.None)
                                 .UseUrls(url)
+                                .UseEswSsl(listener.ServiceContext.CodePackageActivationContext.GetEndpoint("BullfrogApiEndpoint").Port)
                                 .Build();
                         }))
             };

@@ -8,12 +8,12 @@ using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Remoting.FabricTransport;
 using Microsoft.ServiceFabric.Services.Remoting;
 
-[assembly: FabricTransportActorRemotingProvider(RemotingListenerVersion = RemotingListenerVersion.V2_1, RemotingClientVersion = RemotingClientVersion.V2_1)]
+[assembly: FabricTransportActorRemotingProvider(RemotingListenerVersion = RemotingListenerVersion.V2, RemotingClientVersion = RemotingClientVersion.V2)]
 namespace Bullfrog.Actor.Interfaces
 {
     public interface IScaleManager : IActor
     {
-        Task<ScheduledScaleEvent> ScheduleScaleEvent(ScaleEvent scaleEvent, CancellationToken cancellationToken);
+        Task<UpdatedScheduledScaleEvent> ScheduleScaleEvent(ScaleEvent scaleEvent, CancellationToken cancellationToken);
 
         Task<ScheduledScaleEvent> GetScaleEvent(Guid id, CancellationToken cancellationToken);
 
@@ -21,6 +21,6 @@ namespace Bullfrog.Actor.Interfaces
 
         Task<ScaleEventState> DeleteScaleEvent(Guid id, CancellationToken cancellationToken);
 
-        Task<ScaleState> GetScaleSet();
+        Task<ScaleState> GetScaleSet(CancellationToken cancellationToken);
     }
 }

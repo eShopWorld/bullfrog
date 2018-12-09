@@ -2,16 +2,22 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Bullfrog.Actor.Interfaces;
     using Bullfrog.Actor.Interfaces.Models;
+    using Bullfrog.Actor.Models;
+    using Bullfrog.Common;
     using Microsoft.ServiceFabric.Actors;
     using Microsoft.ServiceFabric.Actors.Runtime;
 
     [StatePersistence(StatePersistence.Persisted)]
-    internal class ScaleManager : Actor, IScaleManager
+    public class ScaleManager : Actor, IScaleManager
     {
+        private const string Events = "events";
+        private readonly TimeSpan EstimatedScaleTime = TimeSpan.FromMinutes(new Random().Next(1, 10));
+
         /// <summary>
         /// Initializes a new instance of ScaleManager
         /// </summary>
@@ -26,7 +32,7 @@
         /// This method is called whenever an actor is activated.
         /// An actor is activated the first time any of its methods are invoked.
         /// </summary>
-        protected override Task OnActivateAsync()
+        protected override async Task OnActivateAsync()
         {
             ActorEventSource.Current.ActorMessage(this, "Actor activated.");
 
@@ -35,36 +41,112 @@
             // Any serializable object can be saved in the StateManager.
             // For more information, see https://aka.ms/servicefabricactorsstateserialization
 
-            return StateManager.TryAddStateAsync("count", 0);
+            // For simplicity store all events in one list. Consider creating Future and Completed set of scale events for performance improvements.
+
+            try
+            {
+                await StateManager.TryGetStateAsync<List<ManagedScaleEvent>>(Events);
+            }
+            catch
+            {
+                await StateManager.RemoveStateAsync(Events);
+            }
+
+            await StateManager.TryAddStateAsync(Events, new List<ManagedScaleEvent>());
         }
 
-        Task<ScaleEventState> IScaleManager.DeleteScaleEvent(Guid id, CancellationToken cancellationToken)
+        async Task<ScaleEventState> IScaleManager.DeleteScaleEvent(Guid id, CancellationToken cancellationToken)
         {
-            //return StateManager.GetStateAsync<ScaleEventState>("count", cancellationToken);
-            throw new NotImplementedException();
+            var events = await StateManager.GetStateAsync<List<ManagedScaleEvent>>(Events);
+
+            var eventToDelete = events.Find(e => e.Id == id);
+            var state = eventToDelete?.State ?? ScaleEventState.NotFound;
+            if (eventToDelete != null)
+            {
+                events.Remove(eventToDelete);
+                await StateManager.SetStateAsync(Events, events, cancellationToken);
+            }
+            return state;
         }
 
-        Task<ScheduledScaleEvent> IScaleManager.GetScaleEvent(Guid id, CancellationToken cancellationToken)
+        async Task<ScheduledScaleEvent> IScaleManager.GetScaleEvent(Guid id, CancellationToken cancellationToken)
         {
-            //return StateManager.GetStateAsync<ScaleEventState>("count", cancellationToken);
-            throw new NotImplementedException();
+            var events = await StateManager.GetStateAsync<List<ManagedScaleEvent>>(Events);
+
+            var foundEvent = events.Find(e => e.Id == id);
+            if (foundEvent == null)
+                return null;
+            return ToScheduledScaleEvent(foundEvent);
         }
 
-        Task<ScaleState> IScaleManager.GetScaleSet()
+        async Task<ScaleState> IScaleManager.GetScaleSet(CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            var events = await StateManager.GetStateAsync<List<ManagedScaleEvent>>(Events);
+
+            var now = DateTimeService.UtcNow;
+            // TODO: include events which start before last of the executing events finishes
+            var current = events.Where(e => e.State == ScaleEventState.Executing).ToList();
+            if (current.Count == 0)
+            {
+                return null;
+            }
+
+            return new ScaleState
+            {
+                Scale = current.Sum(e => e.Scale),
+                WasScaleUpAt = current.Min(e => e.RequiredScaleAt),
+                WillScaleDownAt = current.Max(e => e.StartScaleDownAt),
+            };
         }
 
-        Task<List<ScheduledScaleEvent>> IScaleManager.ListScaleEvents(CancellationToken cancellationToken)
+        async Task<List<ScheduledScaleEvent>> IScaleManager.ListScaleEvents(CancellationToken cancellationToken)
         {
-            //return StateManager.GetStateAsync<ScaleEventState>("count", cancellationToken);
-            throw new NotImplementedException();
+            var events = await StateManager.GetStateAsync<List<ManagedScaleEvent>>(Events);
+
+            return events.Select(ToScheduledScaleEvent).ToList();
         }
 
-        Task<ScheduledScaleEvent> IScaleManager.ScheduleScaleEvent(ScaleEvent scaleEvent, CancellationToken cancellationToken)
+        async Task<UpdatedScheduledScaleEvent> IScaleManager.ScheduleScaleEvent(ScaleEvent scaleEvent, CancellationToken cancellationToken)
         {
-            //return StateManager.AddOrUpdateStateAsync("count", scaleEvent.Id, (key, value) => count > value ? count : value, cancellationToken);
-            throw new NotImplementedException();
+            var events = await StateManager.GetStateAsync<List<ManagedScaleEvent>>(Events);
+
+            var modifiedEvent = events.Find(e => e.Id == scaleEvent.Id);
+            var state = modifiedEvent?.State ?? ScaleEventState.NotFound;
+
+            if (modifiedEvent == null)
+                modifiedEvent = new ManagedScaleEvent { Id = scaleEvent.Id };
+            modifiedEvent.Name = scaleEvent.Name;
+            modifiedEvent.RequiredScaleAt = scaleEvent.RequiredScaleAt;
+            modifiedEvent.Scale = scaleEvent.Scale;
+            modifiedEvent.StartScaleDownAt = scaleEvent.StartScaleDownAt;
+            modifiedEvent.EstimatedScaleUpAt = modifiedEvent.RequiredScaleAt - EstimatedScaleTime;
+            events.Add(modifiedEvent);
+
+            await StateManager.SetStateAsync(Events, events, cancellationToken);
+
+            return new UpdatedScheduledScaleEvent
+            {
+                PreState = state,
+                Id = modifiedEvent.Id,
+                EstimatedScaleUpAt = modifiedEvent.EstimatedScaleUpAt,
+                Name = modifiedEvent.Name,
+                RequiredScaleAt = modifiedEvent.RequiredScaleAt,
+                Scale = modifiedEvent.Scale,
+                StartScaleDownAt = modifiedEvent.StartScaleDownAt,
+            };
+        }
+
+        private static ScheduledScaleEvent ToScheduledScaleEvent(ManagedScaleEvent foundEvent)
+        {
+            return new ScheduledScaleEvent
+            {
+                EstimatedScaleUpAt = foundEvent.EstimatedScaleUpAt,
+                Id = foundEvent.Id,
+                Name = foundEvent.Name,
+                RequiredScaleAt = foundEvent.RequiredScaleAt,
+                Scale = foundEvent.Scale,
+                StartScaleDownAt = foundEvent.StartScaleDownAt,
+            };
         }
     }
 }
