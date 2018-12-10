@@ -10,7 +10,7 @@
             <ReplicatorConfigSection Name="ScaleManagerActorServiceReplicatorConfig" />
             <ReplicatorSecurityConfigSection Name="ScaleManagerActorServiceReplicatorSecurityConfig" />
             <StoreConfigSection Name="ScaleManagerActorServiceLocalStoreConfig" />
-            <ServiceEndpointV2_1 Name="ScaleManagerActorServiceEndpointV2_1" />
+            <ServiceEndpointV2 Name="ScaleManagerActorServiceEndpointV2" />
           </GeneratedNames>
         </Extension>
       </Extensions>
@@ -31,6 +31,7 @@
     <Endpoints>
       <Endpoint Name="ScaleManagerActorServiceEndpointV2_1" />
       <Endpoint Name="ScaleManagerActorServiceReplicatorEndpoint" />
+      <Endpoint Name="ScaleManagerActorServiceEndpointV2" />
     </Endpoints>
   </Resources>
   <!-- The content will be generated during build -->
