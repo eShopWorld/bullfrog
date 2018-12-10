@@ -42,16 +42,6 @@
             // For more information, see https://aka.ms/servicefabricactorsstateserialization
 
             // For simplicity store all events in one list. Consider creating Future and Completed set of scale events for performance improvements.
-
-            try
-            {
-                await StateManager.TryGetStateAsync<List<ManagedScaleEvent>>(Events);
-            }
-            catch
-            {
-                await StateManager.RemoveStateAsync(Events);
-            }
-
             await StateManager.TryAddStateAsync(Events, new List<ManagedScaleEvent>());
         }
 

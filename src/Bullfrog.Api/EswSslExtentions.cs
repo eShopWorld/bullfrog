@@ -1,11 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using Eshopworld.DevOps;
-using Eshopworld.Telemetry;
 using Microsoft.AspNetCore.Hosting;
 
 namespace Bullfrog.Api
@@ -32,8 +28,7 @@ namespace Bullfrog.Api
 
         private static X509Certificate2 GetCertificate(DeploymentEnvironment environment)
         {
-            var tld = environment == DeploymentEnvironment.Prod ? "com" : "net";
-            var subject = $"star.{environment}.eshopworld.{tld}";
+            var subject = GetCertSubjectName(environment);
             var store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
             try
             {
@@ -41,21 +36,34 @@ namespace Bullfrog.Api
                 var certCollection = store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, $"CN={subject}", false);
                 if (certCollection.Count == 0)
                 {
-                    if (environment == DeploymentEnvironment.Development)
-                    {
-                        var devCerts = store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, "CN=localhost", false);
-                        if (devCerts.Count > 0)
-                        {
-                            return devCerts[0];
-                        }
-                    }
-                    throw new Exception($"The certificate {subject} has not been found.");
+                    throw new Exception($"The certificate for {subject} has not been found.");
                 }
                 return certCollection[0];
             }
             finally
             {
                 store.Close();
+            }
+        }
+
+        private static string GetCertSubjectName(DeploymentEnvironment environment)
+        {
+            switch (environment)
+            {
+                case DeploymentEnvironment.CI:
+                    return "*.ci.eshopworld.net";
+                case DeploymentEnvironment.Sand:
+                    return "*.sandbox.eshopworld.com";
+                case DeploymentEnvironment.Test:
+                    return "*.test.eshopworld.net";
+                case DeploymentEnvironment.Prep:
+                    return "*.preprod.eshopworld.net";
+                case DeploymentEnvironment.Prod:
+                    return "*.production.eshopworld.com";
+                case DeploymentEnvironment.Development:
+                    return "localhost";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(environment), environment, $"The environment {environment} is not recognized");
             }
         }
     }
