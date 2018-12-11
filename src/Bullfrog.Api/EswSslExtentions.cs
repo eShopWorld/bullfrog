@@ -43,11 +43,11 @@ namespace Bullfrog.Api
             try
             {
                 store.Open(OpenFlags.ReadOnly);
-                var certCollection = store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, $"CN={subject}", false);
+                var certCollection = store.Certificates.Find(X509FindType.FindBySubjectDistinguishedName, $"CN={subject}, OU=Domain Control Validated", true);
 
                 if (certCollection.Count == 0)
                 {
-                    // TODO: temporary attempt to find the cert
+                    // TODO: another temporary attempt to find the cert
                     certCollection = store.Certificates.Find(X509FindType.FindBySubjectName, subject, false);
                     if (certCollection.Count > 0)
                     {
@@ -59,6 +59,7 @@ namespace Bullfrog.Api
                 {
                     throw new Exception($"The certificate for {subject} has not been found.");
                 }
+
                 return certCollection[0];
             }
             finally
