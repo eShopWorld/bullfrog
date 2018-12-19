@@ -1,39 +1,64 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Fabric.Description;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Eshopworld.Core;
 using Eshopworld.DevOps;
 using Eshopworld.Telemetry;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.ServiceFabric.Services.Communication.AspNetCore;
 
 namespace Bullfrog.Api
 {
     public static class EswSslExtentions
     {
-        public static IWebHostBuilder UseEswSsl(this IWebHostBuilder builder, int port)
+        public static IWebHostBuilder UseEswSsl(this IWebHostBuilder builder, AspNetCoreCommunicationListener listener)
+        {
+            var ports = from endpoint in listener.ServiceContext.CodePackageActivationContext.GetEndpoints()
+                        where endpoint.EndpointType == EndpointType.Input
+                        where endpoint.Protocol == EndpointProtocol.Http || endpoint.Protocol == EndpointProtocol.Https
+                        select (endpoint.Port, endpoint.Protocol == EndpointProtocol.Https);
+            return builder.UseEswSsl(ports);
+        }
+
+        public static IWebHostBuilder UseEswSsl(this IWebHostBuilder builder, IEnumerable<(int port, bool isHttps)> endpoints)
         {
             return builder.ConfigureKestrel((context, options) =>
-             {
-                 options.Listen(IPAddress.Any, port, listenOptions =>
-                 {
-                     try
-                     {
-                         var environmentName = context.HostingEnvironment.EnvironmentName;
-                         if (!Enum.TryParse<DeploymentEnvironment>(environmentName, true, out var environment))
-                         {
-                             environment = DeploymentEnvironment.Development;   // TODO: other default or exception? BB?
-                         }
-                         var cert = GetCertificate(environment);
-                         listenOptions.UseHttps(cert);
-                         listenOptions.NoDelay = true;
-                     }
-                     catch (Exception ex)
-                     {
-                         BigBrother.Write(ex.ToExceptionEvent());
-                         // TODO: can we do anything else than reverting to HTTP?
-                     }
-                 });
-             });
+            {
+                X509Certificate2 cert = null;
+                foreach (var (port, isHttps) in endpoints)
+                {
+                    options.Listen(IPAddress.Any, port, listenOptions =>
+                    {
+                        if (isHttps)
+                        {
+                            try
+                            {
+                                if (cert == null)
+                                    cert = GetCertificate(context.HostingEnvironment.EnvironmentName);
+                                listenOptions.UseHttps(cert);
+                                listenOptions.NoDelay = true;
+                            }
+                            catch (Exception ex)
+                            {
+                                BigBrother.Write(ex.ToExceptionEvent());
+                                // TODO: can we do anything else than reverting to HTTP?
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        private static X509Certificate2 GetCertificate(string environmentName)
+        {
+            if (!Enum.TryParse<DeploymentEnvironment>(environmentName, true, out var environment))
+            {
+                environment = DeploymentEnvironment.Development;   // TODO: other default or exception? BB?
+            }
+            return GetCertificate(environment);
         }
 
         private static X509Certificate2 GetCertificate(DeploymentEnvironment environment)
@@ -49,10 +74,6 @@ namespace Bullfrog.Api
                 {
                     // TODO: another temporary attempt to find the cert
                     certCollection = store.Certificates.Find(X509FindType.FindBySubjectName, subject, false);
-                    if (certCollection.Count > 0)
-                    {
-                        BigBrother.Write(new ExceptionEvent(new Exception($"Found {subject} using the FindBySubjectName option (cert {certCollection[0].Subject}).")));
-                    }
                 }
 
                 if (certCollection.Count == 0)
