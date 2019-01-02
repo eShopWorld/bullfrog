@@ -7,5 +7,12 @@
   <Section Name="ScaleManagerActorServiceReplicatorSecurityConfig">
     <Parameter Name="CredentialType" Value="None" />
   </Section>
+  <Section Name="ConfigurationManagerActorServiceReplicatorConfig">
+    <Parameter Name="ReplicatorEndpoint" Value="ConfigurationManagerActorServiceReplicatorEndpoint" />
+    <Parameter Name="BatchAcknowledgementInterval" Value="0.005" />
+  </Section>
+  <Section Name="ConfigurationManagerActorServiceReplicatorSecurityConfig">
+    <Parameter Name="CredentialType" Value="None" />
+  </Section>
   <!-- The content will be generated during build -->
 </Settings>

@@ -14,6 +14,11 @@ namespace Bullfrog.Api
 {
     public static class EswSslExtentions
     {
+        public static IWebHostBuilder UseEswSsl(this IWebHostBuilder builder, int port, bool isHttps)
+        {
+            return builder.UseEswSsl(new[] { (port, isHttps) });
+        }
+
         public static IWebHostBuilder UseEswSsl(this IWebHostBuilder builder, AspNetCoreCommunicationListener listener)
         {
             var ports = from endpoint in listener.ServiceContext.CodePackageActivationContext.GetEndpoints()

@@ -21,9 +21,13 @@ namespace Bullfrog.Api.Controllers
         }
 
         [HttpGet("scaleGroup")]
-        public async Task<ScaleGroupState> GetCurrentState(string scaleGroup)
+        public async Task<ActionResult<ScaleGroupState>> GetCurrentState(string scaleGroup)
         {
-            var regions = ListRegionsOfScaleGroup(scaleGroup);
+            var regions = await ListRegionsOfScaleGroup(scaleGroup);
+            if (regions == null)
+            {
+                return NotFound();
+            }
 
             var tasks = regions
                 .Select(rg => GetActor<IScaleManager>(scaleGroup, rg).GetScaleSet(default))
@@ -38,7 +42,7 @@ namespace Bullfrog.Api.Controllers
             }
 
             var scaleRegionStates = new List<ScaleRegionState>();
-            for (int i = 0; i < regions.Length; i++)
+            for (int i = 0; i < regions.Count; i++)
             {
                 if (tasks[i].Result != null)
                 {

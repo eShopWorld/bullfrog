@@ -6,6 +6,9 @@
     <Parameter Name="ScaleManagerActorService_PartitionCount" DefaultValue="10" />
     <Parameter Name="ScaleManagerActorService_MinReplicaSetSize" DefaultValue="3" />
     <Parameter Name="ScaleManagerActorService_TargetReplicaSetSize" DefaultValue="3" />
+    <Parameter Name="ConfigurationManagerActorService_PartitionCount" DefaultValue="10" />
+    <Parameter Name="ConfigurationManagerActorService_MinReplicaSetSize" DefaultValue="3" />
+    <Parameter Name="ConfigurationManagerActorService_TargetReplicaSetSize" DefaultValue="3" />
   </Parameters>
   <!-- Import the ServiceManifest from the ServicePackage. The ServiceManifestName and ServiceManifestVersion 
        should match the Name and Version attributes of the ServiceManifest element defined in the 
@@ -28,6 +31,11 @@
       <StatelessService ServiceTypeName="Bullfrog.ApiType" InstanceCount="[Bullfrog.Api_InstanceCount]">
         <SingletonPartition />
       </StatelessService>
+    </Service>
+    <Service Name="ConfigurationManagerActorService" GeneratedIdRef="cc15fab6-d534-4634-8b91-0f03a05a0d88|Persisted">
+      <StatefulService ServiceTypeName="ConfigurationManagerActorServiceType" TargetReplicaSetSize="[ConfigurationManagerActorService_TargetReplicaSetSize]" MinReplicaSetSize="[ConfigurationManagerActorService_MinReplicaSetSize]">
+        <UniformInt64Partition PartitionCount="[ConfigurationManagerActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+      </StatefulService>
     </Service>
     <Service Name="ScaleManagerActorService" GeneratedIdRef="72cb40f2-48e8-4883-b102-c042125eb3dc|Persisted">
       <StatefulService ServiceTypeName="ScaleManagerActorServiceType" TargetReplicaSetSize="[ScaleManagerActorService_TargetReplicaSetSize]" MinReplicaSetSize="[ScaleManagerActorService_MinReplicaSetSize]">

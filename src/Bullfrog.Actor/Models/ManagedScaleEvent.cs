@@ -18,18 +18,14 @@ namespace Bullfrog.Actor.Models
 
         public int Scale { get; set; }
 
-        public ScaleEventState State
+        public ScaleEventState GetState(DateTimeOffset now)
         {
-            get
-            {
-                var now = DateTimeService.UtcNow;
-                if (now < RequiredScaleAt)
-                    return ScaleEventState.Waiting;
-                else if (now <= StartScaleDownAt)
-                    return ScaleEventState.Executing;
-                else
-                    return ScaleEventState.Completed;
-            }
+            if (now < RequiredScaleAt)
+                return ScaleEventState.Waiting;
+            else if (now <= StartScaleDownAt)
+                return ScaleEventState.Executing;
+            else
+                return ScaleEventState.Completed;
         }
     }
 }

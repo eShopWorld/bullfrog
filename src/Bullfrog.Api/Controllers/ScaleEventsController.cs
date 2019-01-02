@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
+using Microsoft.AspNetCore.Http;
 
 namespace Bullfrog.Api.Controllers
 {
@@ -24,9 +25,16 @@ namespace Bullfrog.Api.Controllers
         }
 
         [HttpGet("{scaleGroup}")]
-        public async Task<IEnumerable<ScheduledScaleEvent>> ListScheduledEvents(string scaleGroup)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesDefaultResponseType]
+        public async Task<ActionResult<IEnumerable<ScheduledScaleEvent>>> ListScheduledEvents(string scaleGroup)
         {
-            var regions = ListRegionsOfScaleGroup(scaleGroup);
+            var regions = await ListRegionsOfScaleGroup(scaleGroup);
+            if (regions == null)
+            {
+                return NotFound();
+            }
 
             var tasks = regions
                 .Select(rg => GetActor<IScaleManager>(scaleGroup, rg).ListScaleEvents(default))
@@ -41,7 +49,7 @@ namespace Bullfrog.Api.Controllers
             }
 
             var events = new Dictionary<Guid, ScheduledScaleEvent>();
-            for (int i = 0; i < regions.Length; i++)
+            for (int i = 0; i < regions.Count; i++)
             {
                 foreach (var scaleEvent in tasks[i].Result)
                 {
@@ -84,9 +92,16 @@ namespace Bullfrog.Api.Controllers
         }
 
         [HttpGet("{scaleGroup}/{eventId}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesDefaultResponseType]
         public async Task<ActionResult<ScheduledScaleEvent>> ListScheduledEvents(string scaleGroup, Guid eventId)
         {
-            var regions = ListRegionsOfScaleGroup(scaleGroup);
+            var regions = await ListRegionsOfScaleGroup(scaleGroup);
+            if (regions == null)
+            {
+                return NotFound();
+            }
 
             var tasks = regions
                 .Select(rg => GetActor<IScaleManager>(scaleGroup, rg).GetScaleEvent(eventId, default))
@@ -135,7 +150,11 @@ namespace Bullfrog.Api.Controllers
         }
 
         [HttpPut("{scaleGroup}/{eventId}")]
-        public async Task<ActionResult> SaveScaleEvent(string scaleGroup, Guid eventId, [Required]ScaleEvent scaleEvent)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesDefaultResponseType]
+        public async Task<ActionResult<ScaleEvent>> SaveScaleEvent(string scaleGroup, Guid eventId, [Required]ScaleEvent scaleEvent)
         {
             // TODO: move all these validation rules to the model
             if (scaleEvent.RequiredScaleAt <= DateTimeOffset.UtcNow)
@@ -148,11 +167,16 @@ namespace Bullfrog.Api.Controllers
                 return BadRequest();
             }
 
-            var regions = ListRegionsOfScaleGroup(scaleGroup);
+            var regions = await ListRegionsOfScaleGroup(scaleGroup);
+            if (regions == null)
+            {
+                return NotFound();
+            }
+
             var unknownRegions = scaleEvent.RegionConfig.Select(r => r.Name).Except(regions).ToList();
             if (unknownRegions.Count > 0)
             {
-                return BadRequest();
+                return NotFound();
             }
 
             Actor.Interfaces.Models.ScaleEvent CreateScaleEvent(string region)
@@ -181,16 +205,21 @@ namespace Bullfrog.Api.Controllers
                 throw;
             }
 
-            // TODO: what to do with completed events?
-
-
-            throw new NotImplementedException();
+            return scaleEvent;
         }
 
         [HttpDelete("{scaleGroup}/{eventId}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status202Accepted)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesDefaultResponseType]
         public async Task<ActionResult> DeleteScaleEvent(string scaleGroup, Guid eventId)
         {
-            var regions = ListRegionsOfScaleGroup(scaleGroup);
+            var regions = await ListRegionsOfScaleGroup(scaleGroup);
+            if (regions == null)
+            {
+                return NotFound();
+            }
 
             var tasks = regions
                 .Select(rg => GetActor<IScaleManager>(scaleGroup, rg).DeleteScaleEvent(eventId, default))
