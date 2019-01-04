@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.ServiceFabric.Actors.Runtime;
 using Microsoft.ServiceFabric.Data;
@@ -10,7 +7,8 @@ namespace Bullfrog.Actor
 {
     public struct StateItem<T>
     {
-        private IActorStateManager _stateManager;
+        private readonly IActorStateManager _stateManager;
+
         public string Name { get; }
 
         public StateItem(IActorStateManager stateManager, string name)

@@ -9,14 +9,17 @@ using Bullfrog.Api.Models;
 using Eshopworld.Core;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.ServiceFabric.Actors;
-using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Bullfrog.Api.Controllers
 {
+    /// <summary>
+    /// Manges scale events.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Policy = AuthenticationPolicies.EventsReaderScope)]
     public class ScaleEventsController : BaseManagementController
     {
         public ScaleEventsController(IHostingEnvironment hostingEnvironment, IBigBrother bigBrother, StatelessServiceContext sfContext)
@@ -24,6 +27,11 @@ namespace Bullfrog.Api.Controllers
         {
         }
 
+        /// <summary>
+        /// Lists all scheduled events from the specified scale group.
+        /// </summary>
+        /// <param name="scaleGroup">The name of the scale group.</param>
+        /// <returns></returns>
         [HttpGet("{scaleGroup}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -91,6 +99,12 @@ namespace Bullfrog.Api.Controllers
             return events.Values;
         }
 
+        /// <summary>
+        /// Gets the specified scale event.
+        /// </summary>
+        /// <param name="scaleGroup">The scale group which own the event.</param>
+        /// <param name="eventId">The scale event ID.</param>
+        /// <returns></returns>
         [HttpGet("{scaleGroup}/{eventId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -149,11 +163,19 @@ namespace Bullfrog.Api.Controllers
             return scheduledScaleEvent;
         }
 
+        /// <summary>
+        /// Creates or updates the scale event.
+        /// </summary>
+        /// <param name="scaleGroup">The scale group.</param>
+        /// <param name="eventId">The scale event ID.</param>
+        /// <param name="scaleEvent">The new definition of the scale group.</param>
+        /// <returns></returns>
         [HttpPut("{scaleGroup}/{eventId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
+        [Authorize(Policy = AuthenticationPolicies.EventsManagerScope)]
         public async Task<ActionResult<ScaleEvent>> SaveScaleEvent(string scaleGroup, Guid eventId, [Required]ScaleEvent scaleEvent)
         {
             // TODO: move all these validation rules to the model
@@ -208,11 +230,18 @@ namespace Bullfrog.Api.Controllers
             return scaleEvent;
         }
 
+        /// <summary>
+        /// Deletes the scale event.
+        /// </summary>
+        /// <param name="scaleGroup">The scale group which owns the event.</param>
+        /// <param name="eventId">The ID of the event to delete.</param>
+        /// <returns></returns>
         [HttpDelete("{scaleGroup}/{eventId}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status202Accepted)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
+        [Authorize(Policy = AuthenticationPolicies.EventsManagerScope)]
         public async Task<ActionResult> DeleteScaleEvent(string scaleGroup, Guid eventId)
         {
             var regions = await ListRegionsOfScaleGroup(scaleGroup);

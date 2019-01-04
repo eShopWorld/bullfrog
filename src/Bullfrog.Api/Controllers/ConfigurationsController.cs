@@ -1,25 +1,36 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Fabric;
-using System.Linq;
 using System.Threading.Tasks;
 using Bullfrog.Actor.Interfaces;
 using Bullfrog.Actor.Interfaces.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.ServiceFabric.Actors;
 
 namespace Bullfrog.Api.Controllers
 {
+    /// <summary>
+    /// Manages configuration.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Policy = AuthenticationPolicies.AdminScope)]
     public class ConfigurationsController : BaseManagementController
     {
+        /// <summary>
+        /// Creates an instance of <see cref="ConfigurationsController"/>.
+        /// </summary>
+        /// <param name="statelessServiceContext">The instance of <see cref="StatelessServiceContext"/>.</param>
         public ConfigurationsController(StatelessServiceContext statelessServiceContext)
             : base(statelessServiceContext)
         {
         }
 
+        /// <summary>
+        /// Lists names of all configured scale groups.
+        /// </summary>
+        /// <returns></returns>
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesDefaultResponseType]
         [HttpGet]
@@ -28,6 +39,11 @@ namespace Bullfrog.Api.Controllers
             return await GetConfigurationManager().ListConfiguredScaleGroup(default);
         }
 
+        /// <summary>
+        /// Gets the definition of the specified scale group.
+        /// </summary>
+        /// <param name="scaleGroup">The scale group name.</param>
+        /// <returns></returns>
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
@@ -41,6 +57,12 @@ namespace Bullfrog.Api.Controllers
                 return NotFound();
         }
 
+        /// <summary>
+        /// Configures the specified scale group.
+        /// </summary>
+        /// <param name="scaleGroup">The name of the scale group to configure.</param>
+        /// <param name="definition">The new or updated configuration of the scale group.</param>
+        /// <returns></returns>
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesDefaultResponseType]
@@ -56,6 +78,11 @@ namespace Bullfrog.Api.Controllers
             return NoContent();
         }
 
+        /// <summary>
+        /// Removes the scale group.
+        /// </summary>
+        /// <param name="scaleGroup">The name of the scale group.</param>
+        /// <returns></returns>
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesDefaultResponseType]
         [HttpDelete("{scaleGroup}")]

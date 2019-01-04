@@ -4,6 +4,7 @@ using System.Fabric;
 using System.IO;
 using System.Reflection;
 using Autofac;
+using Bullfrog.Api.Helpers;
 using Bullfrog.Common.DependencyInjection;
 using Eshopworld.Core;
 using Eshopworld.DevOps;
@@ -21,12 +22,19 @@ using Swashbuckle.AspNetCore.Swagger;
 
 namespace Bullfrog.Api
 {
+    /// <summary>
+    /// Configures the application.
+    /// </summary>
     public class Startup
     {
         // TODO: Review BB code after fixing its extension methods
         private readonly BigBrother _bb;
         private readonly IConfigurationRoot _configuration;
 
+        /// <summary>
+        /// Creates an instance of the <see cref="Startup"/> class.
+        /// </summary>
+        /// <param name="env">The hosting environment.</param>
         public Startup(IHostingEnvironment env)
         {
             try
@@ -84,8 +92,12 @@ namespace Bullfrog.Api
 
                 services.AddAuthorization(options =>
                 {
-                    options.AddPolicy("AssertScope", policy =>
+                    options.AddPolicy(AuthenticationPolicies.AdminScope, policy =>
                         policy.RequireClaim("scope", "esw.bullfrog.api.all"));
+                    options.AddPolicy(AuthenticationPolicies.EventsManagerScope, policy =>
+                        policy.RequireClaim("scope", "esw.bullfrog.api.events.all", "esw.bullfrog.api.all"));
+                    options.AddPolicy(AuthenticationPolicies.EventsReaderScope, policy =>
+                        policy.RequireClaim("scope", "esw.bullfrog.api.events.read", "esw.bullfrog.api.events.all", "esw.bullfrog.api.all"));
                 });
 
                 services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddIdentityServerAuthentication(x =>
@@ -94,11 +106,7 @@ namespace Bullfrog.Api
                     x.Authority = _configuration["STSConfig:Authority"];
                 });
 
-                services.AddMvc(options =>
-                {
-                    var policy = ScopePolicy.Create("esw.bullfrog.api.all");
-                    options.Filters.Add(new AuthorizeFilter(policy));
-                }).SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+                services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
             }
             catch (Exception e)
             {
@@ -128,9 +136,14 @@ namespace Bullfrog.Api
         {
             try
             {
-                if (Debugger.IsAttached) app.UseDeveloperExceptionPage();
-                app.UseBigBrotherExceptionHandler();
+#if OAUTH_OFF_MODE
+                app.UseFakeAuthentication();
+#else
                 app.UseAuthentication();
+#endif
+                if (Debugger.IsAttached)
+                    app.UseDeveloperExceptionPage();
+                app.UseBigBrotherExceptionHandler();
                 if (_configuration.GetValue<bool>("ActorDirectCallMiddlewareEnabled"))
                 {
                     app.UseActorDirectCall(new ActorDirectCallOptions

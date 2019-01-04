@@ -30,9 +30,10 @@
         /// This method is called whenever an actor is activated.
         /// An actor is activated the first time any of its methods are invoked.
         /// </summary>
-        protected override async Task OnActivateAsync()
+        protected override Task OnActivateAsync()
         {
             ActorEventSource.Current.ActorMessage(this, "ConfigurationManager actor activated.");
+            return Task.CompletedTask;
         }
 
         async Task<Dictionary<string, string[]>> IConfigurationManager.ConfigureScaleGroup(string name, ScaleGroupDefinition definition, CancellationToken cancellationToken)
