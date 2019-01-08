@@ -93,11 +93,11 @@ namespace Bullfrog.Api
                 services.AddAuthorization(options =>
                 {
                     options.AddPolicy(AuthenticationPolicies.AdminScope, policy =>
-                        policy.RequireClaim("scope", "esw.bullfrog.api.all"));
+                        policy.RequireClaim("scope", "bullfrog.api.all"));
                     options.AddPolicy(AuthenticationPolicies.EventsManagerScope, policy =>
-                        policy.RequireClaim("scope", "esw.bullfrog.api.events.all", "esw.bullfrog.api.all"));
+                        policy.RequireClaim("scope", "bullfrog.api.events.all", "bullfrog.api.all"));
                     options.AddPolicy(AuthenticationPolicies.EventsReaderScope, policy =>
-                        policy.RequireClaim("scope", "esw.bullfrog.api.events.read", "esw.bullfrog.api.events.all", "esw.bullfrog.api.all"));
+                        policy.RequireClaim("scope", "bullfrog.api.events.read", "bullfrog.api.events.all", "bullfrog.api.all"));
                 });
 
                 services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddIdentityServerAuthentication(x =>
