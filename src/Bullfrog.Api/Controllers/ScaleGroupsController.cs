@@ -37,7 +37,7 @@ namespace Bullfrog.Api.Controllers
         /// </summary>
         /// <param name="scaleGroup">The name of the scale group.</param>
         /// <returns></returns>
-        [HttpGet("scaleGroup")]
+        [HttpGet("{scaleGroup}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
