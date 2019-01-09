@@ -227,8 +227,8 @@
             catch (Exception ex) // TODO: can/should it be more specific?
             {
                 newScale = -1;
-                var error = new Exception($"Failed to scale {configuration.ScaleSetConfiguration.AutoscaleSettingsResourceId}.");
-                _bigBrother.Publish(ex.ToExceptionEvent());
+                var error = new Exception($"Failed to scale {configuration.ScaleSetConfiguration.AutoscaleSettingsResourceId}.", ex);
+                _bigBrother.Publish(error.ToExceptionEvent());
             }
 
             var nextWakeUpTime = FindNextWakeUpTime(events, now);

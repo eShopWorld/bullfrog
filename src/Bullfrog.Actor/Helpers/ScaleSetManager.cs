@@ -63,6 +63,17 @@ namespace Bullfrog.Actor.Helpers
                 return validationResults;
             }
 
+            try
+            {
+                await UpdateProfile(configuration, pr => (pr.MinInstanceCount, pr.DefaultInstanceCount), cancellationToken, forceUpdate: true);
+            }
+            catch(Exception ex)
+            {
+                validationResults.Append(nameof(configuration.ProfileName),
+                    $"Failed to update autoscale settings {configuration.AutoscaleSettingsResourceId}: {ex.Message}");
+                return validationResults;
+            }
+
             if (configuration.MinInstanceCount > profile.MaxInstanceCount)
             {
                 validationResults.Append(nameof(configuration.MinInstanceCount),
@@ -87,18 +98,21 @@ namespace Bullfrog.Actor.Helpers
         private async Task UpdateProfile(
             ScaleSetConfiguration configuration,
             Func<IAutoscaleProfile, (int minInstance, int defaultInstances)> newInstanceCounts,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            bool forceUpdate = false)
         {
             // TODO: add exception handling
             var autoscale = await _azure.AutoscaleSettings.GetByIdAsync(configuration.AutoscaleSettingsResourceId, cancellationToken);
             if (!autoscale.Profiles.TryGetValue(configuration.ProfileName, out var profile))
             {
-                throw new Exception();
+                throw new Exception($"The profile {configuration.ProfileName} has not been found in the autoscale settings {configuration.AutoscaleSettingsResourceId}.");
             }
 
             var (minInstance, defaultInstances) = newInstanceCounts(profile);
 
-            if (profile.MinInstanceCount != minInstance || profile.DefaultInstanceCount != defaultInstances)
+            if (forceUpdate
+                || profile.MinInstanceCount != minInstance
+                || profile.DefaultInstanceCount != defaultInstances)
             {
                 await autoscale.Update()
                     .UpdateAutoscaleProfile(configuration.ProfileName)
