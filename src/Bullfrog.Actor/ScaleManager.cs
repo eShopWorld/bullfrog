@@ -151,7 +151,7 @@
         {
             await _events.Set(new List<ManagedScaleEvent>(), cancellationToken);
             await _configuration.TryRemove();
-            await UpdateState();
+            await WakeMeAt(null);
         }
 
         async Task<Dictionary<string, string[]>> IScaleManager.ValidateConfiguration(ScaleManagerConfiguration configuration, CancellationToken cancellationToken)
@@ -200,8 +200,8 @@
 
         private async Task UpdateState(CancellationToken cancellationToken = default)
         {
-            var events = await _events.Get(cancellationToken);
             var configuration = await _configuration.Get(cancellationToken);
+            var events = await _events.Get(cancellationToken);
             var now = DateTimeService.UtcNow;
 
             var expectedRequestsNumber = CalculateCurrentTotalScaleRequest(events, now);
