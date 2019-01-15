@@ -22,5 +22,11 @@ namespace Bullfrog.Actor.Interfaces
         Task<ScaleEventState> DeleteScaleEvent(Guid id, CancellationToken cancellationToken);
 
         Task<ScaleState> GetScaleSet(CancellationToken cancellationToken);
+
+        Task Disable(CancellationToken cancellationToken);
+
+        Task<Dictionary<string, string[]>> ValidateConfiguration(ScaleManagerConfiguration configuration, CancellationToken cancellationToken);
+
+        Task Configure(ScaleManagerConfiguration configuration, CancellationToken cancellationToken);
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Fabric;
 using System.Linq;
 using System.Threading.Tasks;
+using Bullfrog.Actor.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.ServiceFabric.Actors;
@@ -10,21 +11,54 @@ using Microsoft.ServiceFabric.Actors.Client;
 
 namespace Bullfrog.Api.Controllers
 {
-    [AllowAnonymous]
+    /// <summary>
+    /// Provides common functionality for all API controller classes.
+    /// </summary>
+    [Authorize]
+    [ApiController]
     public abstract class BaseManagementController : ControllerBase
     {
-        private static Dictionary<Type, string> actorServices = new Dictionary<Type, string>
+        private static readonly Dictionary<Type, string> actorServices = new Dictionary<Type, string>
         {
-            [typeof(Actor.Interfaces.IScaleManager)] = "ScaleManagerActorService",
+            [typeof(IScaleManager)] = "ScaleManagerActorService",
+            [typeof(IConfigurationManager)] = "ConfigurationManagerActorService",
         };
 
-        internal StatelessServiceContext StatelessServiceContext { get; private set; }
+        /// <summary>
+        /// Gets the stateless service context.
+        /// </summary>
+        protected StatelessServiceContext StatelessServiceContext { get; private set; }
 
-        public BaseManagementController(StatelessServiceContext statelessServiceContext)
+        /// <summary>
+        /// Creates an instance of <see cref="BaseManagementController"/>.
+        /// </summary>
+        /// <param name="statelessServiceContext">The <see cref="StatelessServiceContext"/> instance.</param>
+        protected BaseManagementController(StatelessServiceContext statelessServiceContext)
         {
             StatelessServiceContext = statelessServiceContext;
         }
 
+        /// <summary>
+        /// Gets the actor with the specified ID.
+        /// </summary>
+        /// <typeparam name="TActor">The type of the actor.</typeparam>
+        /// <param name="actorId">The ID of the actor.</param>
+        /// <returns>The actor proxy.</returns>
+        protected TActor GetActor<TActor>(ActorId actorId)
+            where TActor : IActor
+        {
+            var serviceName = actorServices[typeof(TActor)];
+            var actorUri = new Uri($"{StatelessServiceContext.CodePackageActivationContext.ApplicationName}/{serviceName}");
+            return ActorProxy.Create<TActor>(actorId, actorUri);
+        }
+
+        /// <summary>
+        /// Returns the actor responsible for managing region of the scale group.
+        /// </summary>
+        /// <typeparam name="TActor">The type of the actor.</typeparam>
+        /// <param name="scaleGroup">The scale group name.</param>
+        /// <param name="region">The region name.</param>
+        /// <returns>The actor proxy.</returns>
         protected TActor GetActor<TActor>(string scaleGroup, string region)
             where TActor : IActor
         {
@@ -32,24 +66,21 @@ namespace Bullfrog.Api.Controllers
             if (actorName.StartsWith('I'))
                 actorName = actorName.Substring(1);
             var actorId = new ActorId($"{actorName}:{scaleGroup}/{region}");
-            var serviceName = actorServices[typeof(TActor)];
-            var actorUri = new Uri($"{StatelessServiceContext.CodePackageActivationContext.ApplicationName}/{serviceName}");
-            return ActorProxy.Create<TActor>(actorId, actorUri);
+            return GetActor<TActor>(actorId);
         }
 
-        protected string[] ListRegionsOfScaleGroup(string scaleGroup)
+        /// <summary>
+        /// Returns the list of regions of the specified scale groups.
+        /// </summary>
+        /// <param name="scaleGroup">The name of the scale group</param>
+        /// <returns>The list of region names or null if the scale group is not configured.</returns>
+        protected async Task<List<string>> ListRegionsOfScaleGroup(string scaleGroup)
         {
-            switch (scaleGroup)
-            {
-                case "SNKRS":
-                    return new[] { "us", "eu" };
-
-                case "ONE":
-                    return new[] { "eu" };
-
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(scaleGroup), scaleGroup, $"The scale group {scaleGroup} is unrecognized.");
-            }
+            var actor = GetActor<IConfigurationManager>(new ActorId("configuration"));
+            // TODO: caching would be nice
+            var configuration = await actor.GetScaleGroupConfiguration(scaleGroup, default);
+            return configuration?.Regions.Select(r => r.RegionName).ToList();
         }
     }
 }
+

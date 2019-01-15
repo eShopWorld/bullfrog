@@ -34,7 +34,7 @@ namespace Bullfrog.Api
                 new ServiceInstanceListener(serviceContext =>
                     new KestrelCommunicationListener(
                         serviceContext,
-                        "BullfrogApiEndpoint",
+                        "BullfrogApiEndpointHttps",
                         (url, listener) =>
                         {
                             return new WebHostBuilder()

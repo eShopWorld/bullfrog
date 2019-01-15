@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Integration.ServiceFabric;
+using Bullfrog.Actor.Helpers;
 using Bullfrog.Common.DependencyInjection;
 using Castle.Core.Internal;
 using Eshopworld.Telemetry;
@@ -12,7 +13,6 @@ using Eshopworld.Telemetry;
 
 namespace Bullfrog.Actor
 {
-
     internal static class Program
     {
         /// <summary>
@@ -24,11 +24,13 @@ namespace Bullfrog.Actor
             {
                 var builder = new ContainerBuilder();
                 builder.RegisterModule(new CoreModule());
-                //builder.RegisterModule(new AzureManagementFluentModule());
+                builder.RegisterModule(new AzureManagementFluentModule());
+                builder.RegisterType<ScaleSetManager>().As<IScaleSetManager>();
 
                 builder.RegisterServiceFabricSupport();
 
                 builder.RegisterActor<ScaleManager>();
+                builder.RegisterActor<ConfigurationManager>();
 
                 using (var container = builder.Build())
                 {

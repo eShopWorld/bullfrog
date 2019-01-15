@@ -14,6 +14,11 @@ namespace Bullfrog.Api
 {
     public static class EswSslExtentions
     {
+        public static IWebHostBuilder UseEswSsl(this IWebHostBuilder builder, int port, bool isHttps)
+        {
+            return builder.UseEswSsl(new[] { (port, isHttps) });
+        }
+
         public static IWebHostBuilder UseEswSsl(this IWebHostBuilder builder, AspNetCoreCommunicationListener listener)
         {
             var ports = from endpoint in listener.ServiceContext.CodePackageActivationContext.GetEndpoints()
@@ -74,6 +79,15 @@ namespace Bullfrog.Api
                 {
                     // TODO: another temporary attempt to find the cert
                     certCollection = store.Certificates.Find(X509FindType.FindBySubjectName, subject, false);
+
+                    for (int i = 0; i < certCollection.Count; i++)
+                    {
+                        if(!IsSslCertificate(certCollection[i]))
+                        {
+                            certCollection.RemoveAt(i);
+                            i--;
+                        }
+                    }
                 }
 
                 if (certCollection.Count == 0)
@@ -108,6 +122,35 @@ namespace Bullfrog.Api
                 default:
                     throw new ArgumentOutOfRangeException(nameof(environment), environment, $"The environment {environment} is not recognized");
             }
+        }
+
+        /// <summary>
+        /// Checks whether the certificate can be used to enable SSL trafic to the local server
+        /// </summary>
+        /// <param name="cert">Certificate to check.</param>
+        /// <returns>True if the certificate can be used for SSL decoding, false otherwise.</returns>
+        private static bool IsSslCertificate(X509Certificate2 cert)
+        {
+            // based on https://stackoverflow.com/questions/51322480/x509-certificate-intended-purpose-and-ssl
+            if (!cert.HasPrivateKey)
+            {
+                return false;
+            }
+
+            foreach (var extension in cert.Extensions)
+            {
+                if (extension.Oid.Value == "2.5.29.37")  // Enhanced Key Usage
+                {
+                    var eku = (X509EnhancedKeyUsageExtension)extension;
+                    foreach (var oid in eku.EnhancedKeyUsages)
+                    {
+                        if (oid.Value == "1.3.6.1.5.5.7.3.1") // Server Authentication
+                            return true;
+                    }
+                }
+            }
+
+            return false;
         }
     }
 }
