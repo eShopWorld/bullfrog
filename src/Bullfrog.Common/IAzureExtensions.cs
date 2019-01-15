@@ -8,6 +8,7 @@ using Microsoft.Azure.Management.Monitor.Fluent;
 
 namespace Bullfrog.Common
 {
+    // TODO: rename
     public static class IAzureExtensions
     {
         public static async Task<IAzure> UpdateAutoscaleProfile(this IAzure azure, UpdateAutoscaleProfileParameters parameters, CancellationToken cancellationToken = default)
@@ -54,6 +55,7 @@ namespace Bullfrog.Common
         }
     }
 
+    // TODO: remove 
     public class UpdateAutoscaleProfileParameters
     {
         public string AutoscaleSettingsResourceId { get; set; }
