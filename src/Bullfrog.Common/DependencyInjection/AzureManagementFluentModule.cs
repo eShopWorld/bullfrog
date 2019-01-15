@@ -9,6 +9,7 @@ using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 using Microsoft.Azure.Services.AppAuthentication;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Rest;
 
 namespace Bullfrog.Common.DependencyInjection
@@ -19,6 +20,15 @@ namespace Bullfrog.Common.DependencyInjection
         {
             builder.Register(c =>
             {
+                // TODO: remove this workaround when SF is configured to provided this value
+                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AzureServicesAuthConnectionString")))
+                {
+                    var configurationRoot = c.Resolve<IConfigurationRoot>();
+                    var authConnectionString = configurationRoot.GetSection("Bullfrog").GetSection("Auth")["ConnectionString"];
+                    if (!string.IsNullOrWhiteSpace(authConnectionString))
+                        Environment.SetEnvironmentVariable("AzureServicesAuthConnectionString", authConnectionString);
+                }
+
                 var tokenProvider = new AzureServiceTokenProvider();
                 var tokenProviderAdapter = new AzureServiceTokenProviderAdapter(tokenProvider);
                 return new TokenCredentials(tokenProviderAdapter);
