@@ -14,6 +14,7 @@
     <ServicePackagePrefix>$(MSBuildProjectName)</ServicePackagePrefix>
     <FabActUtilWorkingDir>$(BaseIntermediateOutputPath)\FabActUtilTemp</FabActUtilWorkingDir>
     <LangVersion>latest</LangVersion>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,14 +26,14 @@
   <ItemGroup>
     <PackageReference Include="Autofac" Version="4.9.0-beta1" />
     <PackageReference Include="Autofac.ServiceFabric" Version="2.1.0" />
-    <PackageReference Include="Eshopworld.Telemetry" Version="2.1.2" />
+    <PackageReference Include="Eshopworld.Telemetry" Version="2.1.3" />
     <PackageReference Include="IdentityModel" Version="4.0.0-bowmore" />
     <PackageReference Include="Microsoft.Azure.KeyVault" Version="3.0.2" />
     <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.18.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.AzureKeyVault" Version="2.2.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="2.2.0" />
     <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="3.19.8" /> <!-- Microsoft.Rest.ClientRuntime.Azure.Authentication 2.3.4 requires >= 3.14.0 && < 4.0.0-->
-    <PackageReference Include="Microsoft.ServiceFabric.Actors" Version="3.3.617" />
+    <PackageReference Include="Microsoft.ServiceFabric.Actors" Version="3.3.624" />
   </ItemGroup>
 
   <ItemGroup>

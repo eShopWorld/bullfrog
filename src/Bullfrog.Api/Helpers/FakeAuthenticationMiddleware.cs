@@ -32,7 +32,7 @@ namespace Bullfrog.Api.Helpers
 
                 if(claims.Count == 0)
                 {
-                    claims.Add(new Claim("scope", "esw.bullfrog.api.all"));
+                    claims.Add(new Claim("scope", "bullfrog.api.all"));
                 }
 
                 var identity = new ClaimsIdentity(new GenericIdentity("FakeUser", "FakeAuth"), claims);

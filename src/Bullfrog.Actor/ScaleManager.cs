@@ -5,11 +5,13 @@
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Bullfrog.Actor.EventModels;
     using Bullfrog.Actor.Helpers;
     using Bullfrog.Actor.Interfaces;
     using Bullfrog.Actor.Interfaces.Models;
     using Bullfrog.Actor.Models;
     using Bullfrog.Common;
+    using Eshopworld.Core;
     using Microsoft.ServiceFabric.Actors;
     using Microsoft.ServiceFabric.Actors.Runtime;
 
@@ -21,18 +23,20 @@
         private readonly StateItem<List<ManagedScaleEvent>> _events;
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
         private readonly IScaleSetManager _scaleSetManager;
+        private readonly IBigBrother _bigBrother;
 
         /// <summary>
         /// Initializes a new instance of ScaleManager
         /// </summary>
         /// <param name="actorService">The Microsoft.ServiceFabric.Actors.Runtime.ActorService that will host this actor instance.</param>
         /// <param name="actorId">The Microsoft.ServiceFabric.Actors.ActorId for this actor instance.</param>
-        public ScaleManager(ActorService actorService, ActorId actorId, IScaleSetManager scaleSetManager)
+        public ScaleManager(ActorService actorService, ActorId actorId, IScaleSetManager scaleSetManager, IBigBrother bigBrother)
             : base(actorService, actorId)
         {
             _events = new StateItem<List<ManagedScaleEvent>>(StateManager, "scaleEvents");
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
             _scaleSetManager = scaleSetManager;
+            _bigBrother = bigBrother;
         }
 
         /// <summary>
@@ -151,7 +155,7 @@
         {
             await _events.Set(new List<ManagedScaleEvent>(), cancellationToken);
             await _configuration.TryRemove();
-            await UpdateState();
+            await WakeMeAt(null);
         }
 
         async Task<Dictionary<string, string[]>> IScaleManager.ValidateConfiguration(ScaleManagerConfiguration configuration, CancellationToken cancellationToken)
@@ -200,24 +204,42 @@
 
         private async Task UpdateState(CancellationToken cancellationToken = default)
         {
-            var events = await _events.Get(cancellationToken);
             var configuration = await _configuration.Get(cancellationToken);
+            var events = await _events.Get(cancellationToken);
             var now = DateTimeService.UtcNow;
 
-            var expectedRequestsNumber = CalculateCurrentTotalScaleRequest(events, now);
-            if (expectedRequestsNumber.HasValue)
+            int newScale;
+            try
             {
-                var newScaleSetSize = (expectedRequestsNumber.Value + configuration.ScaleSetConfiguration.RequestsPerInstance - 1)
-                    / configuration.ScaleSetConfiguration.RequestsPerInstance;
-                await _scaleSetManager.SetScale(newScaleSetSize, configuration.ScaleSetConfiguration, default);
+                var expectedRequestsNumber = CalculateCurrentTotalScaleRequest(events, now);
+                if (expectedRequestsNumber.HasValue)
+                {
+                    newScale = (expectedRequestsNumber.Value + configuration.ScaleSetConfiguration.RequestsPerInstance - 1)
+                        / configuration.ScaleSetConfiguration.RequestsPerInstance;
+                    await _scaleSetManager.SetScale(newScale, configuration.ScaleSetConfiguration, default);
+                }
+                else
+                {
+                    await _scaleSetManager.Reset(configuration.ScaleSetConfiguration, default);
+                    newScale = 0;
+                }
             }
-            else
+            catch (Exception ex) // TODO: can/should it be more specific?
             {
-                await _scaleSetManager.Reset(configuration.ScaleSetConfiguration, default);
+                newScale = -1;
+                var error = new Exception($"Failed to scale {configuration.ScaleSetConfiguration.AutoscaleSettingsResourceId}.", ex);
+                _bigBrother.Publish(error.ToExceptionEvent());
             }
 
             var nextWakeUpTime = FindNextWakeUpTime(events, now);
             await WakeMeAt(nextWakeUpTime);
+
+            _bigBrother.Publish(new ScaleAgentStatus
+            {
+                ActorId = Id.ToString(),
+                NextWakeUpTime = nextWakeUpTime,
+                Scale = newScale,
+            });
         }
 
         protected virtual async Task WakeMeAt(DateTimeOffset? time)

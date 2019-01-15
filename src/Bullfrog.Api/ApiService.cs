@@ -2,6 +2,7 @@
 using System.Fabric;
 using System.IO;
 using Autofac.Extensions.DependencyInjection;
+using Eshopworld.Web;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.ServiceFabric.Services.Communication.AspNetCore;
