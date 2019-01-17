@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Bullfrog.Actor.Interfaces.Models.Validation
 {
+    [AttributeUsage(AttributeTargets.Property)]
     public class ElementsHaveDistinctValuesAttribute : ValidationAttribute
     {
         public ElementsHaveDistinctValuesAttribute(string propertyName)
@@ -12,26 +14,30 @@ namespace Bullfrog.Actor.Interfaces.Models.Validation
 
         public string PropertyName { get; }
 
-
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
-            var items = (System.Collections.IEnumerable)value;
-            if (items == null)
+            if (value == null)
             {
                 return ValidationResult.Success;
             }
 
+            var items = (System.Collections.IEnumerable)value;
+            if (items == null)
+            {
+                return new ValidationResult("Value is not a collection");
+            }
+
             var distinctValues = new HashSet<object>();
             var index = 0;
-            foreach(var v in items)
+            foreach (var v in items)
             {
-                if(v == null)
+                if (v == null)
                 {
-                    return new ValidationResult("Item is required", new[] { $"[{index}]" });
+                    return new ValidationResult("Value is required", new[] { $"[{index}]" });
                 }
 
                 var propertyValue = v.GetType().GetProperty(PropertyName)?.GetValue(v);
-                if(propertyValue == null)
+                if (propertyValue == null)
                 {
                     return new ValidationResult("Value is missing.", new[] { $"[{index}].{PropertyName}" });
                 }

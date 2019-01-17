@@ -1,4 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Bullfrog.Actor.Interfaces.Models.Validation;
 
 namespace Bullfrog.Actor.Interfaces.Models
 {
@@ -18,5 +20,12 @@ namespace Bullfrog.Actor.Interfaces.Models
         /// </summary>
         [Required]
         public ScaleSetConfiguration ScaleSet { get; set; }
+
+        /// <summary>
+        /// The configuration of scaling of Cosmos databases.
+        /// </summary>
+        [Required]
+        [ElementsHaveDistinctValues(nameof(CosmosConfiguration.Name))]
+        public List<CosmosConfiguration> Cosmos { get; set; }
     }
 }

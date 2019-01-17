@@ -96,6 +96,7 @@
                 var configuration = new ScaleManagerConfiguration
                 {
                     ScaleSetConfiguration = region.ScaleSet,
+                    CosmosConfigurations = region.Cosmos,
                 };
                 await actor.Configure(configuration, default);
             }

@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Eshopworld.DevOps" Version="2.0.0" />
+    <PackageReference Include="Eshopworld.DevOps" Version="2.0.1" />
     <PackageReference Include="Microsoft.ServiceFabric.Actors" Version="3.3.624" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="4.5.0" />
   </ItemGroup>

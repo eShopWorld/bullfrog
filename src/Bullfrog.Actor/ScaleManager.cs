@@ -23,6 +23,7 @@
         private readonly StateItem<List<ManagedScaleEvent>> _events;
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
         private readonly IScaleSetManager _scaleSetManager;
+        private readonly ICosmosManager _cosmosManager;
         private readonly IBigBrother _bigBrother;
 
         /// <summary>
@@ -30,12 +31,18 @@
         /// </summary>
         /// <param name="actorService">The Microsoft.ServiceFabric.Actors.Runtime.ActorService that will host this actor instance.</param>
         /// <param name="actorId">The Microsoft.ServiceFabric.Actors.ActorId for this actor instance.</param>
-        public ScaleManager(ActorService actorService, ActorId actorId, IScaleSetManager scaleSetManager, IBigBrother bigBrother)
+        public ScaleManager(
+            ActorService actorService,
+            ActorId actorId,
+            IScaleSetManager scaleSetManager,
+            ICosmosManager cosmosManager,
+            IBigBrother bigBrother)
             : base(actorService, actorId)
         {
             _events = new StateItem<List<ManagedScaleEvent>>(StateManager, "scaleEvents");
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
             _scaleSetManager = scaleSetManager;
+            _cosmosManager = cosmosManager;
             _bigBrother = bigBrother;
         }
 
@@ -187,29 +194,11 @@
             var configuration = await _configuration.Get(cancellationToken);
             var events = await _events.Get(cancellationToken);
             var now = DateTimeService.UtcNow;
+            var expectedRequestsNumber = CalculateCurrentTotalScaleRequest(events, now);
 
-            int newScale;
-            try
-            {
-                var expectedRequestsNumber = CalculateCurrentTotalScaleRequest(events, now);
-                if (expectedRequestsNumber.HasValue)
-                {
-                    newScale = (expectedRequestsNumber.Value + configuration.ScaleSetConfiguration.RequestsPerInstance - 1)
-                        / configuration.ScaleSetConfiguration.RequestsPerInstance;
-                    await _scaleSetManager.SetScale(newScale, configuration.ScaleSetConfiguration, default);
-                }
-                else
-                {
-                    await _scaleSetManager.Reset(configuration.ScaleSetConfiguration, default);
-                    newScale = 0;
-                }
-            }
-            catch (Exception ex) // TODO: can/should it be more specific?
-            {
-                newScale = -1;
-                var error = new Exception($"Failed to scale {configuration.ScaleSetConfiguration.AutoscaleSettingsResourceId}.", ex);
-                _bigBrother.Publish(error.ToExceptionEvent());
-            }
+            // TODO: can all scale operations be done concurrently (if it's too long to do it sequentially)? Is Azure Fluent safe to use in such scenario?
+            var scaleSetInstances = await UpdateScaleSet(configuration.ScaleSetConfiguration, expectedRequestsNumber);
+            var cosmosScaleState = await UpdateCosmosInstances(configuration.CosmosConfigurations, expectedRequestsNumber);
 
             var nextWakeUpTime = FindNextWakeUpTime(events, now);
             await WakeMeAt(nextWakeUpTime);
@@ -217,9 +206,67 @@
             _bigBrother.Publish(new ScaleAgentStatus
             {
                 ActorId = Id.ToString(),
+                RequestedScale = expectedRequestsNumber,
                 NextWakeUpTime = nextWakeUpTime,
-                Scale = newScale,
+                ScaleSetInstances = scaleSetInstances,
+                Cosmos = cosmosScaleState,
             });
+        }
+
+        private async Task<int> UpdateScaleSet(ScaleSetConfiguration configuration, int? expectedRequestsNumber)
+        {
+            int scaleSetInstances;
+            try
+            {
+                if (expectedRequestsNumber.HasValue)
+                {
+                    scaleSetInstances = (expectedRequestsNumber.Value + configuration.RequestsPerInstance - 1)
+                        / configuration.RequestsPerInstance;
+                    await _scaleSetManager.SetScale(scaleSetInstances, configuration, default);
+                }
+                else
+                {
+                    await _scaleSetManager.Reset(configuration, default);
+                    scaleSetInstances = 0;
+                }
+            }
+            catch (Exception ex) // TODO: can/should it be more specific?
+            {
+                scaleSetInstances = -1;
+                var error = new Exception($"Failed to scale {configuration.AutoscaleSettingsResourceId}.", ex);
+                _bigBrother.Publish(error.ToExceptionEvent());
+            }
+
+            return scaleSetInstances;
+        }
+
+        private async Task<List<CosmosScale>> UpdateCosmosInstances(List<CosmosConfiguration> cosmosInstances, int? expectedRequestsNumber)
+        {
+            var cosmosScaleState = new List<CosmosScale>();
+            foreach (var cosmosConfiguration in cosmosInstances)
+            {
+                int cosmosRUs = -1;
+                try
+                {
+                    if (expectedRequestsNumber.HasValue)
+                    {
+                        cosmosRUs = await _cosmosManager.SetScale(expectedRequestsNumber.Value, cosmosConfiguration);
+                    }
+                    else
+                    {
+                        cosmosRUs = await _cosmosManager.Reset(cosmosConfiguration);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    var error = new Exception($"Failed to scale the {cosmosConfiguration.Name} cosmos instance.", ex);
+                    _bigBrother.Publish(error.ToExceptionEvent());
+                }
+
+                cosmosScaleState.Add(new CosmosScale { Name = cosmosConfiguration.Name, RUs = cosmosRUs });
+            }
+
+            return cosmosScaleState;
         }
 
         protected virtual async Task WakeMeAt(DateTimeOffset? time)
