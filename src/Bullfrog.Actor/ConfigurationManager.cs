@@ -59,13 +59,6 @@
                 return null;
             }
 
-            var validationResults = await ValidateConfiguration(name, definition, cancellationToken);
-
-            if (validationResults.Count > 0)
-            {
-                return validationResults;
-            }
-
             await UpdateScaleManagers(name, definition, existingGroups);
 
             await state.Set(definition, default);
@@ -93,61 +86,6 @@
                 var actor = GetActor<IScaleManager>(name, region.RegionName);
                 await actor.Disable(default);
             }
-        }
-
-        private async Task<Dictionary<string, string[]>> ValidateConfiguration(string name, ScaleGroupDefinition definition, CancellationToken cancellationToken)
-        {
-            var validationResults = new Dictionary<string, string[]>();
-            if (definition.Regions == null || definition.Regions.Count == 0 || definition.Regions.Any(r => r == null || string.IsNullOrWhiteSpace(r.RegionName)))
-            {
-                validationResults.Add(nameof(definition.Regions), new[] { "The regions are missing or one of their names is invalid" });
-                return validationResults;
-            }
-
-            var regionNames = new HashSet<string>();
-            for (int i = 0; i < definition.Regions.Count; i++)
-            {
-                var region = definition.Regions[i];
-                if (string.IsNullOrWhiteSpace(region.RegionName) || region.RegionName.Trim() != region.RegionName)
-                {
-                    validationResults.Add($"[{i}].{nameof(region.RegionName)}", new[] { "The region name is invalid" });
-                    continue;
-                }
-
-                if (!regionNames.Add(region.RegionName))
-                {
-                    validationResults.Add($"[{i}].{nameof(region.RegionName)}", new[] { $"The region name {region.RegionName} is defined more than once" });
-                    continue;
-                }
-
-                var actor = GetActor<IScaleManager>(name, region.RegionName);
-                var configuration = new ScaleManagerConfiguration
-                {
-                    ScaleSetConfiguration = region.ScaleSet,
-                };
-                var validationResult = await actor.ValidateConfiguration(configuration, cancellationToken);
-                if (validationResult != null)
-                {
-                    foreach (var val in validationResult)
-                    {
-                        validationResults.Add($"[{i}].{TranslateKey(val.Key)}",
-                            val.Value.Select(v => $"{v} (region {region.RegionName})").ToArray());
-                    }
-                }
-            }
-
-            return validationResults;
-        }
-
-        private static string TranslateKey(string s)
-        {
-            if (s.StartsWith(nameof(ScaleManagerConfiguration.ScaleSetConfiguration)))
-            {
-                var restOfKey = s.Substring(nameof(ScaleManagerConfiguration.ScaleSetConfiguration).Length);
-                return $"{nameof(ScaleGroupRegion.ScaleSet)}{restOfKey}";
-            }
-
-            return s;
         }
 
         private async Task UpdateScaleManagers(string name, ScaleGroupDefinition definition, Microsoft.ServiceFabric.Data.ConditionalValue<ScaleGroupDefinition> existingGroup)

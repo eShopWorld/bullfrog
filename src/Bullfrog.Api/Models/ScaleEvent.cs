@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
+using Bullfrog.Actor.Interfaces.Models.Validation;
 
 namespace Bullfrog.Api.Models
 {
@@ -29,6 +30,9 @@ namespace Bullfrog.Api.Models
         /// <summary>
         /// The list of regions which require scaling.
         /// </summary>
+        [Required]
+        [MinLength(1, ErrorMessage = "At least one region must be defined.")]
+        [ElementsHaveDistinctValues(nameof(RegionScaleValue.Name))]
         public List<RegionScaleValue> RegionConfig { get; set; }
     }
 }

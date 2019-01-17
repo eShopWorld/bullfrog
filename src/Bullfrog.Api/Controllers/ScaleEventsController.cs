@@ -176,7 +176,7 @@ namespace Bullfrog.Api.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
         [Authorize(Policy = AuthenticationPolicies.EventsManagerScope)]
-        public async Task<ActionResult<ScaleEvent>> SaveScaleEvent(string scaleGroup, Guid eventId, [Required]ScaleEvent scaleEvent)
+        public async Task<ActionResult<ScaleEvent>> SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent)
         {
             // TODO: move all these validation rules to the model
             if (scaleEvent.RequiredScaleAt <= DateTimeOffset.UtcNow)

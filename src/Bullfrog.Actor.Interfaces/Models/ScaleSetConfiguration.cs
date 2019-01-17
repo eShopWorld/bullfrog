@@ -1,10 +1,12 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Bullfrog.Actor.Interfaces.Models.Validation;
 
 namespace Bullfrog.Actor.Interfaces.Models
 {
     /// <summary>
     /// Configuration of virtual machine scale set which is part of the scale group.
     /// </summary>
+    [ScaleSetConfigurationValid]
     public class ScaleSetConfiguration
     {
         /// <summary>

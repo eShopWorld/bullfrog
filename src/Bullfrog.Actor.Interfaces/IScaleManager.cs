@@ -25,8 +25,6 @@ namespace Bullfrog.Actor.Interfaces
 
         Task Disable(CancellationToken cancellationToken);
 
-        Task<Dictionary<string, string[]>> ValidateConfiguration(ScaleManagerConfiguration configuration, CancellationToken cancellationToken);
-
         Task Configure(ScaleManagerConfiguration configuration, CancellationToken cancellationToken);
     }
 }

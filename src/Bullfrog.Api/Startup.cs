@@ -11,11 +11,9 @@ using Eshopworld.DevOps;
 using Eshopworld.Telemetry;
 using Eshopworld.Web;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Swagger;
@@ -124,6 +122,7 @@ namespace Bullfrog.Api
         public void ConfigureContainer(ContainerBuilder builder)
         {
             builder.RegisterModule(new CoreModule());
+            builder.RegisterModule(new AzureManagementFluentModule());
         }
 
         /// <summary>

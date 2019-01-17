@@ -158,28 +158,8 @@
             await WakeMeAt(null);
         }
 
-        async Task<Dictionary<string, string[]>> IScaleManager.ValidateConfiguration(ScaleManagerConfiguration configuration, CancellationToken cancellationToken)
-        {
-            var errors = new Dictionary<string, string[]>();
-            var ssErrors = await _scaleSetManager.ValidateConfiguration(configuration.ScaleSetConfiguration, cancellationToken);
-            if (ssErrors != null)
-            {
-                foreach (var err in ssErrors)
-                {
-                    errors.Add($"{nameof(configuration.ScaleSetConfiguration)}.{err.Key}", err.Value);
-                }
-            }
-            return errors;
-        }
-
         async Task IScaleManager.Configure(ScaleManagerConfiguration configuration, CancellationToken cancellationToken)
         {
-            var errors = await _scaleSetManager.ValidateConfiguration(configuration.ScaleSetConfiguration, cancellationToken);
-            if (errors != null && errors.Count > 0)
-            {
-                throw new Exception($"Configuration is invalid: {errors.First().Value} ({errors.First().Key})");
-            }
-
             await _configuration.Set(configuration, cancellationToken);
             await UpdateState();
         }

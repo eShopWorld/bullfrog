@@ -10,7 +10,5 @@ namespace Bullfrog.Actor.Helpers
         Task SetScale(int size, ScaleSetConfiguration configuration, CancellationToken cancellationToken);
 
         Task Reset(ScaleSetConfiguration configuration, CancellationToken cancellationToken);
-
-        Task<Dictionary<string, string[]>> ValidateConfiguration(ScaleSetConfiguration configuration, CancellationToken cancellationToken);
     }
 }
