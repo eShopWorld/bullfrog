@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Text;
 using Bullfrog.Actor.Interfaces.Models.Validation;
 
 namespace Bullfrog.Api.Models
@@ -25,6 +24,7 @@ namespace Bullfrog.Api.Models
         /// <summary>
         /// The time when the scale event ends and all resources can be scaled in.
         /// </summary>
+        [ValueIs(ValueComparision.GreaterThen, PropertyValue = nameof(RequiredScaleAt))]
         public DateTimeOffset StartScaleDownAt { get; set; }
 
         /// <summary>

@@ -9,25 +9,49 @@ using Microsoft.Extensions.Configuration;
 
 namespace Bullfrog.Actor.Interfaces.Models
 {
+    /// <summary>
+    /// Defines a Cosmos DB database or a container which is should be scaled to handle requested throughput. 
+    /// </summary>
     public class CosmosConfiguration : IValidatableObject
     {
+        /// <summary>
+        /// The name used as an identifier of this Cosmos DB instance.
+        /// </summary>
         [Required]
         public string Name { get; set; }
 
+        /// <summary>
+        /// The Cosmos DB account name.
+        /// </summary>
         [Required]
         public string AccountName { get; set; }
 
+        /// <summary>
+        /// The Cosmos DB database name.
+        /// </summary>
         [Required]
         public string DatabaseName { get; set; }
 
+        /// <summary>
+        /// The optional name of the container in the Cosmos DB database.
+        /// </summary>
         public string ContainerName { get; set; }
 
+        /// <summary>
+        /// The number of requests per configured RU which on avarage can be processed per second.
+        /// </summary>
         [ValueIs(ValueComparision.GreaterThen, Value = 0)]
         public decimal RequestsPerRU { get; set; }
 
+        /// <summary>
+        /// The minimal value of RU used when there are no active events.
+        /// </summary>
         [CosmosRU]
         public int MinimumRU { get; set; }
 
+        /// <summary>
+        /// The maximal value of RU. No scaling operation will exceed it.
+        /// </summary>
         [CosmosRU]
         [ValueIs(ValueComparision.GreaterThanOrEqualTo, PropertyValue = nameof(MinimumRU))]
         public int MaximumRU { get; set; }
@@ -43,13 +67,10 @@ namespace Bullfrog.Actor.Interfaces.Models
 
         private async Task<ValidationResult> IsValidAsync(IConfigurationRoot configuration)
         {
-            // TODO: fix somehow this code duplication
-            var cosmosConnectionStringsSection = configuration.GetSection("Bullfrog").GetSection("Cosmos");
-
-            var connectionString = cosmosConnectionStringsSection[AccountName];
+            var connectionString = configuration.GetCosmosAccountConnectionString(AccountName);
             if (connectionString == null)
             {
-                return new ValidationResult($"Connection string for account {AccountName} not found.", new[] { nameof(AccountName) });
+                return new ValidationResult($"A connection string for the account {AccountName} has not found.", new[] { nameof(AccountName) });
             }
 
             try

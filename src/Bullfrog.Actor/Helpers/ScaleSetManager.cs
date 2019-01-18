@@ -17,19 +17,25 @@ namespace Bullfrog.Actor.Helpers
             _azure = azure;
         }
 
-        public async Task SetScale(int size, ScaleSetConfiguration configuration, CancellationToken cancellationToken)
+        public async Task<int> SetScale(int scale, ScaleSetConfiguration configuration, CancellationToken cancellationToken)
         {
+            var instances = (scale + configuration.RequestsPerInstance - 1)
+                / configuration.RequestsPerInstance;
+
             await UpdateProfile(configuration, profile =>
             {
-                if (size > profile.MaxInstanceCount)
-                    size = profile.MaxInstanceCount;
-                return (size, size);
+                if (instances > profile.MaxInstanceCount)
+                    instances = profile.MaxInstanceCount;
+                return (instances, instances);
             }, cancellationToken);
+
+            return instances;
         }
 
-        public async Task Reset(ScaleSetConfiguration configuration, CancellationToken cancellationToken)
+        public async Task<int> Reset(ScaleSetConfiguration configuration, CancellationToken cancellationToken)
         {
             await UpdateProfile(configuration, profile => (configuration.MinInstanceCount, configuration.DefaultInstanceCount), cancellationToken);
+            return configuration.MinInstanceCount;
         }
 
         private async Task UpdateProfile(
@@ -37,13 +43,12 @@ namespace Bullfrog.Actor.Helpers
             Func<IAutoscaleProfile, (int minInstance, int defaultInstances)> newInstanceCounts,
             CancellationToken cancellationToken)
         {
-            var parameters = new UpdateAutoscaleProfileParameters
-            {
-                AutoscaleSettingsResourceId = configuration.AutoscaleSettingsResourceId,
-                ProfileName = configuration.ProfileName,
-                NewInstanceCountCalculator = newInstanceCounts,
-            };
-            await _azure.UpdateAutoscaleProfile(parameters, cancellationToken);
+            await _azure.UpdateAutoscaleProfile(
+                configuration.AutoscaleSettingsResourceId,
+                configuration.ProfileName,
+                newInstanceCounts,
+                forceUpdate: false,
+                cancellationToken);
        }
     }
 }

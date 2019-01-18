@@ -7,8 +7,8 @@ namespace Bullfrog.Actor.Helpers
 {
     public interface IScaleSetManager
     {
-        Task SetScale(int size, ScaleSetConfiguration configuration, CancellationToken cancellationToken);
+        Task<int> SetScale(int scale, ScaleSetConfiguration configuration, CancellationToken cancellationToken);
 
-        Task Reset(ScaleSetConfiguration configuration, CancellationToken cancellationToken);
+        Task<int> Reset(ScaleSetConfiguration configuration, CancellationToken cancellationToken);
     }
 }

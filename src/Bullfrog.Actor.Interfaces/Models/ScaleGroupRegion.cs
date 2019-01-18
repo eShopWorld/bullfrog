@@ -22,7 +22,7 @@ namespace Bullfrog.Actor.Interfaces.Models
         public ScaleSetConfiguration ScaleSet { get; set; }
 
         /// <summary>
-        /// The configuration of scaling of Cosmos databases.
+        /// The configuration of scaling of Cosmos DB databases or containers.
         /// </summary>
         [Required]
         [ElementsHaveDistinctValues(nameof(CosmosConfiguration.Name))]

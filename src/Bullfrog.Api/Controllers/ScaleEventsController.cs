@@ -178,17 +178,6 @@ namespace Bullfrog.Api.Controllers
         [Authorize(Policy = AuthenticationPolicies.EventsManagerScope)]
         public async Task<ActionResult<ScaleEvent>> SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent)
         {
-            // TODO: move all these validation rules to the model
-            if (scaleEvent.RequiredScaleAt <= DateTimeOffset.UtcNow)
-            {
-                return BadRequest();
-            }
-
-            if (scaleEvent.RequiredScaleAt >= scaleEvent.StartScaleDownAt)
-            {
-                return BadRequest();
-            }
-
             var regions = await ListRegionsOfScaleGroup(scaleGroup);
             if (regions == null)
             {

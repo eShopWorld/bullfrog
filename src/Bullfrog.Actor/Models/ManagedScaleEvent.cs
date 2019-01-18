@@ -1,6 +1,5 @@
 ﻿using System;
 using Bullfrog.Actor.Interfaces.Models;
-using Bullfrog.Common;
 
 namespace Bullfrog.Actor.Models
 {

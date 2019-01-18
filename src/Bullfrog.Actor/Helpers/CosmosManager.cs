@@ -51,8 +51,7 @@ namespace Bullfrog.Actor.Helpers
 
         private string GetConnectionString(CosmosConfiguration configuration)
         {
-            var connectionStrings = _configuration.GetSection("Bullfrog").GetSection("Cosmos");
-            var connectionString = connectionStrings[configuration.AccountName];
+            var connectionString = _configuration.GetCosmosAccountConnectionString(configuration.AccountName);
             if (connectionString == null)
             {
                 throw new ArgumentException($"The connection string for the Cosmos account {configuration.AccountName} has not been found");

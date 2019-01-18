@@ -220,14 +220,11 @@
             {
                 if (expectedRequestsNumber.HasValue)
                 {
-                    scaleSetInstances = (expectedRequestsNumber.Value + configuration.RequestsPerInstance - 1)
-                        / configuration.RequestsPerInstance;
-                    await _scaleSetManager.SetScale(scaleSetInstances, configuration, default);
+                    scaleSetInstances = await _scaleSetManager.SetScale(expectedRequestsNumber.Value, configuration, default);
                 }
                 else
                 {
-                    await _scaleSetManager.Reset(configuration, default);
-                    scaleSetInstances = 0;
+                    scaleSetInstances = await _scaleSetManager.Reset(configuration, default);
                 }
             }
             catch (Exception ex) // TODO: can/should it be more specific?
