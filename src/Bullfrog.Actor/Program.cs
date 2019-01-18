@@ -26,6 +26,7 @@ namespace Bullfrog.Actor
                 builder.RegisterModule(new CoreModule());
                 builder.RegisterModule(new AzureManagementFluentModule());
                 builder.RegisterType<ScaleSetManager>().As<IScaleSetManager>();
+                builder.RegisterType<CosmosManager>().As<ICosmosManager>();
 
                 builder.RegisterServiceFabricSupport();
 

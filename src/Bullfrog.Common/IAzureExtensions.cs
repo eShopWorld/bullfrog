@@ -1,10 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Azure.Management.CosmosDB.Fluent;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.Monitor.Fluent;
+using Microsoft.Azure.Management.Monitor.Fluent.Models;
 
 namespace Bullfrog.Common
 {
@@ -41,7 +42,7 @@ namespace Bullfrog.Common
             {
                 return await autoscaleSettings.GetByIdAsync(resourceId, cancellationToken);
             }
-            catch (Microsoft.Azure.Management.Monitor.Fluent.Models.ErrorResponseException ex)
+            catch (ErrorResponseException ex)
             {
                 var message = ex.Response != null & ex.Response.StatusCode == System.Net.HttpStatusCode.NotFound
                     ? $"The autoscale settings {resourceId} has not been found"
@@ -52,6 +53,20 @@ namespace Bullfrog.Common
             {
                 throw new Exception($"Failed to access autoscale settings {resourceId}: {ex.Message}");
             }
+        }
+
+        public static async Task<string> GetAccountConnectionString(this ICosmosDBAccounts accounts, string accountName, CancellationToken cancellationToken = default)
+        {
+            var cosmosAccounts = await accounts.ListAsync(cancellationToken: cancellationToken);
+            var account = cosmosAccounts.FirstOrDefault(_ => _.Name == accountName);
+            if (account == null)
+            {
+                throw new Exception($"The {accountName} cosmos account has not been found.");
+            }
+
+            var keys = await account.ListKeysAsync(cancellationToken);  // TODO: use ListConnectionString instead when it is fixed
+
+            return $"AccountEndpoint={account.DocumentEndpoint};AccountKey={keys.PrimaryMasterKey};";
         }
     }
 
