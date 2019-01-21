@@ -1,7 +1,7 @@
 ﻿using System;
-using Bullfrog.Actor.Interfaces.Models;
+using Bullfrog.Actors.Interfaces.Models;
 
-namespace Bullfrog.Actor.Models
+namespace Bullfrog.Actors.Models
 {
     public class ManagedScaleEvent
     {

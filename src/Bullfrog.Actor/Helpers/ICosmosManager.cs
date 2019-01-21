@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Bullfrog.Actor.Interfaces.Models;
+using Bullfrog.Actors.Interfaces.Models;
 
-namespace Bullfrog.Actor.Helpers
+namespace Bullfrog.Actors.Helpers
 {
     public interface ICosmosManager
     {

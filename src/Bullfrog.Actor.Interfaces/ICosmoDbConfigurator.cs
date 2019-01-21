@@ -1,7 +1,7 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 
-namespace Bullfrog.Actor.Interfaces
+namespace Bullfrog.Actors.Interfaces
 {
     interface ICosmoDbConfigurator
     {

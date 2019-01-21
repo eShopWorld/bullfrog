@@ -1,15 +1,15 @@
-﻿namespace Bullfrog.Actor
+﻿namespace Bullfrog.Actors
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Bullfrog.Actor.EventModels;
-    using Bullfrog.Actor.Helpers;
-    using Bullfrog.Actor.Interfaces;
-    using Bullfrog.Actor.Interfaces.Models;
-    using Bullfrog.Actor.Models;
+    using Bullfrog.Actors.EventModels;
+    using Bullfrog.Actors.Helpers;
+    using Bullfrog.Actors.Interfaces;
+    using Bullfrog.Actors.Interfaces.Models;
+    using Bullfrog.Actors.Models;
     using Bullfrog.Common;
     using Eshopworld.Core;
     using Microsoft.ServiceFabric.Actors;

@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
-using Bullfrog.Actor.Interfaces.Models.Validation;
+using Bullfrog.Actors.Interfaces.Models.Validation;
 using Bullfrog.Common;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.Monitor.Fluent;
 
-namespace Bullfrog.Actor.Interfaces.Models
+namespace Bullfrog.Actors.Interfaces.Models
 {
     /// <summary>
     /// Configuration of virtual machine scale set which is part of the scale group.

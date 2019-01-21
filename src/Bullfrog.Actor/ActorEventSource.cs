@@ -1,4 +1,4 @@
-﻿namespace Bullfrog.Actor
+﻿namespace Bullfrog.Actors
 {
     using System;
     using System.Collections.Generic;

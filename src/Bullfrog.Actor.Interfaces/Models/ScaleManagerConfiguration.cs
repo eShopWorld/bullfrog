@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace Bullfrog.Actor.Interfaces.Models
+namespace Bullfrog.Actors.Interfaces.Models
 {
     public class ScaleManagerConfiguration
     {

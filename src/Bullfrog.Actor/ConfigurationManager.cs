@@ -1,12 +1,12 @@
-﻿namespace Bullfrog.Actor
+﻿namespace Bullfrog.Actors
 {
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Bullfrog.Actor.Interfaces;
-    using Bullfrog.Actor.Interfaces.Models;
+    using Bullfrog.Actors.Interfaces;
+    using Bullfrog.Actors.Interfaces.Models;
     using Microsoft.ServiceFabric.Actors;
     using Microsoft.ServiceFabric.Actors.Client;
     using Microsoft.ServiceFabric.Actors.Runtime;

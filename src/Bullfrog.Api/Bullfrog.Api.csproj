@@ -38,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Bullfrog.Actor.Interfaces\Bullfrog.Actor.Interfaces.csproj" />
+    <ProjectReference Include="..\Bullfrog.Actor.Interfaces\Bullfrog.Actors.Interfaces.csproj" />
     <ProjectReference Include="..\Bullfrog.Common\Bullfrog.Common.csproj" />
   </ItemGroup>
   

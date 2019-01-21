@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.ServiceFabric.Actors.Runtime;
 using Microsoft.ServiceFabric.Data;
 
-namespace Bullfrog.Actor
+namespace Bullfrog.Actors
 {
     public struct StateItem<T>
     {

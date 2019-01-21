@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Bullfrog.Actor.Interfaces.Models.Validation;
+using Bullfrog.Actors.Interfaces.Models.Validation;
 
-namespace Bullfrog.Actor.Interfaces.Models
+namespace Bullfrog.Actors.Interfaces.Models
 {
     /// <summary>
     /// Defines the configuration of a scale group.

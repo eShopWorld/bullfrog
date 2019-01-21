@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 
-namespace Bullfrog.Actor.Interfaces.Models.Validation
+namespace Bullfrog.Actors.Interfaces.Models.Validation
 {
     [AttributeUsage(AttributeTargets.Property)]
     public class ValueIsAttribute : ValidationAttribute

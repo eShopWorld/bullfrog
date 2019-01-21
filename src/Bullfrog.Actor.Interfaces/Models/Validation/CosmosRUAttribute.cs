@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Bullfrog.Actor.Interfaces.Models.Validation
+namespace Bullfrog.Actors.Interfaces.Models.Validation
 {
     public class CosmosRUAttribute : ValidationAttribute
     {

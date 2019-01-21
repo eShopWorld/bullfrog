@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Fabric;
 using System.Linq;
 using System.Threading.Tasks;
-using Bullfrog.Actor.Interfaces;
+using Bullfrog.Actors.Interfaces;
 using Bullfrog.Api.Models;
 using Eshopworld.Core;
 using Microsoft.AspNetCore.Hosting;
@@ -190,9 +190,9 @@ namespace Bullfrog.Api.Controllers
                 return NotFound();
             }
 
-            Actor.Interfaces.Models.ScaleEvent CreateScaleEvent(string region)
+            Actors.Interfaces.Models.ScaleEvent CreateScaleEvent(string region)
             {
-                return new Actor.Interfaces.Models.ScaleEvent
+                return new Actors.Interfaces.Models.ScaleEvent
                 {
                     Id = eventId,
                     Name = scaleEvent.Name,
@@ -251,7 +251,7 @@ namespace Bullfrog.Api.Controllers
                 throw;
             }
 
-            return tasks.Any(t => t.Result == Actor.Interfaces.Models.ScaleEventState.Executing)
+            return tasks.Any(t => t.Result == Actors.Interfaces.Models.ScaleEventState.Executing)
                 ? (ActionResult)Accepted()
                 : NoContent();
         }

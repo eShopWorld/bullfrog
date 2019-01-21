@@ -4,14 +4,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Integration.ServiceFabric;
-using Bullfrog.Actor.Helpers;
+using Bullfrog.Actors.Helpers;
 using Bullfrog.Common.DependencyInjection;
 using Castle.Core.Internal;
 using Eshopworld.Telemetry;
 
 [assembly: InternalsVisibleTo(InternalsVisible.ToDynamicProxyGenAssembly2)]
 
-namespace Bullfrog.Actor
+namespace Bullfrog.Actors
 {
     internal static class Program
     {

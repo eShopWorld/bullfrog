@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using Bullfrog.Actor.Interfaces.Models.Validation;
+using Bullfrog.Actors.Interfaces.Models.Validation;
 
 namespace Bullfrog.Api.Models
 {

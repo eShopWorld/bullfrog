@@ -21,7 +21,7 @@
     </EnvironmentOverrides>
   </ServiceManifestImport>
   <ServiceManifestImport>
-    <ServiceManifestRef ServiceManifestName="Bullfrog.ActorPkg" ServiceManifestVersion="1.0.0" />
+    <ServiceManifestRef ServiceManifestName="Bullfrog.ActorsPkg" ServiceManifestVersion="1.0.0" />
     <EnvironmentOverrides CodePackageRef="Code">
       <EnvironmentVariable Name="ASPNETCORE_ENVIRONMENT" Value="[AspNetCore_Environment]" />
     </EnvironmentOverrides>

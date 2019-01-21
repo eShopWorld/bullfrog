@@ -1,4 +1,4 @@
-﻿namespace Bullfrog.Actor.EventModels
+﻿namespace Bullfrog.Actors.EventModels
 {
     public class CosmosScale
     {

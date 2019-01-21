@@ -2,12 +2,12 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
-using Bullfrog.Actor.Interfaces.Models.Validation;
+using Bullfrog.Actors.Interfaces.Models.Validation;
 using Bullfrog.Common;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
 
-namespace Bullfrog.Actor.Interfaces.Models
+namespace Bullfrog.Actors.Interfaces.Models
 {
     /// <summary>
     /// Defines a Cosmos DB database or a container which is should be scaled to handle requested throughput. 

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Eshopworld.Core;
 
-namespace Bullfrog.Actor.EventModels
+namespace Bullfrog.Actors.EventModels
 {
     public class ScaleAgentStatus : TelemetryEvent
     {

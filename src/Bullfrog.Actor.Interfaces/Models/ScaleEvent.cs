@@ -1,8 +1,8 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
-using Bullfrog.Actor.Interfaces.Models.Validation;
+using Bullfrog.Actors.Interfaces.Models.Validation;
 
-namespace Bullfrog.Actor.Interfaces.Models
+namespace Bullfrog.Actors.Interfaces.Models
 {
     public class ScaleEvent
     {

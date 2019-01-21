@@ -43,7 +43,7 @@
     <Content Include="PublishProfiles\TEST.xml" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Bullfrog.Actor\Bullfrog.Actor.csproj" />
+    <ProjectReference Include="..\Bullfrog.Actor\Bullfrog.Actors.csproj" />
     <ProjectReference Include="..\Bullfrog.Api\Bullfrog.Api.csproj" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />

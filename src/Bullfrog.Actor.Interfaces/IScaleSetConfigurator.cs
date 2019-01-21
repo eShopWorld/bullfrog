@@ -1,9 +1,9 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Bullfrog.Actor.Interfaces.Models;
+using Bullfrog.Actors.Interfaces.Models;
 using Microsoft.ServiceFabric.Actors;
 
-namespace Bullfrog.Actor.Interfaces
+namespace Bullfrog.Actors.Interfaces
 {
     public interface IScaleSetConfigurator : IActor
     {

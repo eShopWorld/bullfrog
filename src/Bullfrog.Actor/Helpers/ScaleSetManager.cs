@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Bullfrog.Actor.Interfaces.Models;
+using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.Monitor.Fluent;
 
-namespace Bullfrog.Actor.Helpers
+namespace Bullfrog.Actors.Helpers
 {
     class ScaleSetManager : IScaleSetManager
     {

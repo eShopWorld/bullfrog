@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<ServiceManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Name="Bullfrog.ActorPkg" Version="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric">
+<ServiceManifest xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Name="Bullfrog.ActorsPkg" Version="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric">
   <ServiceTypes>
     <StatefulServiceType ServiceTypeName="ScaleManagerActorServiceType" HasPersistedState="true">
       <Extensions>
@@ -33,7 +33,7 @@
   <CodePackage Name="Code" Version="1.0.0">
     <EntryPoint>
       <ExeHost>
-        <Program>Bullfrog.Actor.exe</Program>
+        <Program>Bullfrog.Actors.exe</Program>
       </ExeHost>
     </EntryPoint>
     <EnvironmentVariables>
