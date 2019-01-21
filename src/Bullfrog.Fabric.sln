@@ -5,9 +5,9 @@ VisualStudioVersion = 16.0.28315.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{A07B5EB6-E848-4116-A8D0-A826331D98C6}") = "Bullfrog.Fabric", "Bullfrog.Fabric\Bullfrog.Fabric.sfproj", "{CF3104C1-2E63-4A0E-A0E1-A3DBC85C926C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Actors", "Bullfrog.Actor\Bullfrog.Actors.csproj", "{3C843205-8FEA-4D4C-BD80-2B1C1C7804D8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Actors", "Bullfrog.Actors\Bullfrog.Actors.csproj", "{3C843205-8FEA-4D4C-BD80-2B1C1C7804D8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Actors.Interfaces", "Bullfrog.Actor.Interfaces\Bullfrog.Actors.Interfaces.csproj", "{29F7A1D1-A95D-4441-82C5-5CDA3D004B60}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Actors.Interfaces", "Bullfrog.Actors.Interfaces\Bullfrog.Actors.Interfaces.csproj", "{29F7A1D1-A95D-4441-82C5-5CDA3D004B60}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Api", "Bullfrog.Api\Bullfrog.Api.csproj", "{DBDFB760-F8D7-44EF-B6CD-7E578D4E4CEF}"
 EndProject
