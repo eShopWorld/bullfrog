@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,6 +14,7 @@ using Eshopworld.Telemetry;
 
 namespace Bullfrog.Actors
 {
+    [ExcludeFromCodeCoverage]
     internal static class Program
     {
         /// <summary>
@@ -27,6 +29,7 @@ namespace Bullfrog.Actors
                 builder.RegisterModule(new AzureManagementFluentModule());
                 builder.RegisterType<ScaleSetManager>().As<IScaleSetManager>();
                 builder.RegisterType<CosmosManager>().As<ICosmosManager>();
+                builder.RegisterType<SimpleActorProxyFactory>().As<ISimpleActorProxyFactory>();
 
                 builder.RegisterServiceFabricSupport();
 

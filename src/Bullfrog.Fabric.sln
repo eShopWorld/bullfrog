@@ -13,6 +13,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Api", "Bullfrog.Ap
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Common", "Bullfrog.Common\Bullfrog.Common.csproj", "{DE51C8B8-DDAE-4D58-BD7E-E1FE0139EFBD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{2EE623E8-CEAE-45FF-9836-C1B3B463706F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Actors.Tests", "Tests\Bullfrog.Actors.Tests\Bullfrog.Actors.Tests.csproj", "{93B5207C-B7AE-4C08-82BB-B82937433283}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,9 +57,18 @@ Global
 		{DE51C8B8-DDAE-4D58-BD7E-E1FE0139EFBD}.Release|Any CPU.ActiveCfg = Release|x64
 		{DE51C8B8-DDAE-4D58-BD7E-E1FE0139EFBD}.Release|x64.ActiveCfg = Release|x64
 		{DE51C8B8-DDAE-4D58-BD7E-E1FE0139EFBD}.Release|x64.Build.0 = Release|x64
+		{93B5207C-B7AE-4C08-82BB-B82937433283}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{93B5207C-B7AE-4C08-82BB-B82937433283}.Debug|x64.ActiveCfg = Debug|x64
+		{93B5207C-B7AE-4C08-82BB-B82937433283}.Debug|x64.Build.0 = Debug|x64
+		{93B5207C-B7AE-4C08-82BB-B82937433283}.Release|Any CPU.ActiveCfg = Release|x64
+		{93B5207C-B7AE-4C08-82BB-B82937433283}.Release|x64.ActiveCfg = Release|x64
+		{93B5207C-B7AE-4C08-82BB-B82937433283}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{93B5207C-B7AE-4C08-82BB-B82937433283} = {2EE623E8-CEAE-45FF-9836-C1B3B463706F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52D22453-628E-48F3-8A36-B787F5049AA6}

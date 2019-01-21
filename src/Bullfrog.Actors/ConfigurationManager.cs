@@ -1,29 +1,32 @@
-﻿namespace Bullfrog.Actors
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Bullfrog.Actors.Interfaces;
-    using Bullfrog.Actors.Interfaces.Models;
-    using Microsoft.ServiceFabric.Actors;
-    using Microsoft.ServiceFabric.Actors.Client;
-    using Microsoft.ServiceFabric.Actors.Runtime;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Bullfrog.Actors.Helpers;
+using Bullfrog.Actors.Interfaces;
+using Bullfrog.Actors.Interfaces.Models;
+using Microsoft.ServiceFabric.Actors;
+using Microsoft.ServiceFabric.Actors.Runtime;
 
+namespace Bullfrog.Actors
+{
     [StatePersistence(StatePersistence.Persisted)]
     public class ConfigurationManager : Actor, IConfigurationManager
     {
         private const string ScaleGroupKeyPrefix = "scaleGroup:";
+        private readonly ISimpleActorProxyFactory _proxyFactory;
 
         /// <summary>
         /// Initializes a new instance of ScaleManager
         /// </summary>
         /// <param name="actorService">The Microsoft.ServiceFabric.Actors.Runtime.ActorService that will host this actor instance.</param>
         /// <param name="actorId">The Microsoft.ServiceFabric.Actors.ActorId for this actor instance.</param>
-        public ConfigurationManager(ActorService actorService, ActorId actorId)
+        /// <param name="proxyFactory">The factory of actor client proxies.</param>
+        public ConfigurationManager(ActorService actorService, ActorId actorId, ISimpleActorProxyFactory proxyFactory)
             : base(actorService, actorId)
         {
+            _proxyFactory = proxyFactory;
         }
 
         /// <summary>
@@ -52,7 +55,7 @@
                 // Delete the scale group if it has been registered.
                 if (existingGroups.HasValue)
                 {
-                    await DeleteScaleGroup(name, existingGroups.Value);
+                    await DisableRegions(name, existingGroups.Value.Regions);
                     await state.Remove(default);
                 }
 
@@ -74,14 +77,25 @@
                 .ToList();
         }
 
+        async Task<ScaleGroupDefinition> IConfigurationManager.GetScaleGroupConfiguration(string name, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(name) || name.Trim() != name)
+            {
+                throw new ArgumentException("The name parameter is invalid", nameof(name));
+            }
+            var state = GetScaleGroupState(name);
+            var configuration = await state.TryGet(cancellationToken);
+            return configuration.HasValue ? configuration.Value : null;
+        }
+
         private StateItem<ScaleGroupDefinition> GetScaleGroupState(string name)
         {
             return new StateItem<ScaleGroupDefinition>(StateManager, ScaleGroupKeyPrefix + name);
         }
 
-        private async Task DeleteScaleGroup(string name, ScaleGroupDefinition existingGroup)
+        private async Task DisableRegions(string name, IEnumerable<ScaleGroupRegion> regions)
         {
-            foreach (var region in existingGroup.Regions)
+            foreach (var region in regions)
             {
                 var actor = GetActor<IScaleManager>(name, region.RegionName);
                 await actor.Disable(default);
@@ -103,32 +117,17 @@
 
             var existingRegions = existingGroup.HasValue ? existingGroup.Value.Regions : new List<ScaleGroupRegion>();
             var removedRegions = existingRegions.Where(rg => !definition.Regions.Any(r => r.RegionName == rg.RegionName));
-            foreach (var removedRegion in removedRegions)
-            {
-                var actor = GetActor<IScaleManager>(name, removedRegion.RegionName);
-                await actor.Disable(default);
-            }
+            await DisableRegions(name, removedRegions);
         }
 
-        async Task<ScaleGroupDefinition> IConfigurationManager.GetScaleGroupConfiguration(string name, CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrWhiteSpace(name) || name.Trim() != name)
-            {
-                throw new ArgumentException("The name parameter is invalid", nameof(name));
-            }
-            var state = GetScaleGroupState(name);
-            var configuration = await state.TryGet(cancellationToken);
-            return configuration.HasValue ? configuration.Value : null;
-        }
-
-        protected TActor GetActor<TActor>(string scaleGroup, string region)
+        private TActor GetActor<TActor>(string scaleGroup, string region)
                where TActor : IActor
         {
             var actorName = typeof(TActor).Name;
             if (actorName.StartsWith('I'))
                 actorName = actorName.Substring(1);
             var actorId = new ActorId($"{actorName}:{scaleGroup}/{region}");
-            return ActorProxy.Create<TActor>(actorId);
+            return _proxyFactory.CreateProxy<TActor>(actorId);
         }
     }
 }

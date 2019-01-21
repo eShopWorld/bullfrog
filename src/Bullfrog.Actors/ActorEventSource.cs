@@ -1,15 +1,13 @@
 ﻿namespace Bullfrog.Actors
 {
     using System;
-    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
     using System.Diagnostics.Tracing;
-    using System.Fabric;
-    using System.Linq;
-    using System.Text;
     using System.Threading.Tasks;
     using Microsoft.ServiceFabric.Actors.Runtime;
 
 
+    [ExcludeFromCodeCoverage]
     [EventSource(Name = "MyCompany-Bullfrog.Fabric-Bullfrog.Actor")]
     internal sealed class ActorEventSource : EventSource
     {
