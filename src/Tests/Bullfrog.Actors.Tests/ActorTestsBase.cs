@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Fabric;
+using System.Threading;
 using Bullfrog.Actors.Helpers;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Runtime;
+using Microsoft.ServiceFabric.Data;
 using Moq;
 
 public abstract class ActorTestsBase<T>
@@ -51,6 +53,18 @@ public abstract class ActorTestsBase<T>
         where TActor : IActor
     {
         _registeredActorProxies.Add((typeof(TActor), actorId), proxy);
+    }
+
+    protected void AddOptionalState<TItem>(string name, TItem value)
+    {
+        ActorStateManagerMock.Setup(sm => sm.TryGetStateAsync<TItem>(name, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ConditionalValue<TItem>(true, value));
+    }
+
+    protected void AddMissingOptionalState<TItem>(string name)
+    {
+        ActorStateManagerMock.Setup(sm => sm.TryGetStateAsync<TItem>(name, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ConditionalValue<TItem>());
     }
 
 

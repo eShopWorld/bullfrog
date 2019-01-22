@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors;
@@ -71,8 +72,7 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
     public async Task GetDefinitionOfNotDefinedScaleGroup()
     {
         var scaleGroupName = "aa";
-        ActorStateManagerMock.Setup(sm => sm.TryGetStateAsync<ScaleGroupDefinition>(ScaleGroupKeyPrefix + scaleGroupName, It.IsAny<CancellationToken>()))
-           .ReturnsAsync(new ConditionalValue<ScaleGroupDefinition>());
+        AddMissingOptionalState<ScaleGroupDefinition>(ScaleGroupKeyPrefix + scaleGroupName);
         var cm = GetActor();
 
         var scaleGroup = await cm.GetScaleGroupConfiguration(scaleGroupName, default);
@@ -102,18 +102,15 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
                 }
             }
         };
-        ActorStateManagerMock.Setup(sm => sm.TryGetStateAsync<ScaleGroupDefinition>(ScaleGroupKeyPrefix + scaleGroupName, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ConditionalValue<ScaleGroupDefinition>());
+        AddMissingOptionalState<ScaleGroupDefinition>(ScaleGroupKeyPrefix + scaleGroupName);
         ActorStateManagerMock.Setup(sm => sm.SetStateAsync(ScaleGroupKeyPrefix + scaleGroupName, newScaleGroupDefinition, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var scaleManagerMock = MockRepository.Create<IScaleManager>();
-        scaleManagerMock.Setup(sm => sm.Configure(It.Is<ScaleManagerConfiguration>(c => c.ScaleSetConfiguration == newScaleGroupDefinition.Regions[0].ScaleSet), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        RegisterActorProxy(new ActorId("ScaleManager:aa/rr"), scaleManagerMock.Object);
+        var configureCallVerify = PrepareScaleManagerConfigureCall("aa/rr", c => c.ScaleSetConfiguration == newScaleGroupDefinition.Regions[0].ScaleSet);
         var cm = GetActor();
 
         await cm.ConfigureScaleGroup(scaleGroupName, newScaleGroupDefinition, default);
 
+        configureCallVerify();
         ActorStateManagerMock.Verify(sm => sm.SetStateAsync(ScaleGroupKeyPrefix + scaleGroupName, newScaleGroupDefinition, It.IsAny<CancellationToken>()),
             Times.Once);
     }
@@ -122,8 +119,7 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
     public async Task RemoveNotExistingScaleGroup()
     {
         var scaleGroupName = "aa";
-        ActorStateManagerMock.Setup(sm => sm.TryGetStateAsync<ScaleGroupDefinition>(ScaleGroupKeyPrefix + scaleGroupName, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ConditionalValue<ScaleGroupDefinition>());
+        AddMissingOptionalState<ScaleGroupDefinition>(ScaleGroupKeyPrefix + scaleGroupName);
         var cm = GetActor();
 
         await cm.ConfigureScaleGroup(scaleGroupName, null, default);
@@ -151,19 +147,15 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
                 }
             }
         };
-        ActorStateManagerMock.Setup(sm => sm.TryGetStateAsync<ScaleGroupDefinition>(ScaleGroupKeyPrefix + scaleGroupName, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ConditionalValue<ScaleGroupDefinition>(true, scaleGroupDefinition));
+        AddOptionalState(ScaleGroupKeyPrefix + scaleGroupName, scaleGroupDefinition);
         ActorStateManagerMock.Setup(sm => sm.RemoveStateAsync(ScaleGroupKeyPrefix + scaleGroupName, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var scaleManagerMock = MockRepository.Create<IScaleManager>();
-        scaleManagerMock.Setup(sm => sm.Disable(It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        RegisterActorProxy(new ActorId("ScaleManager:aa/rr"), scaleManagerMock.Object);
+        var disableVerify = PrepareScaleManagerDisableCall("aa/rr");
         var cm = GetActor();
 
         await cm.ConfigureScaleGroup(scaleGroupName, null, default);
 
-        scaleManagerMock.Verify(sm => sm.Disable(It.IsAny<CancellationToken>()), Times.Once);
+        disableVerify();
     }
 
     [Fact, IsDev]
@@ -202,34 +194,42 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
                 }
             }
         };
-        ActorStateManagerMock.Setup(sm => sm.TryGetStateAsync<ScaleGroupDefinition>(ScaleGroupKeyPrefix + scaleGroupName, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new ConditionalValue<ScaleGroupDefinition>(true, existingScaleGroupDefinition));
+        AddOptionalState(ScaleGroupKeyPrefix + scaleGroupName, existingScaleGroupDefinition);
         ActorStateManagerMock.Setup(sm => sm.SetStateAsync(ScaleGroupKeyPrefix + scaleGroupName, newScaleGroupDefinition, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         // region deleted
-        var dlScaleManagerMock = MockRepository.Create<IScaleManager>();
-        dlScaleManagerMock.Setup(sm => sm.Disable(It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        RegisterActorProxy(new ActorId("ScaleManager:aa/dl"), dlScaleManagerMock.Object);
+        var dlDisableVerify = PrepareScaleManagerDisableCall("aa/dl");
         // region changed
-        var chScaleManagerMock = MockRepository.Create<IScaleManager>();
-        chScaleManagerMock.Setup(sm => sm.Configure(It.Is<ScaleManagerConfiguration>(c => c.ScaleSetConfiguration == newScaleGroupDefinition.Regions[0].ScaleSet), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        RegisterActorProxy(new ActorId("ScaleManager:aa/ch"), chScaleManagerMock.Object);
+        var chConfigureVerify = PrepareScaleManagerConfigureCall("aa/ch", c => c.ScaleSetConfiguration == newScaleGroupDefinition.Regions[0].ScaleSet);
         // region added
-        var nwScaleManagerMock = MockRepository.Create<IScaleManager>();
-        nwScaleManagerMock.Setup(sm => sm.Configure(It.Is<ScaleManagerConfiguration>(c => c.ScaleSetConfiguration == newScaleGroupDefinition.Regions[1].ScaleSet), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        RegisterActorProxy(new ActorId("ScaleManager:aa/nw"), nwScaleManagerMock.Object);
+        var nwConfigureVerify = PrepareScaleManagerConfigureCall("aa/nw", c => c.ScaleSetConfiguration == newScaleGroupDefinition.Regions[1].ScaleSet);
         var cm = GetActor();
 
         await cm.ConfigureScaleGroup(scaleGroupName, newScaleGroupDefinition, default);
 
-        dlScaleManagerMock.Verify(sm => sm.Disable(It.IsAny<CancellationToken>()), Times.Once);
-        chScaleManagerMock.Verify(sm => sm.Configure(It.IsAny<ScaleManagerConfiguration>(), It.IsAny<CancellationToken>()), Times.Once);
-        nwScaleManagerMock.Verify(sm => sm.Configure(It.IsAny<ScaleManagerConfiguration>(), It.IsAny<CancellationToken>()), Times.Once);
+        dlDisableVerify();
+        chConfigureVerify();
+        nwConfigureVerify();
         ActorStateManagerMock.Verify(sm => sm.SetStateAsync(ScaleGroupKeyPrefix + scaleGroupName, newScaleGroupDefinition, It.IsAny<CancellationToken>()),
             Times.Once);
+    }
+
+    private Action PrepareScaleManagerConfigureCall(string name, Expression<Func<ScaleManagerConfiguration, bool>> match)
+    {
+        var scaleManagerMock = MockRepository.Create<IScaleManager>();
+        scaleManagerMock.Setup(sm => sm.Configure(It.Is(match), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        RegisterActorProxy(new ActorId("ScaleManager:" + name), scaleManagerMock.Object);
+        return () => scaleManagerMock.Verify(sm => sm.Configure(It.IsAny<ScaleManagerConfiguration>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    private Action PrepareScaleManagerDisableCall(string name)
+    {
+        var scaleManagerMock = MockRepository.Create<IScaleManager>();
+        scaleManagerMock.Setup(sm => sm.Disable(It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        RegisterActorProxy(new ActorId("ScaleManager:" + name), scaleManagerMock.Object);
+        return () => scaleManagerMock.Verify(sm => sm.Disable(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     private new IConfigurationManager GetActor()
