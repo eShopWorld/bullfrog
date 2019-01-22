@@ -18,7 +18,7 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
 {
     private const string ScaleGroupKeyPrefix = "scaleGroup:";
 
-    [Fact, IsDev]
+    [Fact, IsLayer0]
     public async Task ListScaleGroupsWhenNoneExist()
     {
         ActorStateManagerMock.Setup(sm => sm.GetStateNamesAsync(It.IsAny<CancellationToken>()))
@@ -30,7 +30,7 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
         scaleGroups.Should().BeEmpty();
     }
 
-    [Fact, IsDev]
+    [Fact, IsLayer0]
     public async Task ListExistingScaleGrups()
     {
         ActorStateManagerMock.Setup(sm => sm.GetStateNamesAsync(It.IsAny<CancellationToken>()))
@@ -42,7 +42,7 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
         scaleGroups.Should().BeEquivalentTo("bb", "dd");
     }
 
-    [Fact, IsDev]
+    [Fact, IsLayer0]
     public async Task GetExistingScaleGroupDefinition()
     {
         var scaleGroupName = "aa";
@@ -68,7 +68,7 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
         scaleGroup.Should().Be(scaleGroupDefinition);
     }
 
-    [Fact, IsDev]
+    [Fact, IsLayer0]
     public async Task GetDefinitionOfNotDefinedScaleGroup()
     {
         var scaleGroupName = "aa";
@@ -80,7 +80,7 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
         scaleGroup.Should().BeNull();
     }
 
-    [Fact, IsDev]
+    [Fact, IsLayer0]
     public async Task ConfigureNewScaleGroup()
     {
         var scaleGroupName = "aa";
@@ -115,7 +115,7 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
             Times.Once);
     }
 
-    [Fact, IsDev]
+    [Fact, IsLayer0]
     public async Task RemoveNotExistingScaleGroup()
     {
         var scaleGroupName = "aa";
@@ -125,7 +125,7 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
         await cm.ConfigureScaleGroup(scaleGroupName, null, default);
     }
 
-    [Fact, IsDev]
+    [Fact, IsLayer0]
     public async Task RemoveExistingScaleGroup()
     {
         var scaleGroupName = "aa";
@@ -158,7 +158,7 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
         disableVerify();
     }
 
-    [Fact, IsDev]
+    [Fact, IsLayer0]
     public async Task ModifyRegionsOfExistingScaleGroup()
     {
         var scaleGroupName = "aa";
