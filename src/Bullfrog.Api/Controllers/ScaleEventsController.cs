@@ -108,7 +108,7 @@ namespace Bullfrog.Api.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
-        public async Task<ActionResult<ScheduledScaleEvent>> ListScheduledEvents(string scaleGroup, Guid eventId)
+        public async Task<ActionResult<ScheduledScaleEvent>> GetScheduledEvent(string scaleGroup, Guid eventId)
         {
             var regions = await ListRegionsOfScaleGroup(scaleGroup);
             if (regions == null)
