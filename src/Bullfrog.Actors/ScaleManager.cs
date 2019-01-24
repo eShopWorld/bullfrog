@@ -74,7 +74,9 @@
             {
                 events.Remove(eventToDelete);
                 await _events.Set(events, cancellationToken);
+                await UpdateState();
             }
+
             return state;
         }
 
