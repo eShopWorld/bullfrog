@@ -28,7 +28,7 @@
     <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="4.3.1" />
     <PackageReference Include="Eshopworld.Web" Version="2.0.1" />
     <PackageReference Include="IdentityServer4.AccessTokenValidation" Version="2.7.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.9.0-beta2" />
+    <PackageReference Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.9.0-beta3" />
     <PackageReference Include="Microsoft.AspNetCore.ApplicationInsights.HostingStartup" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Api.Analyzers" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Razor.Design" Version="2.2.0" PrivateAssets="All" />
@@ -38,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Bullfrog.Actor.Interfaces\Bullfrog.Actor.Interfaces.csproj" />
+    <ProjectReference Include="..\Bullfrog.Actors.Interfaces\Bullfrog.Actors.Interfaces.csproj" />
     <ProjectReference Include="..\Bullfrog.Common\Bullfrog.Common.csproj" />
   </ItemGroup>
   

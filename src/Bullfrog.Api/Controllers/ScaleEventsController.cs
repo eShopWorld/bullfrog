@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Fabric;
 using System.Linq;
 using System.Threading.Tasks;
-using Bullfrog.Actor.Interfaces;
+using Bullfrog.Actors.Interfaces;
 using Bullfrog.Api.Models;
 using Eshopworld.Core;
 using Microsoft.AspNetCore.Hosting;
@@ -109,7 +108,7 @@ namespace Bullfrog.Api.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
-        public async Task<ActionResult<ScheduledScaleEvent>> ListScheduledEvents(string scaleGroup, Guid eventId)
+        public async Task<ActionResult<ScheduledScaleEvent>> GetScheduledEvent(string scaleGroup, Guid eventId)
         {
             var regions = await ListRegionsOfScaleGroup(scaleGroup);
             if (regions == null)
@@ -178,17 +177,6 @@ namespace Bullfrog.Api.Controllers
         [Authorize(Policy = AuthenticationPolicies.EventsManagerScope)]
         public async Task<ActionResult<ScaleEvent>> SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent)
         {
-            // TODO: move all these validation rules to the model
-            if (scaleEvent.RequiredScaleAt <= DateTimeOffset.UtcNow)
-            {
-                return BadRequest();
-            }
-
-            if (scaleEvent.RequiredScaleAt >= scaleEvent.StartScaleDownAt)
-            {
-                return BadRequest();
-            }
-
             var regions = await ListRegionsOfScaleGroup(scaleGroup);
             if (regions == null)
             {
@@ -201,9 +189,9 @@ namespace Bullfrog.Api.Controllers
                 return NotFound();
             }
 
-            Actor.Interfaces.Models.ScaleEvent CreateScaleEvent(string region)
+            Actors.Interfaces.Models.ScaleEvent CreateScaleEvent(string region)
             {
-                return new Actor.Interfaces.Models.ScaleEvent
+                return new Actors.Interfaces.Models.ScaleEvent
                 {
                     Id = eventId,
                     Name = scaleEvent.Name,
@@ -262,7 +250,7 @@ namespace Bullfrog.Api.Controllers
                 throw;
             }
 
-            return tasks.Any(t => t.Result == Actor.Interfaces.Models.ScaleEventState.Executing)
+            return tasks.Any(t => t.Result == Actors.Interfaces.Models.ScaleEventState.Executing)
                 ? (ActionResult)Accepted()
                 : NoContent();
         }

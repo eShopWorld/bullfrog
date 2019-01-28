@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Fabric;
 using System.Linq;
 using System.Threading.Tasks;
-using Bullfrog.Actor.Interfaces;
+using Bullfrog.Actors.Interfaces;
 using Bullfrog.Api.Models;
 using Eshopworld.Core;
 using Microsoft.AspNetCore.Hosting;

@@ -5,13 +5,17 @@ VisualStudioVersion = 16.0.28315.86
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{A07B5EB6-E848-4116-A8D0-A826331D98C6}") = "Bullfrog.Fabric", "Bullfrog.Fabric\Bullfrog.Fabric.sfproj", "{CF3104C1-2E63-4A0E-A0E1-A3DBC85C926C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Actor", "Bullfrog.Actor\Bullfrog.Actor.csproj", "{3C843205-8FEA-4D4C-BD80-2B1C1C7804D8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Actors", "Bullfrog.Actors\Bullfrog.Actors.csproj", "{3C843205-8FEA-4D4C-BD80-2B1C1C7804D8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Actor.Interfaces", "Bullfrog.Actor.Interfaces\Bullfrog.Actor.Interfaces.csproj", "{29F7A1D1-A95D-4441-82C5-5CDA3D004B60}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Actors.Interfaces", "Bullfrog.Actors.Interfaces\Bullfrog.Actors.Interfaces.csproj", "{29F7A1D1-A95D-4441-82C5-5CDA3D004B60}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Api", "Bullfrog.Api\Bullfrog.Api.csproj", "{DBDFB760-F8D7-44EF-B6CD-7E578D4E4CEF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Common", "Bullfrog.Common\Bullfrog.Common.csproj", "{DE51C8B8-DDAE-4D58-BD7E-E1FE0139EFBD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{2EE623E8-CEAE-45FF-9836-C1B3B463706F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Actors.Tests", "Tests\Bullfrog.Actors.Tests\Bullfrog.Actors.Tests.csproj", "{93B5207C-B7AE-4C08-82BB-B82937433283}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -53,9 +57,18 @@ Global
 		{DE51C8B8-DDAE-4D58-BD7E-E1FE0139EFBD}.Release|Any CPU.ActiveCfg = Release|x64
 		{DE51C8B8-DDAE-4D58-BD7E-E1FE0139EFBD}.Release|x64.ActiveCfg = Release|x64
 		{DE51C8B8-DDAE-4D58-BD7E-E1FE0139EFBD}.Release|x64.Build.0 = Release|x64
+		{93B5207C-B7AE-4C08-82BB-B82937433283}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{93B5207C-B7AE-4C08-82BB-B82937433283}.Debug|x64.ActiveCfg = Debug|x64
+		{93B5207C-B7AE-4C08-82BB-B82937433283}.Debug|x64.Build.0 = Debug|x64
+		{93B5207C-B7AE-4C08-82BB-B82937433283}.Release|Any CPU.ActiveCfg = Release|x64
+		{93B5207C-B7AE-4C08-82BB-B82937433283}.Release|x64.ActiveCfg = Release|x64
+		{93B5207C-B7AE-4C08-82BB-B82937433283}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{93B5207C-B7AE-4C08-82BB-B82937433283} = {2EE623E8-CEAE-45FF-9836-C1B3B463706F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52D22453-628E-48F3-8A36-B787F5049AA6}

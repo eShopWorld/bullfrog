@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Fabric;
 using System.Linq;
 using System.Threading.Tasks;
-using Bullfrog.Actor.Interfaces;
+using Bullfrog.Actors.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.ServiceFabric.Actors;

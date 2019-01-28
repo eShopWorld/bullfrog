@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Fabric;
 using System.Threading.Tasks;
-using Bullfrog.Actor.Interfaces;
-using Bullfrog.Actor.Interfaces.Models;
+using Bullfrog.Actors.Interfaces;
+using Bullfrog.Actors.Interfaces.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
