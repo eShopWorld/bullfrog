@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Fabric;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Autofac;
 using Bullfrog.Api.Helpers;
@@ -16,7 +17,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Swashbuckle.AspNetCore.Swagger;
+using Microsoft.OpenApi.Models;
 
 namespace Bullfrog.Api
 {
@@ -61,22 +62,35 @@ namespace Bullfrog.Api
                 services.AddApplicationInsightsTelemetry(_configuration);
                 services.AddSwaggerGen(c =>
                 {
-                    c.SwaggerDoc(BullfrogVersion.LatestApi, new Info { Title = "Bullfrog Api", Version = BullfrogVersion.Bullfrog });
+                    c.SwaggerDoc(BullfrogVersion.LatestApi, new OpenApiInfo { Title = "Bullfrog Api", Version = BullfrogVersion.Bullfrog });
                     c.AddSecurityDefinition("Bearer",
-                        new ApiKeyScheme
+                        new OpenApiSecurityScheme
                         {
-                            In = "header",
+                            In = ParameterLocation.Header,
                             Description = "Please insert JWT with Bearer into field",
                             Name = "Authorization",
-                            Type = "apiKey"
+                            Type = SecuritySchemeType.Http,
+                            Scheme = "bearer",
+                            BearerFormat = "JWT",
                         });
-                    var filePath = Path.Combine(
-                        Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? throw new InvalidOperationException("Wrong check for the swagger XML file! 'Assembly.GetExecutingAssembly().Location' came back null!"),
-                        "Bullfrog.Api.xml");
-
-                    if (File.Exists(filePath))
+                    c.AddSecurityRequirement(new OpenApiSecurityRequirement
                     {
-                        c.IncludeXmlComments(filePath);
+                        {
+                            new OpenApiSecurityScheme
+                            {
+                                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" },
+                            },
+                            new string[0]
+                        }
+                    });
+
+                    var docFiles = Directory.EnumerateFiles(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Bullfrog.*.xml").ToList();
+                    if (docFiles.Count > 0)
+                    {
+                        foreach(var file in docFiles)
+                        {
+                            c.IncludeXmlComments(file);
+                        }
                     }
                     else
                     {
@@ -86,6 +100,8 @@ namespace Bullfrog.Api
                             Debugger.Break();
                         }
                     }
+
+                    c.OperationFilter<DefaultResponseFixFilter>();
                 });
 
                 services.AddAuthorization(options =>
