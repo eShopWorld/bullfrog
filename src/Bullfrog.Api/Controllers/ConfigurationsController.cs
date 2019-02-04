@@ -69,12 +69,7 @@ namespace Bullfrog.Api.Controllers
         [HttpPut("{scaleGroup}")]
         public async Task<ActionResult> SetDefinition(string scaleGroup, ScaleGroupDefinition definition)
         {
-            var validationResult = await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, definition, default);
-            if (validationResult != null && validationResult.Count > 0)
-            {
-                var result = new ValidationProblemDetails(validationResult);
-                return BadRequest(result);
-            }
+            await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, definition, default);
             return NoContent();
         }
 

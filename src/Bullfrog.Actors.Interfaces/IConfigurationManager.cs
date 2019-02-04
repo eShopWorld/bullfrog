@@ -17,8 +17,8 @@ namespace Bullfrog.Actors.Interfaces
         /// <param name="name">The name of the scale group.</param>
         /// <param name="definition">The new definiton of the scale group or null if the scale group should be processed.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>Returns null.</returns>
-        Task<Dictionary<string, string[]>> ConfigureScaleGroup(string name, ScaleGroupDefinition definition, CancellationToken cancellationToken);
+        /// <returns></returns>
+        Task ConfigureScaleGroup(string name, ScaleGroupDefinition definition, CancellationToken cancellationToken);
 
         /// <summary>
         /// Returns the current definiton of the scale group (or null if the scale group is not defined).

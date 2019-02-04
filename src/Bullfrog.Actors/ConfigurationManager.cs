@@ -39,7 +39,7 @@ namespace Bullfrog.Actors
             return Task.CompletedTask;
         }
 
-        async Task<Dictionary<string, string[]>> IConfigurationManager.ConfigureScaleGroup(string name, ScaleGroupDefinition definition, CancellationToken cancellationToken)
+        async Task IConfigurationManager.ConfigureScaleGroup(string name, ScaleGroupDefinition definition, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(name) || name.Trim() != name)
             {
@@ -50,22 +50,17 @@ namespace Bullfrog.Actors
 
             var existingGroups = await state.TryGet(cancellationToken);
 
-            if (definition == null)
+            if (definition != null)
+            {
+                await UpdateScaleManagers(name, definition, existingGroups);
+                await state.Set(definition, default);
+            }
+            else if (existingGroups.HasValue)
             {
                 // Delete the scale group if it has been registered.
-                if (existingGroups.HasValue)
-                {
-                    await DisableRegions(name, existingGroups.Value.Regions);
-                    await state.Remove(default);
-                }
-
-                return null;
+                await DisableRegions(name, existingGroups.Value.Regions);
+                await state.Remove(default);
             }
-
-            await UpdateScaleManagers(name, definition, existingGroups);
-
-            await state.Set(definition, default);
-            return null;
         }
 
         async Task<List<string>> IConfigurationManager.ListConfiguredScaleGroup(CancellationToken cancellationToken)
