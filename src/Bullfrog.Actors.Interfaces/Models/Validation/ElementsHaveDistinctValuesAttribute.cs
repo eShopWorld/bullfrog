@@ -4,16 +4,27 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Bullfrog.Actors.Interfaces.Models.Validation
 {
+    /// <summary>
+    /// Validates tthat the property contains a list of items with distinct values.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
     public class ElementsHaveDistinctValuesAttribute : ValidationAttribute
     {
+        /// <summary>
+        /// Creates an instance of the validator.
+        /// </summary>
+        /// <param name="propertyName">The item's property used to test for uniqueness.</param>
         public ElementsHaveDistinctValuesAttribute(string propertyName)
         {
             PropertyName = propertyName;
         }
 
+        /// <summary>
+        /// The name of the item's property which is checked for uniqueness.
+        /// </summary>
         public string PropertyName { get; }
 
+        /// <inherit/>
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
             if (value == null)
@@ -21,7 +32,7 @@ namespace Bullfrog.Actors.Interfaces.Models.Validation
                 return ValidationResult.Success;
             }
 
-            var items = (System.Collections.IEnumerable)value;
+            var items = value as System.Collections.IEnumerable;
             if (items == null)
             {
                 return new ValidationResult("Value is not a collection");

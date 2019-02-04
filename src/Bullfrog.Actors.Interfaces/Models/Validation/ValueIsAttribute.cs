@@ -5,20 +5,37 @@ using System.Reflection;
 
 namespace Bullfrog.Actors.Interfaces.Models.Validation
 {
+    /// <summary>
+    /// Value validator.
+    /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
     public class ValueIsAttribute : ValidationAttribute
     {
-        public ValueIsAttribute(ValueComparision comparision)
+        /// <summary>
+        /// Creates an instance of the value validator.
+        /// </summary>
+        /// <param name="comparision">The type of comparasion which is used to check the validity of the value.</param>
+        public ValueIsAttribute(ValueComparison comparision)
         {
             Comparision = comparision;
         }
 
-        public ValueComparision Comparision { get; }
+        /// <summary>
+        /// The type of comparasion which is used to check the validity of the value.
+        /// </summary>
+        public ValueComparison Comparision { get; }
 
+        /// <summary>
+        /// The other value which is compared to the validated value.
+        /// </summary>
         public object Value { get; set; }
 
+        /// <summary>
+        /// The other property which is compared to the validated value.
+        /// </summary>
         public string PropertyValue { get; set; }
 
+        /// <inherit/>
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
             if (value == null)
@@ -26,7 +43,7 @@ namespace Bullfrog.Actors.Interfaces.Models.Validation
                 return ValidationResult.Success;
             }
 
-            var otherValue = GetValueToCompare(value, validationContext);
+            var otherValue = GetValueToCompare(validationContext);
             if (otherValue.GetType() != value.GetType())
             {
                 otherValue = Convert.ChangeType(otherValue, value.GetType());
@@ -37,32 +54,32 @@ namespace Bullfrog.Actors.Interfaces.Models.Validation
             string description;
             switch (Comparision)
             {
-                case ValueComparision.LessThan:
+                case ValueComparison.LessThan:
                     succeeded = comparisionResult < 0;
                     description = "less than";
                     break;
-                case ValueComparision.LessThanOrEqualTo:
+                case ValueComparison.LessThanOrEqualTo:
                     succeeded = comparisionResult <= 0;
                     description = "less than or equal to";
                     break;
-                case ValueComparision.EqualTo:
+                case ValueComparison.EqualTo:
                     succeeded = comparisionResult == 0;
                     description = "equal to";
                     break;
-                case ValueComparision.NotEqualTo:
+                case ValueComparison.NotEqualTo:
                     succeeded = comparisionResult != 0;
                     description = "different than";
                     break;
-                case ValueComparision.GreaterThanOrEqualTo:
+                case ValueComparison.GreaterThanOrEqualTo:
                     succeeded = comparisionResult >= 0;
                     description = "greater than or equal to";
                     break;
-                case ValueComparision.GreaterThen:
+                case ValueComparison.GreaterThen:
                     succeeded = comparisionResult > 0;
                     description = "greater than";
                     break;
                 default:
-                    throw new Exception("Invalid comparasion type.");
+                    throw new ArgumentException("Invalid comparison type.");
             }
 
             return succeeded
@@ -78,7 +95,7 @@ namespace Bullfrog.Actors.Interfaces.Models.Validation
             return (int)compareMethod.Invoke(defaultComparer, new[] { value1, value2 });
         }
 
-        private object GetValueToCompare(object value, ValidationContext validationContext)
+        private object GetValueToCompare(ValidationContext validationContext)
         {
             if (PropertyValue != null)
             {
@@ -87,7 +104,7 @@ namespace Bullfrog.Actors.Interfaces.Models.Validation
                     BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.FlattenHierarchy);
                 if (prop == null)
                 {
-                    throw new Exception($"The property {PropertyValue} has not been found.");
+                    throw new ArgumentException($"The property {PropertyValue} has not been found.");
                 }
 
                 return prop.GetValue(validationContext.ObjectInstance) ?? throw new Exception($"The property {PropertyValue} returned null");
@@ -98,18 +115,8 @@ namespace Bullfrog.Actors.Interfaces.Models.Validation
             }
             else
             {
-                throw new Exception($"Either {nameof(PropertyValue)} or {nameof(Value)} must be set to not null value.");
+                throw new ArgumentException($"Either {nameof(PropertyValue)} or {nameof(Value)} must be set to not null value.");
             }
         }
-    }
-
-    public enum ValueComparision
-    {
-        LessThan,
-        LessThanOrEqualTo,
-        EqualTo,
-        NotEqualTo,
-        GreaterThanOrEqualTo,
-        GreaterThen
     }
 }

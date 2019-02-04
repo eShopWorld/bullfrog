@@ -67,7 +67,7 @@ namespace Bullfrog.Common
             }
             catch (ErrorResponseException ex)
             {
-                var message = ex.Response != null & ex.Response.StatusCode == System.Net.HttpStatusCode.NotFound
+                var message = ex.Response != null && ex.Response.StatusCode == System.Net.HttpStatusCode.NotFound
                     ? $"The autoscale settings {resourceId} has not been found"
                     : $"Failed to access autoscale settings {resourceId}: {ex.Message}";
                 throw new Exception(message);

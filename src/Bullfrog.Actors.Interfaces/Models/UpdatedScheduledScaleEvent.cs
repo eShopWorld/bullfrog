@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Bullfrog.Actors.Interfaces.Models
+﻿namespace Bullfrog.Actors.Interfaces.Models
 {
+    /// <summary>
+    /// The details of the update of the scale event.
+    /// </summary>
     public class UpdatedScheduledScaleEvent : ScheduledScaleEvent
     {
         /// <summary>

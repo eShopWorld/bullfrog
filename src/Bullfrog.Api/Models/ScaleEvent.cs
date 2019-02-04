@@ -24,7 +24,7 @@ namespace Bullfrog.Api.Models
         /// <summary>
         /// The time when the scale event ends and all resources can be scaled in.
         /// </summary>
-        [ValueIs(ValueComparision.GreaterThen, PropertyValue = nameof(RequiredScaleAt))]
+        [ValueIs(ValueComparison.GreaterThen, PropertyValue = nameof(RequiredScaleAt))]
         public DateTimeOffset StartScaleDownAt { get; set; }
 
         /// <summary>

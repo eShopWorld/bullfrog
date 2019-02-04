@@ -40,7 +40,7 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// <summary>
         /// The number of requests per configured RU which on avarage can be processed per second.
         /// </summary>
-        [ValueIs(ValueComparision.GreaterThen, Value = 0)]
+        [ValueIs(ValueComparison.GreaterThen, Value = 0)]
         public decimal RequestsPerRU { get; set; }
 
         /// <summary>
@@ -53,7 +53,7 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// The maximal value of RU. No scaling operation will exceed it.
         /// </summary>
         [CosmosRU]
-        [ValueIs(ValueComparision.GreaterThanOrEqualTo, PropertyValue = nameof(MinimumRU))]
+        [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(MinimumRU))]
         public int MaximumRU { get; set; }
 
         #region Validation

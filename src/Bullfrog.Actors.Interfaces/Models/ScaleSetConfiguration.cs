@@ -42,7 +42,7 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// The default number of instances defined in the profile.
         /// </summary>
         [Range(1, 1000)]
-        [ValueIs(ValueComparision.GreaterThanOrEqualTo, PropertyValue = nameof(MinInstanceCount))]
+        [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(MinInstanceCount))]
         public int DefaultInstanceCount { get; set; }
 
         #region Validation

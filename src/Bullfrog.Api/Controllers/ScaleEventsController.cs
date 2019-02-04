@@ -147,7 +147,7 @@ namespace Bullfrog.Api.Controllers
                 RegionConfig = new List<RegionScaleValue>(),
             };
 
-            for (int i = 0; i < regions.Count(); i++)
+            for (int i = 0; i < regions.Count; i++)
             {
                 if (tasks[i].Result != null)
                 {
