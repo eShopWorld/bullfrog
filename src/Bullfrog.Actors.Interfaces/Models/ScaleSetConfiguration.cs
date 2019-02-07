@@ -15,6 +15,12 @@ namespace Bullfrog.Actors.Interfaces.Models
     public class ScaleSetConfiguration : IValidatableObject
     {
         /// <summary>
+        /// The name used as an identifier of this VM scale set configuration.
+        /// </summary>
+        [Required]
+        public string Name { get; set; }
+
+        /// <summary>
         /// The resource id of the autoscale settings which controls virtual machine scale set scaling.
         /// </summary>
         [Required]
@@ -44,6 +50,16 @@ namespace Bullfrog.Actors.Interfaces.Models
         [Range(1, 1000)]
         [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(MinInstanceCount))]
         public int DefaultInstanceCount { get; set; }
+
+        /// <summary>
+        /// The time needed to prescale the scale set.
+        /// </summary>
+        [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(ZeroTimeSpan))]
+        public TimeSpan PrescaleLeadTime { get; set; }
+
+#pragma warning disable IDE0052 // Remove unread private members (required by the validator of PrescaleLeadTime)
+        private TimeSpan ZeroTimeSpan => TimeSpan.Zero;
+#pragma warning restore IDE0052 // Remove unread private members
 
         #region Validation
 

@@ -104,7 +104,7 @@ namespace Bullfrog.Actors
                 var actor = GetActor<IScaleManager>(name, region.RegionName);
                 var configuration = new ScaleManagerConfiguration
                 {
-                    ScaleSetConfiguration = region.ScaleSet,
+                    ScaleSetConfigurations = region.ScaleSets,
                     CosmosConfigurations = region.Cosmos,
                 };
                 await actor.Configure(configuration, default);

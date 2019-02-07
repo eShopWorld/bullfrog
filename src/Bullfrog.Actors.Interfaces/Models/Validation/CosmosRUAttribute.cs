@@ -2,8 +2,12 @@
 
 namespace Bullfrog.Actors.Interfaces.Models.Validation
 {
+    /// <summary>
+    /// Validates the Cosmos DB RU value.
+    /// </summary>
     public class CosmosRUAttribute : ValidationAttribute
     {
+        /// <inherit/>
         public override bool IsValid(object value)
         {
             if (value == null)

@@ -8,9 +8,9 @@ namespace Bullfrog.Actors.Interfaces.Models
     public class ScaleManagerConfiguration
     {
         /// <summary>
-        /// Defines the managed VM scale set configuration.
+        /// Defines the managed VM scale set configurations.
         /// </summary>
-        public ScaleSetConfiguration ScaleSetConfiguration { get; set; }
+        public List<ScaleSetConfiguration> ScaleSetConfigurations { get; set; }
 
         /// <summary>
         /// Defines the managed Cosmos DB configuration.

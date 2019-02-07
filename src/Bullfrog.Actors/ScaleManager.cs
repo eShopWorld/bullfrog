@@ -199,7 +199,7 @@
             var expectedRequestsNumber = CalculateCurrentTotalScaleRequest(events, now);
 
             // TODO: can all scale operations be done concurrently (if it's too long to do it sequentially)? Is Azure Fluent safe to use in such scenario?
-            var scaleSetInstances = await UpdateScaleSet(configuration.ScaleSetConfiguration, expectedRequestsNumber);
+            var scaleSetInstances = await UpdateScaleSets(configuration.ScaleSetConfigurations, expectedRequestsNumber);
             var cosmosScaleState = await UpdateCosmosInstances(configuration.CosmosConfigurations, expectedRequestsNumber);
 
             var nextWakeUpTime = FindNextWakeUpTime(events, now);
@@ -210,33 +210,43 @@
                 ActorId = Id.ToString(),
                 RequestedScale = expectedRequestsNumber,
                 NextWakeUpTime = nextWakeUpTime,
-                ScaleSetInstances = scaleSetInstances,
+                ScaleSets = scaleSetInstances,
                 Cosmos = cosmosScaleState,
             });
         }
 
-        private async Task<int> UpdateScaleSet(ScaleSetConfiguration configuration, int? expectedRequestsNumber)
+        private async Task<List<ScaleSetScale>> UpdateScaleSets(List<ScaleSetConfiguration> configurations, int? expectedRequestsNumber)
         {
-            int scaleSetInstances;
-            try
+            var scales = new List<ScaleSetScale>();
+            foreach (var configuration in configurations)
             {
-                if (expectedRequestsNumber.HasValue)
+                int scaleSetInstances;
+                try
                 {
-                    scaleSetInstances = await _scaleSetManager.SetScale(expectedRequestsNumber.Value, configuration, default);
+                    if (expectedRequestsNumber.HasValue)
+                    {
+                        scaleSetInstances = await _scaleSetManager.SetScale(expectedRequestsNumber.Value, configuration, default);
+                    }
+                    else
+                    {
+                        scaleSetInstances = await _scaleSetManager.Reset(configuration, default);
+                    }
                 }
-                else
+                catch (Exception ex) // TODO: can/should it be more specific?
                 {
-                    scaleSetInstances = await _scaleSetManager.Reset(configuration, default);
+                    scaleSetInstances = -1;
+                    var error = new Exception($"Failed to scale {configuration.AutoscaleSettingsResourceId}.", ex);
+                    _bigBrother.Publish(error.ToExceptionEvent());
                 }
-            }
-            catch (Exception ex) // TODO: can/should it be more specific?
-            {
-                scaleSetInstances = -1;
-                var error = new Exception($"Failed to scale {configuration.AutoscaleSettingsResourceId}.", ex);
-                _bigBrother.Publish(error.ToExceptionEvent());
+
+                scales.Add(new ScaleSetScale
+                {
+                    Name = configuration.Name ?? configuration.AutoscaleSettingsResourceId,
+                    InstancesNumber = scaleSetInstances
+                });
             }
 
-            return scaleSetInstances;
+            return scales;
         }
 
         private async Task<List<CosmosScale>> UpdateCosmosInstances(List<CosmosConfiguration> cosmosInstances, int? expectedRequestsNumber)

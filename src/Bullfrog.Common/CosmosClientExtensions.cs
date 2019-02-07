@@ -5,8 +5,20 @@ using Microsoft.Azure.Cosmos;
 
 namespace Bullfrog.Common
 {
+    /// <summary>
+    /// The Cosmos DB related extension methods.
+    /// </summary>
     public static class CosmosClientExtensions
     {
+        /// <summary>
+        /// Sets the provisioned thoughput of database or a container.
+        /// </summary>
+        /// <param name="client">The Cosmos DB client.</param>
+        /// <param name="throughput">The requested throughput (in RUs)</param>
+        /// <param name="database">The CosomosDB database name.</param>
+        /// <param name="container">The optional container name. The provisioned throuput will be set at the container level is this name is provided.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns></returns>
         public static async Task SetProvisionedThrouputAsync(this CosmosClient client, int? throughput, string database, string container, CancellationToken cancellationToken = default)
         {
             var db = client.Databases[database];

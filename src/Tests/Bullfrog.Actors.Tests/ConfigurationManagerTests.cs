@@ -91,13 +91,16 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
                 new ScaleGroupRegion
                 {
                     RegionName = "rr",
-                    ScaleSet = new ScaleSetConfiguration
+                    ScaleSets = new List<ScaleSetConfiguration>
                     {
-                        AutoscaleSettingsResourceId = "/xx",
-                        DefaultInstanceCount = 2,
-                        MinInstanceCount = 1,
-                        ProfileName = "a",
-                        RequestsPerInstance = 22,
+                        new ScaleSetConfiguration
+                        {
+                            AutoscaleSettingsResourceId = "/xx",
+                            DefaultInstanceCount = 2,
+                            MinInstanceCount = 1,
+                            ProfileName = "a",
+                            RequestsPerInstance = 22,
+                        }
                     }
                 }
             }
@@ -105,7 +108,7 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
         AddMissingOptionalState<ScaleGroupDefinition>(ScaleGroupKeyPrefix + scaleGroupName);
         ActorStateManagerMock.Setup(sm => sm.SetStateAsync(ScaleGroupKeyPrefix + scaleGroupName, newScaleGroupDefinition, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        var configureCallVerify = PrepareScaleManagerConfigureCall("aa/rr", c => c.ScaleSetConfiguration == newScaleGroupDefinition.Regions[0].ScaleSet);
+        var configureCallVerify = PrepareScaleManagerConfigureCall("aa/rr", c => c.ScaleSetConfigurations == newScaleGroupDefinition.Regions[0].ScaleSets);
         var cm = GetActor();
 
         await cm.ConfigureScaleGroup(scaleGroupName, newScaleGroupDefinition, default);
@@ -200,9 +203,9 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
         // region deleted
         var dlDisableVerify = PrepareScaleManagerDisableCall("aa/dl");
         // region changed
-        var chConfigureVerify = PrepareScaleManagerConfigureCall("aa/ch", c => c.ScaleSetConfiguration == newScaleGroupDefinition.Regions[0].ScaleSet);
+        var chConfigureVerify = PrepareScaleManagerConfigureCall("aa/ch", c => c.ScaleSetConfigurations == newScaleGroupDefinition.Regions[0].ScaleSets);
         // region added
-        var nwConfigureVerify = PrepareScaleManagerConfigureCall("aa/nw", c => c.ScaleSetConfiguration == newScaleGroupDefinition.Regions[1].ScaleSet);
+        var nwConfigureVerify = PrepareScaleManagerConfigureCall("aa/nw", c => c.ScaleSetConfigurations == newScaleGroupDefinition.Regions[1].ScaleSets);
         var cm = GetActor();
 
         await cm.ConfigureScaleGroup(scaleGroupName, newScaleGroupDefinition, default);
