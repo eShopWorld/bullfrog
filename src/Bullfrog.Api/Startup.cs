@@ -29,6 +29,7 @@ namespace Bullfrog.Api
         // TODO: Review BB code after fixing its extension methods
         private readonly BigBrother _bb;
         private readonly IConfigurationRoot _configuration;
+        private bool UseOpenApiV2 => _configuration["Bullfrog:OpenApi"] == "V2";
 
         /// <summary>
         /// Creates an instance of the <see cref="Startup"/> class.
@@ -69,7 +70,7 @@ namespace Bullfrog.Api
                             In = ParameterLocation.Header,
                             Description = "Please insert JWT with Bearer into field",
                             Name = "Authorization",
-                            Type = SecuritySchemeType.Http,
+                            Type = UseOpenApiV2 ? SecuritySchemeType.ApiKey : SecuritySchemeType.Http,
                             Scheme = "bearer",
                             BearerFormat = "JWT",
                         });
@@ -87,7 +88,7 @@ namespace Bullfrog.Api
                     var docFiles = Directory.EnumerateFiles(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Bullfrog.*.xml").ToList();
                     if (docFiles.Count > 0)
                     {
-                        foreach(var file in docFiles)
+                        foreach (var file in docFiles)
                         {
                             c.IncludeXmlComments(file);
                         }
@@ -169,7 +170,8 @@ namespace Bullfrog.Api
 
                 app.UseMvc();
 
-                app.UseSwagger();
+                // Use V2 OpenAPI as long as AutoREST only supports V2.
+                app.UseSwagger(c => c.SerializeAsV2 = UseOpenApiV2);
                 app.UseSwaggerUI(c =>
                 {
                     c.SwaggerEndpoint($"/swagger/{BullfrogVersion.LatestApi}/swagger.json", $"Bullfrog Api {BullfrogVersion.LatestApi}");
