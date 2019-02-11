@@ -51,16 +51,6 @@ namespace Bullfrog.Actors.Interfaces.Models
         [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(MinInstanceCount))]
         public int DefaultInstanceCount { get; set; }
 
-        /// <summary>
-        /// The time needed to prescale the scale set.
-        /// </summary>
-        [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(ZeroTimeSpan))]
-        public TimeSpan PrescaleLeadTime { get; set; }
-
-#pragma warning disable IDE0052 // Remove unread private members (required by the validator of PrescaleLeadTime)
-        private TimeSpan ZeroTimeSpan => TimeSpan.Zero;
-#pragma warning restore IDE0052 // Remove unread private members
-
         #region Validation
 
         IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)

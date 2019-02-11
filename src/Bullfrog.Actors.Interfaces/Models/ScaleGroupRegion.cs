@@ -17,11 +17,6 @@ namespace Bullfrog.Actors.Interfaces.Models
         public string RegionName { get; set; }
 
         /// <summary>
-        /// The configuration of the virtual machine scale set's scaling.
-        /// </summary>
-        public ScaleSetConfiguration ScaleSet { get; set; }
-
-        /// <summary>
         /// The configurations of scaling of VM scale sets.
         /// </summary>
         [Required]

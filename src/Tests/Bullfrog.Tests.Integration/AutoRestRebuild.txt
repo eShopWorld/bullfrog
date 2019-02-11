@@ -1,0 +1,1 @@
+﻿autorest  --input-file=client.json --csharp --output-folder=Client --namespace=Client --use-datetimeoffset --add-credentials

@@ -53,8 +53,11 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
                 new ScaleGroupRegion
                 {
                     RegionName = "rr",
-                    ScaleSet = new ScaleSetConfiguration
+                    ScaleSets = new List<ScaleSetConfiguration>
                     {
+                        new ScaleSetConfiguration
+                        {
+                        }
                     }
                 }
             }
@@ -139,13 +142,16 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
                 new ScaleGroupRegion
                 {
                     RegionName = "rr",
-                    ScaleSet = new ScaleSetConfiguration
+                    ScaleSets = new List<ScaleSetConfiguration>
                     {
-                        AutoscaleSettingsResourceId = "/xx",
-                        DefaultInstanceCount = 2,
-                        MinInstanceCount = 1,
-                        ProfileName = "a",
-                        RequestsPerInstance = 22,
+                        new ScaleSetConfiguration
+                        {
+                            AutoscaleSettingsResourceId = "/xx",
+                            DefaultInstanceCount = 2,
+                            MinInstanceCount = 1,
+                            ProfileName = "a",
+                            RequestsPerInstance = 22,
+                        }
                     }
                 }
             }
@@ -172,12 +178,22 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
                 new ScaleGroupRegion
                 {
                     RegionName = "dl",
-                    ScaleSet = new ScaleSetConfiguration()
+                    ScaleSets = new List<ScaleSetConfiguration>
+                    {
+                        new ScaleSetConfiguration
+                        {
+                        }
+                    }
                 },
                 new ScaleGroupRegion
                 {
                     RegionName = "ch",
-                    ScaleSet = new ScaleSetConfiguration()
+                    ScaleSets = new List<ScaleSetConfiguration>
+                    {
+                        new ScaleSetConfiguration
+                        {
+                        }
+                    }
                 }
             }
         };
@@ -188,12 +204,22 @@ public class ConfigurationManagerTests : ActorTestsBase<ConfigurationManager>
                 new ScaleGroupRegion
                 {
                     RegionName = "ch",
-                    ScaleSet = new ScaleSetConfiguration()
+                    ScaleSets = new List<ScaleSetConfiguration>
+                    {
+                        new ScaleSetConfiguration
+                        {
+                        }
+                    }
                 },
                 new ScaleGroupRegion
                 {
                     RegionName = "nw",
-                    ScaleSet = new ScaleSetConfiguration()
+                    ScaleSets = new List<ScaleSetConfiguration>
+                    {
+                        new ScaleSetConfiguration
+                        {
+                        }
+                    }
                 }
             }
         };
