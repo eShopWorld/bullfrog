@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.ServiceFabric.Actors.Client;
 
 namespace Bullfrog.Api.Controllers
 {
@@ -27,8 +28,13 @@ namespace Bullfrog.Api.Controllers
         /// <param name="hostingEnvironment">The hosting environment.</param>
         /// <param name="bigBrother">The BigBrather instance.</param>
         /// <param name="sfContext">The stateless service context.</param>
-        public ScaleGroupsController(IHostingEnvironment hostingEnvironment, IBigBrother bigBrother, StatelessServiceContext sfContext)
-            : base(sfContext)
+        /// <param name="proxyFactory">A factory used to create actor proxies.</param>
+        public ScaleGroupsController(
+            IHostingEnvironment hostingEnvironment,
+            IBigBrother bigBrother,
+            StatelessServiceContext sfContext,
+            IActorProxyFactory proxyFactory)
+            : base(sfContext, proxyFactory)
         {
         }
 

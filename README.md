@@ -14,12 +14,10 @@ Scale events can be added to scale groups. Each scale event defines how many req
 ## Configuration
 
 ### Define scale groups
-
- * for each controled VM scale make the user-assigned identity used by Bullfrog a contributor of the resource group which contains VM scale set
- * for each controlled CosmosDB save the full (not read-only) connection string in the Bullfrog's key vault as a secret named Bullfrog--Cosmos--<CosmosDbName> where <CosmosDbName> is the name of Cosmos DB account.
+  * for each controled VM scale make the user-assigned identity used by Bullfrog a contributor of the resource group which contains VM scale set
+  * for each controlled CosmosDB save the full (not read-only) connection string in the Bullfrog's key vault as a secret named Bullfrog--Cosmos--<CosmosDbName> where <CosmosDbName> is the name of Cosmos DB account.
 
 ### Create scale events
- 
- Scale events are identified by Guid. Saving a scale event will either update an existing scale event (if the scale event with the same Guid has already been defined) or create a new scale event.
+  Scale events are identified by Guid. Saving a scale event will either update an existing scale event (if the scale event with the same Guid has already been defined) or create a new scale event.
 
 

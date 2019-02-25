@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.AspNetCore.Builder;
 
 namespace Bullfrog.Api.Helpers
@@ -6,6 +7,7 @@ namespace Bullfrog.Api.Helpers
     /// <summary>
     /// Extension methods to add fake authentication capabilities to an HTTP application pipeline.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class FakeAuthBuilderExtensions
     {
         /// <summary>

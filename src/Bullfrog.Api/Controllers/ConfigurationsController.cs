@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.ServiceFabric.Actors;
+using Microsoft.ServiceFabric.Actors.Client;
 
 namespace Bullfrog.Api.Controllers
 {
@@ -22,8 +23,9 @@ namespace Bullfrog.Api.Controllers
         /// Creates an instance of <see cref="ConfigurationsController"/>.
         /// </summary>
         /// <param name="statelessServiceContext">The instance of <see cref="StatelessServiceContext"/>.</param>
-        public ConfigurationsController(StatelessServiceContext statelessServiceContext)
-            : base(statelessServiceContext)
+        /// <param name="proxyFactory">A factory used to create actor proxies.</param>
+        public ConfigurationsController(StatelessServiceContext statelessServiceContext, IActorProxyFactory proxyFactory)
+            : base(statelessServiceContext, proxyFactory)
         {
         }
 
@@ -45,7 +47,6 @@ namespace Bullfrog.Api.Controllers
         /// <param name="scaleGroup">The scale group name.</param>
         /// <returns></returns>
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
         [HttpGet("{scaleGroup}")]
         public async Task<ActionResult<ScaleGroupDefinition>> GetDefinition(string scaleGroup)
@@ -64,7 +65,6 @@ namespace Bullfrog.Api.Controllers
         /// <param name="definition">The new or updated configuration of the scale group.</param>
         /// <returns></returns>
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesDefaultResponseType]
         [HttpPut("{scaleGroup}")]
         public async Task<ActionResult> SetDefinition(string scaleGroup, ScaleGroupDefinition definition)

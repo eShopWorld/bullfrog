@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.ServiceFabric.Actors.Client;
 
 namespace Bullfrog.Api.Controllers
 {
@@ -21,8 +22,12 @@ namespace Bullfrog.Api.Controllers
     [Authorize(Policy = AuthenticationPolicies.EventsReaderScope)]
     public class ScaleEventsController : BaseManagementController
     {
-        public ScaleEventsController(IHostingEnvironment hostingEnvironment, IBigBrother bigBrother, StatelessServiceContext sfContext)
-            : base(sfContext)
+        public ScaleEventsController(
+            IHostingEnvironment hostingEnvironment,
+            IBigBrother bigBrother,
+            StatelessServiceContext sfContext,
+            IActorProxyFactory proxyFactory)
+            : base(sfContext, proxyFactory)
         {
         }
 
@@ -33,7 +38,6 @@ namespace Bullfrog.Api.Controllers
         /// <returns></returns>
         [HttpGet("{scaleGroup}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
         public async Task<ActionResult<IEnumerable<ScheduledScaleEvent>>> ListScheduledEvents(string scaleGroup)
         {
@@ -106,7 +110,6 @@ namespace Bullfrog.Api.Controllers
         /// <returns></returns>
         [HttpGet("{scaleGroup}/{eventId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
         public async Task<ActionResult<ScheduledScaleEvent>> GetScheduledEvent(string scaleGroup, Guid eventId)
         {
@@ -171,8 +174,6 @@ namespace Bullfrog.Api.Controllers
         /// <returns></returns>
         [HttpPut("{scaleGroup}/{eventId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
         [Authorize(Policy = AuthenticationPolicies.EventsManagerScope)]
         public async Task<ActionResult<ScaleEvent>> SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent)
@@ -227,7 +228,6 @@ namespace Bullfrog.Api.Controllers
         [HttpDelete("{scaleGroup}/{eventId}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status202Accepted)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
         [Authorize(Policy = AuthenticationPolicies.EventsManagerScope)]
         public async Task<ActionResult> DeleteScaleEvent(string scaleGroup, Guid eventId)

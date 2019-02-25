@@ -65,12 +65,6 @@
               "$ref": "#/definitions/ScaleGroupDefinition"
             }
           },
-          "404": {
-            "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/ProblemDetails"
-            }
-          },
           "default": {
             "description": "Unexpected error",
             "schema": {
@@ -115,12 +109,6 @@
         "responses": {
           "204": {
             "description": "Success"
-          },
-          "400": {
-            "description": "Bad Request",
-            "schema": {
-              "$ref": "#/definitions/ProblemDetails"
-            }
           },
           "default": {
             "description": "Unexpected error",
@@ -209,12 +197,6 @@
               }
             }
           },
-          "404": {
-            "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/ProblemDetails"
-            }
-          },
           "default": {
             "description": "Unexpected error",
             "schema": {
@@ -258,12 +240,6 @@
             "description": "Success",
             "schema": {
               "$ref": "#/definitions/ScheduledScaleEvent"
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/ProblemDetails"
             }
           },
           "default": {
@@ -322,18 +298,6 @@
               "$ref": "#/definitions/ScaleEvent"
             }
           },
-          "400": {
-            "description": "Bad Request",
-            "schema": {
-              "$ref": "#/definitions/ProblemDetails"
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/ProblemDetails"
-            }
-          },
           "default": {
             "description": "Unexpected error",
             "schema": {
@@ -376,12 +340,6 @@
           },
           "202": {
             "description": "Success"
-          },
-          "404": {
-            "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/ProblemDetails"
-            }
           },
           "default": {
             "description": "Unexpected error",
@@ -492,9 +450,6 @@
           "description": "The name of the region.",
           "type": "string"
         },
-        "scaleSet": {
-          "$ref": "#/definitions/ScaleSetConfiguration"
-        },
         "scaleSets": {
           "description": "The configurations of scaling of VM scale sets.",
           "uniqueItems": false,
@@ -562,10 +517,6 @@
           "maximum": 1000,
           "minimum": 1,
           "type": "integer"
-        },
-        "prescaleLeadTime": {
-          "description": "The time needed to prescale the scale set.",
-          "type": "string"
         }
       }
     },

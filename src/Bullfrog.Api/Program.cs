@@ -1,10 +1,12 @@
 ﻿using Eshopworld.Telemetry;
 using Microsoft.ServiceFabric.Services.Runtime;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace Bullfrog.Api
 {
+    [ExcludeFromCodeCoverage]
     internal static class Program
     {
         /// <summary>

@@ -55,6 +55,8 @@ namespace Bullfrog.Common.DependencyInjection
                 var authenticated = c.Resolve<Azure.IAuthenticated>();
                 return authenticated.WithSubscription(subscriptionId);
             });
+
+            builder.RegisterType<CosmosDbHelper>().As<ICosmosDbHelper>();
         }
 
         private class AzureServiceTokenProviderAdapter : ITokenProvider

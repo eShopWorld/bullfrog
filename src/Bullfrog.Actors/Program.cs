@@ -26,7 +26,8 @@ namespace Bullfrog.Actors
             {
                 var builder = new ContainerBuilder();
                 builder.RegisterModule(new CoreModule());
-                builder.RegisterModule(new AzureManagementFluentModule());
+                builder.RegisterModule<AzureManagementFluentModule>();
+                builder.RegisterModule<ServiceFabricModule>();
                 builder.RegisterType<ScaleSetManager>().As<IScaleSetManager>();
                 builder.RegisterType<CosmosManager>().As<ICosmosManager>();
                 builder.RegisterType<SimpleActorProxyFactory>().As<ISimpleActorProxyFactory>();

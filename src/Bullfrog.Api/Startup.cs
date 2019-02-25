@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Fabric;
 using System.IO;
 using System.Linq;
@@ -24,6 +25,7 @@ namespace Bullfrog.Api
     /// <summary>
     /// Configures the application.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public class Startup
     {
         // TODO: Review BB code after fixing its extension methods
@@ -139,7 +141,8 @@ namespace Bullfrog.Api
         public void ConfigureContainer(ContainerBuilder builder)
         {
             builder.RegisterModule(new CoreModule());
-            builder.RegisterModule(new AzureManagementFluentModule());
+            builder.RegisterModule<AzureManagementFluentModule>();
+            builder.RegisterModule<ServiceFabricModule>();
         }
 
         /// <summary>

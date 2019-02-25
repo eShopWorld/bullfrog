@@ -23,6 +23,7 @@ namespace Bullfrog.Api.Controllers
             [typeof(IScaleManager)] = "ScaleManagerActorService",
             [typeof(IConfigurationManager)] = "ConfigurationManagerActorService",
         };
+        private readonly IActorProxyFactory _proxyFactory;
 
         /// <summary>
         /// Gets the stateless service context.
@@ -33,9 +34,12 @@ namespace Bullfrog.Api.Controllers
         /// Creates an instance of <see cref="BaseManagementController"/>.
         /// </summary>
         /// <param name="statelessServiceContext">The <see cref="StatelessServiceContext"/> instance.</param>
-        protected BaseManagementController(StatelessServiceContext statelessServiceContext)
+        /// <param name="proxyFactory"></param>
+        protected BaseManagementController(StatelessServiceContext statelessServiceContext,
+            IActorProxyFactory proxyFactory)
         {
             StatelessServiceContext = statelessServiceContext;
+            _proxyFactory = proxyFactory;
         }
 
         /// <summary>
@@ -49,7 +53,7 @@ namespace Bullfrog.Api.Controllers
         {
             var serviceName = actorServices[typeof(TActor)];
             var actorUri = new Uri($"{StatelessServiceContext.CodePackageActivationContext.ApplicationName}/{serviceName}");
-            return ActorProxy.Create<TActor>(actorId, actorUri);
+            return _proxyFactory.CreateActorProxy<TActor>(actorUri, actorId);
         }
 
         /// <summary>

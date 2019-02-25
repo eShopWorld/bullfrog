@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Tracing;
 using System.Fabric;
 using System.Linq;
@@ -10,6 +11,7 @@ using Microsoft.ServiceFabric.Services.Runtime;
 namespace Bullfrog.Api
 {
     [EventSource(Name = "MyCompany-Bullfrog.Fabric-Bullfrog.Api")]
+    [ExcludeFromCodeCoverage]
     internal sealed class ServiceEventSource : EventSource
     {
         public static readonly ServiceEventSource Current = new ServiceEventSource();

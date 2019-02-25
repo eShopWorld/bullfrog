@@ -67,7 +67,6 @@ public abstract class ActorTestsBase<T>
             .ReturnsAsync(new ConditionalValue<TItem>());
     }
 
-
     private class TestProxyFactory : ISimpleActorProxyFactory
     {
         private readonly Dictionary<(Type, ActorId), object> _registrations;

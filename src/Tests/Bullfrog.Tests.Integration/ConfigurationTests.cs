@@ -52,7 +52,6 @@ public class ConfigurationTests
             .Which.Response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
 
-
     [Fact, IsLayer3]
     public void UnauthenticatedCannotAccessConfiguration()
     {

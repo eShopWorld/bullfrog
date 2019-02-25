@@ -1,5 +1,8 @@
-﻿namespace Bullfrog.Api
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Bullfrog.Api
 {
+    [ExcludeFromCodeCoverage]
     internal static class BullfrogVersion
     {
         public static string Bullfrog => "0.2";

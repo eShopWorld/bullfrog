@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models.Validation;
 using Bullfrog.Common;
-using Microsoft.Azure.Cosmos;
-using Microsoft.Extensions.Configuration;
 
 namespace Bullfrog.Actors.Interfaces.Models
 {
@@ -60,66 +56,14 @@ namespace Bullfrog.Actors.Interfaces.Models
 
         IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)
         {
-            var configuration = (IConfigurationRoot)validationContext.GetService(typeof(IConfigurationRoot));
+            var cosmosDbManager = (ICosmosDbHelper)validationContext.GetService(typeof(ICosmosDbHelper));
 
-            yield return IsValidAsync(configuration).GetAwaiter().GetResult();
-        }
-
-        private async Task<ValidationResult> IsValidAsync(IConfigurationRoot configuration)
-        {
-            var connectionString = configuration.GetCosmosAccountConnectionString(AccountName);
-            if (connectionString == null)
+            yield return cosmosDbManager.ValidateConfiguration(new CosmosDbConfiguration
             {
-                return new ValidationResult($"A connection string for the account {AccountName} has not found.", new[] { nameof(AccountName) });
-            }
-
-            try
-            {
-                using (var client = new CosmosClient(connectionString))
-                {
-                    try
-                    {
-                        await client.GetAccountSettingsAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        return new ValidationResult($"Failed to access account: {ex.Message}", new[] { nameof(AccountName) });
-                    }
-
-                    var database = client.Databases[DatabaseName];
-
-                    try
-                    {
-                        await database.ReadProvisionedThroughputAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        return new ValidationResult($"Failed to access the database {DatabaseName}: {ex.Message}", new[] { nameof(DatabaseName) });
-                    }
-
-                    if (ContainerName != null)
-                    {
-                        var container = database.Containers[ContainerName];
-
-                        try
-                        {
-                            await container.ReadProvisionedThroughputAsync();
-                        }
-                        catch (Exception ex)
-                        {
-                            return new ValidationResult($"Failed to access the container {ContainerName} in the database {DatabaseName}: {ex.Message}", new[] { nameof(ContainerName) });
-                        }
-                    }
-
-                    await client.SetProvisionedThrouputAsync(null, DatabaseName, ContainerName);
-                }
-            }
-            catch (Exception ex)
-            {
-                return new ValidationResult($"Failed to validation configuration: {ex.Message}");
-            }
-
-            return ValidationResult.Success;
+                AccountName = AccountName,
+                ContainerName = ContainerName,
+                DatabaseName = DatabaseName,
+            }).GetAwaiter().GetResult();
         }
 
         #endregion

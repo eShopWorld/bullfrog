@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
@@ -7,7 +8,8 @@ using Microsoft.AspNetCore.Http;
 
 namespace Bullfrog.Api.Helpers
 {
-    internal class FakeAuthenticationMiddleware
+    [ExcludeFromCodeCoverage]
+    public class FakeAuthenticationMiddleware
     {
         private const string FakeClaimHeaderPrefix = "FakeClaim-";
         private readonly RequestDelegate _next;

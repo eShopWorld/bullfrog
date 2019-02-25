@@ -32,8 +32,7 @@ namespace Bullfrog.Actors.Interfaces.Models.Validation
                 return ValidationResult.Success;
             }
 
-            var items = value as System.Collections.IEnumerable;
-            if (items == null)
+            if (!(value is System.Collections.IEnumerable items))
             {
                 return new ValidationResult("Value is not a collection");
             }

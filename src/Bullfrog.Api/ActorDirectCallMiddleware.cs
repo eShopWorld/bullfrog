@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Fabric;
 using System.IO;
 using System.Linq;
@@ -20,6 +21,7 @@ namespace Bullfrog.Api
     /// <summary>
     /// The parameters required by <see cref="ActorDirectCallMiddleware"/>;
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public class ActorDirectCallOptions
     {
         /// <summary>
@@ -44,6 +46,7 @@ namespace Bullfrog.Api
     /// <summary>
     /// Extension methods used by <see cref="ActorDirectCallMiddleware"/>.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class ActorDirectCallExtensions
     {
         /// <summary>
