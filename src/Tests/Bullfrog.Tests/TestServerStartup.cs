@@ -52,7 +52,7 @@ public class TestServerStartup
         services.AddSingleton<IActorProxyFactory>(actoryProxyFactory);
 
         var id = new ActorId("configuration");
-        Func<ActorService, ActorId, ActorBase> actorFactory = (service, actorId) => new ConfigurationManager(service, actorId, new SimpleActorProxyFactory(actoryProxyFactory));
+        Func<ActorService, ActorId, ActorBase> actorFactory = (service, actorId) => new ConfigurationManager(service, actorId, actoryProxyFactory);
         var svc = MockActorServiceFactory.CreateActorServiceForActor<ConfigurationManager>(actorFactory);
         var actor = svc.Activate(id);
 
@@ -108,20 +108,5 @@ public class TestServerStartup
         app.UseMvc();
         app.UseSwagger();
         app.UseSwaggerUI();
-    }
-
-    private class SimpleActorProxyFactory : ISimpleActorProxyFactory
-    {
-        private readonly IActorProxyFactory _proxyFactory;
-
-        public SimpleActorProxyFactory(IActorProxyFactory proxyFactory)
-        {
-            _proxyFactory = proxyFactory;
-        }
-
-        public TActor CreateProxy<TActor>(ActorId actorId) where TActor : IActor
-        {
-            return _proxyFactory.CreateActorProxy<TActor>(actorId);
-        }
     }
 }

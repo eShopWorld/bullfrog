@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
 using Microsoft.ServiceFabric.Actors;
+using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors.Runtime;
 
 namespace Bullfrog.Actors
@@ -15,7 +15,7 @@ namespace Bullfrog.Actors
     public class ConfigurationManager : Actor, IConfigurationManager
     {
         private const string ScaleGroupKeyPrefix = "scaleGroup:";
-        private readonly ISimpleActorProxyFactory _proxyFactory;
+        private readonly IActorProxyFactory _proxyFactory;
 
         /// <summary>
         /// Initializes a new instance of ScaleManager
@@ -23,7 +23,7 @@ namespace Bullfrog.Actors
         /// <param name="actorService">The Microsoft.ServiceFabric.Actors.Runtime.ActorService that will host this actor instance.</param>
         /// <param name="actorId">The Microsoft.ServiceFabric.Actors.ActorId for this actor instance.</param>
         /// <param name="proxyFactory">The factory of actor client proxies.</param>
-        public ConfigurationManager(ActorService actorService, ActorId actorId, ISimpleActorProxyFactory proxyFactory)
+        public ConfigurationManager(ActorService actorService, ActorId actorId, IActorProxyFactory proxyFactory)
             : base(actorService, actorId)
         {
             _proxyFactory = proxyFactory;
@@ -122,7 +122,7 @@ namespace Bullfrog.Actors
             if (actorName.StartsWith('I'))
                 actorName = actorName.Substring(1);
             var actorId = new ActorId($"{actorName}:{scaleGroup}/{region}");
-            return _proxyFactory.CreateProxy<TActor>(actorId);
+            return _proxyFactory.CreateActorProxy<TActor>(actorId);
         }
     }
 }

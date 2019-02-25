@@ -6,6 +6,7 @@ using Eshopworld.Core;
 using Eshopworld.DevOps;
 using Eshopworld.Telemetry;
 using Microsoft.Extensions.Configuration;
+using Microsoft.ServiceFabric.Actors.Client;
 
 namespace Bullfrog.Common.DependencyInjection
 {
@@ -39,6 +40,8 @@ namespace Bullfrog.Common.DependencyInjection
                 return new BigBrother(insKey, insKey);
             })
             .SingleInstance();
+
+            builder.RegisterType<ActorProxyFactory>().As<IActorProxyFactory>();
         }
     }
 }

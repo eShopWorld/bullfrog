@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Fabric;
 using System.Threading;
-using Bullfrog.Actors.Helpers;
 using Microsoft.ServiceFabric.Actors;
+using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors.Runtime;
 using Microsoft.ServiceFabric.Data;
+using Microsoft.ServiceFabric.Services.Remoting;
 using Moq;
 
 public abstract class ActorTestsBase<T>
@@ -67,7 +68,8 @@ public abstract class ActorTestsBase<T>
             .ReturnsAsync(new ConditionalValue<TItem>());
     }
 
-    private class TestProxyFactory : ISimpleActorProxyFactory
+    [ExcludeFromCodeCoverage]
+    private class TestProxyFactory : IActorProxyFactory
     {
         private readonly Dictionary<(Type, ActorId), object> _registrations;
 
@@ -76,17 +78,31 @@ public abstract class ActorTestsBase<T>
             _registrations = registrations;
         }
 
-        [ExcludeFromCodeCoverage]
-        public TActor CreateProxy<TActor>(ActorId actorId) where TActor : IActor
+        public TActorInterface CreateActorProxy<TActorInterface>(ActorId actorId, string applicationName = null, string serviceName = null, string listenerName = null) where TActorInterface : IActor
         {
-            if (_registrations.TryGetValue((typeof(TActor), actorId), out var proxy))
+            if (_registrations.TryGetValue((typeof(TActorInterface), actorId), out var proxy))
             {
-                return (TActor)proxy;
+                return (TActorInterface)proxy;
             }
             else
             {
-                throw new Exception($"The proxy for {typeof(TActor).Name} with Id {actorId} has not been registered.");
+                throw new Exception($"The proxy for {typeof(TActorInterface).Name} with Id {actorId} has not been registered.");
             }
+        }
+
+        public TActorInterface CreateActorProxy<TActorInterface>(Uri serviceUri, ActorId actorId, string listenerName = null) where TActorInterface : IActor
+        {
+            throw new NotImplementedException();
+        }
+
+        public TServiceInterface CreateActorServiceProxy<TServiceInterface>(Uri serviceUri, ActorId actorId, string listenerName = null) where TServiceInterface : IService
+        {
+            throw new NotImplementedException();
+        }
+
+        public TServiceInterface CreateActorServiceProxy<TServiceInterface>(Uri serviceUri, long partitionKey, string listenerName = null) where TServiceInterface : IService
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -9,6 +9,7 @@ using Bullfrog.Actors.Helpers;
 using Bullfrog.Common.DependencyInjection;
 using Castle.Core.Internal;
 using Eshopworld.Telemetry;
+using Microsoft.ServiceFabric.Actors.Client;
 
 [assembly: InternalsVisibleTo(InternalsVisible.ToDynamicProxyGenAssembly2)]
 
@@ -30,7 +31,6 @@ namespace Bullfrog.Actors
                 builder.RegisterModule<ServiceFabricModule>();
                 builder.RegisterType<ScaleSetManager>().As<IScaleSetManager>();
                 builder.RegisterType<CosmosManager>().As<ICosmosManager>();
-                builder.RegisterType<SimpleActorProxyFactory>().As<ISimpleActorProxyFactory>();
 
                 builder.RegisterServiceFabricSupport();
 
