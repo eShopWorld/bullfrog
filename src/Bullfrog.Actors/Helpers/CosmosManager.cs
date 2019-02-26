@@ -29,7 +29,7 @@ namespace Bullfrog.Actors.Helpers
 
         public async Task<int> SetScale(int requestedScale, CosmosConfiguration configuration, CancellationToken cancellationToken = default)
         {
-            var ruCount = Math.Ceiling(requestedScale / configuration.RequestsPerRU);
+            var ruCount = Math.Ceiling(requestedScale * configuration.RequestUnitsPerRequest);
             if (ruCount > configuration.MaximumRU)
             {
                 ruCount = configuration.MaximumRU;

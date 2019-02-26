@@ -33,19 +33,19 @@ namespace Client.Models
         /// <param name="databaseName">The Cosmos DB database name.</param>
         /// <param name="containerName">The optional name of the container in
         /// the Cosmos DB database.</param>
-        /// <param name="requestsPerRU">The number of requests per configured
-        /// RU which on avarage can be processed per second.</param>
+        /// <param name="requestUnitsPerRequest">The number of Request Units
+        /// used on average by each request.</param>
         /// <param name="minimumRU">The minimal value of RU used when there are
         /// no active events.</param>
         /// <param name="maximumRU">The maximal value of RU. No scaling
         /// operation will exceed it.</param>
-        public CosmosConfiguration(string name, string accountName, string databaseName, string containerName = default(string), double? requestsPerRU = default(double?), int? minimumRU = default(int?), int? maximumRU = default(int?))
+        public CosmosConfiguration(string name, string accountName, string databaseName, string containerName = default(string), double? requestUnitsPerRequest = default(double?), int? minimumRU = default(int?), int? maximumRU = default(int?))
         {
             Name = name;
             AccountName = accountName;
             DatabaseName = databaseName;
             ContainerName = containerName;
-            RequestsPerRU = requestsPerRU;
+            RequestUnitsPerRequest = requestUnitsPerRequest;
             MinimumRU = minimumRU;
             MaximumRU = maximumRU;
             CustomInit();
@@ -83,11 +83,11 @@ namespace Client.Models
         public string ContainerName { get; set; }
 
         /// <summary>
-        /// Gets or sets the number of requests per configured RU which on
-        /// avarage can be processed per second.
+        /// Gets or sets the number of Request Units used on average by each
+        /// request.
         /// </summary>
-        [JsonProperty(PropertyName = "requestsPerRU")]
-        public double? RequestsPerRU { get; set; }
+        [JsonProperty(PropertyName = "requestUnitsPerRequest")]
+        public double? RequestUnitsPerRequest { get; set; }
 
         /// <summary>
         /// Gets or sets the minimal value of RU used when there are no active

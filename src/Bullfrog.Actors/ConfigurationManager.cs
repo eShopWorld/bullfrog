@@ -106,6 +106,8 @@ namespace Bullfrog.Actors
                 {
                     ScaleSetConfigurations = region.ScaleSets,
                     CosmosConfigurations = region.Cosmos,
+                    CosmosDbPrescaleLeadTime = region.CosmosDbPrescaleLeadTime,
+                    ScaleSetPrescaleLeadTime = region.ScaleSetPrescaleLeadTime,
                 };
                 await actor.Configure(configuration, default);
             }

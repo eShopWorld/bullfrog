@@ -1,16 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Client;
 using Client.Models;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
+using Moq;
 using ServiceFabric.Mocks;
 using Xunit;
 
 public class ScaleManagerTests : BaseApiTests
 {
+    private TimeSpan _cosmosDbPrescaleLeadTime;
+    private TimeSpan _scaleSetPrescaleLeadTime;
+
     [Fact, IsLayer0]
     public void AddingEventToUnknownScaleGroup()
     {
@@ -145,6 +150,89 @@ public class ScaleManagerTests : BaseApiTests
         reminders.Should().BeEmpty();
     }
 
+    [Fact, IsLayer0]
+    public void AddingActiveEvent()
+    {
+        CreateScaleGroup();
+        var scaleEvent = new Client.Models.ScaleEvent
+        {
+            Name = "aa",
+            RegionConfig = new List<RegionScaleValue>
+            {
+                new RegionScaleValue
+                {
+                    Name = "eu",
+                    Scale = 10,
+                }
+            },
+            RequiredScaleAt = UtcNow + TimeSpan.FromMinutes(1),
+            StartScaleDownAt = UtcNow + TimeSpan.FromHours(2),
+        };
+        var id = Guid.NewGuid();
+        CosmosManagerMoq.Setup(x => x.SetScale(10, It.IsAny<Bullfrog.Actors.Interfaces.Models.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(4);
+        ScaleSetManagerMoq.Setup(x => x.SetScale(10, It.IsAny<Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(4);
+
+        //act
+        ApiClient.SaveScaleEvent("sg", id, scaleEvent);
+
+        CosmosManagerMoq.Verify(x => x.SetScale(10, It.IsAny<Bullfrog.Actors.Interfaces.Models.CosmosConfiguration>(), It.IsAny<CancellationToken>()));
+        ScaleSetManagerMoq.Verify(x => x.SetScale(10, It.IsAny<Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration>(), It.IsAny<CancellationToken>()));
+    }
+
+    [Theory, IsLayer0]
+    [InlineData(5, 5, 60, null, null, 55)]
+    [InlineData(5, 5, -30, 100, 100, 30)]
+    [InlineData(5, 5, -60, null, null, null)]
+    [InlineData(10, 6, 60, null, null, 50)]
+    [InlineData(20, 20, 10, 100, 100, 70)]
+    public void ReminderChecks(int scaleSetLeadTime, int cosmosDbLeadTime, int eventOffset, int? scaleSetScale, int? cosmosScale, int? reminder)
+    {
+        _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(scaleSetLeadTime);
+        _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(cosmosDbLeadTime);
+        CreateScaleGroup();
+        var scaleEvent = new Client.Models.ScaleEvent
+        {
+            Name = "aa",
+            RegionConfig = new List<RegionScaleValue>
+            {
+                new RegionScaleValue
+                {
+                    Name = "eu",
+                    Scale = 100,
+                }
+            },
+            RequiredScaleAt = UtcNow + TimeSpan.FromMinutes(eventOffset),
+            StartScaleDownAt = UtcNow + TimeSpan.FromMinutes(eventOffset + 60),
+        };
+        var id = Guid.NewGuid();
+        if (cosmosScale.HasValue)
+            CosmosManagerMoq.Setup(x => x.SetScale(cosmosScale.Value, It.IsAny<Bullfrog.Actors.Interfaces.Models.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(10);
+        else
+            CosmosManagerMoq.Setup(x => x.Reset(It.IsAny<Bullfrog.Actors.Interfaces.Models.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(10);
+        if (scaleSetScale.HasValue)
+            ScaleSetManagerMoq.Setup(x => x.SetScale(scaleSetScale.Value, It.IsAny<Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(10);
+        else
+            ScaleSetManagerMoq.Setup(x => x.Reset(It.IsAny<Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(10);
+
+        //act
+        ApiClient.SaveScaleEvent("sg", id, scaleEvent);
+
+        CosmosManagerMoq.VerifyAll();
+        ScaleSetManagerMoq.VerifyAll();
+        var reminders = ScaleManagerActors[("sg", "eu")].GetActorReminders();
+        if (reminder.HasValue)
+            reminders.Should().ContainSingle()
+                .Which.Should().Match<Microsoft.ServiceFabric.Actors.Runtime.IActorReminder>(x => x.DueTime == TimeSpan.FromMinutes(reminder.Value));
+        else
+            reminders.Should().BeEmpty();
+    }
+
     private void CreateScaleGroup()
     {
         ApiClient.SetDefinition("sg", new Client.Models.ScaleGroupDefinition
@@ -163,7 +251,7 @@ public class ScaleManagerTests : BaseApiTests
                             DatabaseName = "dn",
                             MaximumRU = 1000,
                             MinimumRU = 400,
-                            RequestsPerRU = 2,
+                            RequestUnitsPerRequest = 10,
                         },
                     },
                     ScaleSets = new List<ScaleSetConfiguration>
@@ -175,12 +263,13 @@ public class ScaleManagerTests : BaseApiTests
                             ProfileName = "pr",
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,
-                            RequestsPerInstance = 30,
+                            RequestsPerInstance = 100,
                         },
                     },
+                    CosmosDbPrescaleLeadTime = _cosmosDbPrescaleLeadTime.ToString(),
+                    ScaleSetPrescaleLeadTime = _scaleSetPrescaleLeadTime.ToString(),
                 }
             },
         });
-
     }
 }

@@ -19,7 +19,6 @@
     public class ScaleManager : Actor, IScaleManager, IRemindable
     {
         private const string ReminderName = "wakeupReminder";
-        private readonly TimeSpan EstimatedScaleTime = TimeSpan.FromMinutes(5);
         private readonly StateItem<List<ManagedScaleEvent>> _events;
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
         private readonly IScaleSetManager _scaleSetManager;
@@ -149,7 +148,9 @@
             modifiedEvent.RequiredScaleAt = scaleEvent.RequiredScaleAt;
             modifiedEvent.Scale = scaleEvent.Scale;
             modifiedEvent.StartScaleDownAt = scaleEvent.StartScaleDownAt;
-            modifiedEvent.EstimatedScaleUpAt = modifiedEvent.RequiredScaleAt - EstimatedScaleTime;
+            var estimatedScaleTime = TimeSpan.FromTicks(Math.Max(configuration.Value.CosmosDbPrescaleLeadTime.Ticks,
+                configuration.Value.ScaleSetPrescaleLeadTime.Ticks));
+            modifiedEvent.EstimatedScaleUpAt = modifiedEvent.RequiredScaleAt - estimatedScaleTime;
 
             await _events.Set(events, cancellationToken);
 
@@ -177,6 +178,16 @@
         async Task IScaleManager.Configure(ScaleManagerConfiguration configuration, CancellationToken cancellationToken)
         {
             await _configuration.Set(configuration, cancellationToken);
+
+            var estimatedScaleTime = TimeSpan.FromTicks(Math.Max(configuration.CosmosDbPrescaleLeadTime.Ticks,
+                configuration.ScaleSetPrescaleLeadTime.Ticks));
+            var events = await _events.Get();
+            foreach (var ev in events)
+            {
+                ev.EstimatedScaleUpAt = ev.RequiredScaleAt - estimatedScaleTime;
+            }
+            await _events.Set(events);
+
             await UpdateState();
         }
 

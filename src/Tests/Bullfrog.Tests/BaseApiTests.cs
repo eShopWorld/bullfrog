@@ -44,6 +44,8 @@ public class BaseApiTests
 
     protected DateTimeOffset UtcNow { get; set; } = new DateTimeOffset(2019, 2, 22, 0, 0, 0, 0,
        System.Globalization.CultureInfo.InvariantCulture.Calendar, TimeSpan.Zero);
+    protected Mock<IScaleSetManager> ScaleSetManagerMoq { get; private set; }
+    protected Mock<ICosmosManager> CosmosManagerMoq { get; private set; }
 
     private void ConfigureServices(IServiceCollection services)
     {
@@ -60,9 +62,9 @@ public class BaseApiTests
 
         RegisterConfigurationManagerActor(actorProxyFactory);
         
-        var scaleSetManagerMoq = new Mock<IScaleSetManager>();
-        var cosmosManagerMoq = new Mock<ICosmosManager>();
-        RegisterScaleManagerActor("sg", "eu", scaleSetManagerMoq, cosmosManagerMoq, dateTimeProviderMoq.Object, bigBrotherMoq.Object, actorProxyFactory);
+        ScaleSetManagerMoq = new Mock<IScaleSetManager>();
+        CosmosManagerMoq = new Mock<ICosmosManager>();
+        RegisterScaleManagerActor("sg", "eu", ScaleSetManagerMoq, CosmosManagerMoq, dateTimeProviderMoq.Object, bigBrotherMoq.Object, actorProxyFactory);
 
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
         autoscaleProfile.SetupGet(p => p.MaxInstanceCount).Returns(10);

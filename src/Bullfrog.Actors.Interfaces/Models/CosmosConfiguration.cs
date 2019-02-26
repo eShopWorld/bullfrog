@@ -34,10 +34,10 @@ namespace Bullfrog.Actors.Interfaces.Models
         public string ContainerName { get; set; }
 
         /// <summary>
-        /// The number of requests per configured RU which on avarage can be processed per second.
+        /// The number of Request Units used on average by each request.
         /// </summary>
         [ValueIs(ValueComparison.GreaterThen, Value = 0)]
-        public decimal RequestsPerRU { get; set; }
+        public decimal RequestUnitsPerRequest { get; set; }
 
         /// <summary>
         /// The minimal value of RU used when there are no active events.

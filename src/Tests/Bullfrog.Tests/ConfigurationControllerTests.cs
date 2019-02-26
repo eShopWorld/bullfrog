@@ -42,7 +42,7 @@ public class ConfigurationControllerTests : BaseApiTests
                             DatabaseName = "cc",
                             MinimumRU = 400,
                             MaximumRU = 5000,
-                            RequestsPerRU = 10,
+                            RequestUnitsPerRequest = 10,
                         },
                     },
                     ScaleSets = new List<ScaleSetConfiguration>

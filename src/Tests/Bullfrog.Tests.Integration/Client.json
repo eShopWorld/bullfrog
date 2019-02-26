@@ -545,9 +545,9 @@
           "description": "The optional name of the container in the Cosmos DB database.",
           "type": "string"
         },
-        "requestsPerRU": {
+        "requestUnitsPerRequest": {
           "format": "double",
-          "description": "The number of requests per configured RU which on avarage can be processed per second.",
+          "description": "The number of Request Units used on average by each request.",
           "type": "number"
         },
         "minimumRU": {

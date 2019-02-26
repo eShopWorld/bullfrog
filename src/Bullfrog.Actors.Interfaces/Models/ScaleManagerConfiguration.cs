@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace Bullfrog.Actors.Interfaces.Models
 {
@@ -16,5 +17,16 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// Defines the managed Cosmos DB configuration.
         /// </summary>
         public List<CosmosConfiguration> CosmosConfigurations { get; set; }
+
+
+        /// <summary>
+        /// VM scale sets prescale lead time.
+        /// </summary>
+        public TimeSpan ScaleSetPrescaleLeadTime { get; set; }
+
+        /// <summary>
+        /// Cosmos DB prescale lead time.
+        /// </summary>
+        public TimeSpan CosmosDbPrescaleLeadTime { get; set; }
     }
 }
