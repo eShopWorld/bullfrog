@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Client;
 using Client.Models;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
+using ServiceFabric.Mocks;
 using Xunit;
 
 public class ScaleManagerTests : BaseApiTests
@@ -92,8 +94,8 @@ public class ScaleManagerTests : BaseApiTests
                     Scale = 10,
                 }
             },
-            RequiredScaleAt = DateTime.UtcNow + TimeSpan.FromHours(1),
-            StartScaleDownAt = DateTime.UtcNow + TimeSpan.FromHours(2),
+            RequiredScaleAt = UtcNow + TimeSpan.FromHours(1),
+            StartScaleDownAt = UtcNow + TimeSpan.FromHours(2),
         };
         var id = Guid.NewGuid();
 
@@ -102,9 +104,46 @@ public class ScaleManagerTests : BaseApiTests
 
         var scheduledEvent = ApiClient.GetScheduledEvent("sg", id);
         scheduledEvent.Should().BeEquivalentTo(scaleEvent);
+        var allEvents = ApiClient.ListScheduledEvents("sg");
+        allEvents.Should().BeEquivalentTo(new[] { scaleEvent });
+        var actor = ScaleManagerActors[("sg", "eu")];
+        var reminders = actor.GetActorReminders();
+        reminders.Should().HaveCount(1);
     }
 
+    [Fact, IsLayer0]
+    public void DeletingEvent()
+    {
+        CreateScaleGroup();
+        var scaleEvent = new Client.Models.ScaleEvent
+        {
+            Name = "aa",
+            RegionConfig = new List<RegionScaleValue>
+            {
+                new RegionScaleValue
+                {
+                    Name = "eu",
+                    Scale = 10,
+                }
+            },
+            RequiredScaleAt = UtcNow + TimeSpan.FromHours(1),
+            StartScaleDownAt = UtcNow + TimeSpan.FromHours(2),
+        };
+        var id = Guid.NewGuid();
+        ApiClient.SaveScaleEvent("sg", id, scaleEvent);
 
+        //act
+        ApiClient.DeleteScaleEvent("sg", id);
+
+        Action getEvent = () => ApiClient.GetScheduledEvent("sg", id);
+        getEvent.Should().Throw<ProblemDetailsException>()
+             .Where(x => x.Response.StatusCode == System.Net.HttpStatusCode.NotFound);
+        var allEvents = ApiClient.ListScheduledEvents("sg");
+        allEvents.Should().BeEmpty();
+        var actor = ScaleManagerActors[("sg", "eu")];
+        var reminders = actor.GetActorReminders();
+        reminders.Should().BeEmpty();
+    }
 
     private void CreateScaleGroup()
     {

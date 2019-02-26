@@ -41,7 +41,13 @@ namespace Bullfrog.Common.DependencyInjection
             })
             .SingleInstance();
 
-            builder.RegisterType<ActorProxyFactory>().As<IActorProxyFactory>();
+            builder.RegisterType<ActorProxyFactory>().As<IActorProxyFactory>().SingleInstance();
+            builder.RegisterType<DateTimeProvider>().As<IDateTimeProvider>().SingleInstance();
+        }
+
+        private class DateTimeProvider : IDateTimeProvider
+        {
+            public DateTimeOffset UtcNow => DateTimeOffset.UtcNow;
         }
     }
 }

@@ -24,6 +24,7 @@
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
         private readonly IScaleSetManager _scaleSetManager;
         private readonly ICosmosManager _cosmosManager;
+        private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IBigBrother _bigBrother;
 
         /// <summary>
@@ -31,11 +32,16 @@
         /// </summary>
         /// <param name="actorService">The Microsoft.ServiceFabric.Actors.Runtime.ActorService that will host this actor instance.</param>
         /// <param name="actorId">The Microsoft.ServiceFabric.Actors.ActorId for this actor instance.</param>
+        /// <param name="scaleSetManager">Updates the configuration of a VM scale set to handle a requested thoughput.</param>
+        /// <param name="cosmosManager">Updates configuration of the Cosmos DB to handle a requested thoughput.</param>
+        /// <param name="dateTimeProvider">Gets the current time.</param>
+        /// <param name="bigBrother">Performs the logging.</param>
         public ScaleManager(
             ActorService actorService,
             ActorId actorId,
             IScaleSetManager scaleSetManager,
             ICosmosManager cosmosManager,
+            IDateTimeProvider dateTimeProvider,
             IBigBrother bigBrother)
             : base(actorService, actorId)
         {
@@ -43,6 +49,7 @@
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
             _scaleSetManager = scaleSetManager;
             _cosmosManager = cosmosManager;
+            _dateTimeProvider = dateTimeProvider;
             _bigBrother = bigBrother;
         }
 
@@ -66,7 +73,7 @@
         async Task<ScaleEventState> IScaleManager.DeleteScaleEvent(Guid id, CancellationToken cancellationToken)
         {
             var events = await _events.Get(cancellationToken);
-            var now = DateTimeService.UtcNow;
+            var now = _dateTimeProvider.UtcNow;
 
             var eventToDelete = events.Find(e => e.Id == id);
             var state = eventToDelete?.GetState(now) ?? ScaleEventState.NotFound;
@@ -94,7 +101,7 @@
         {
             // TODO: base scale calculation of the state of controlled resources instead of on the events
             var events = await _events.Get();
-            var now = DateTimeService.UtcNow;
+            var now = _dateTimeProvider.UtcNow;
 
             // TODO: include events which start before last of the executing events finishes
             var current = events.Where(e => e.GetState(now) == ScaleEventState.Executing).ToList();
@@ -130,7 +137,7 @@
             var events = await _events.Get();
 
             var modifiedEvent = events.Find(e => e.Id == scaleEvent.Id);
-            var state = modifiedEvent?.GetState(DateTimeService.UtcNow) ?? ScaleEventState.NotFound;
+            var state = modifiedEvent?.GetState(_dateTimeProvider.UtcNow) ?? ScaleEventState.NotFound;
 
             if (modifiedEvent == null)
             {
@@ -195,7 +202,7 @@
         {
             var configuration = await _configuration.Get(cancellationToken);
             var events = await _events.Get(cancellationToken);
-            var now = DateTimeService.UtcNow;
+            var now = _dateTimeProvider.UtcNow;
             var expectedRequestsNumber = CalculateCurrentTotalScaleRequest(events, now);
 
             // TODO: can all scale operations be done concurrently (if it's too long to do it sequentially)? Is Azure Fluent safe to use in such scenario?
@@ -283,7 +290,7 @@
             TimeSpan dueTime;
             if (time.HasValue)
             {
-                dueTime = time.Value - DateTimeService.UtcNow;
+                dueTime = time.Value - _dateTimeProvider.UtcNow;
                 if (dueTime < TimeSpan.Zero)
                 {
                     dueTime = TimeSpan.Zero;
