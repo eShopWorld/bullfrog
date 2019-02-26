@@ -153,6 +153,8 @@ public class ScaleManagerTests : BaseApiTests
     [Fact, IsLayer0]
     public void AddingActiveEvent()
     {
+        _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(5);
+        _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(5);
         CreateScaleGroup();
         var scaleEvent = new Client.Models.ScaleEvent
         {
@@ -182,11 +184,13 @@ public class ScaleManagerTests : BaseApiTests
     }
 
     [Theory, IsLayer0]
-    [InlineData(5, 5, 60, null, null, 55)]
+    [InlineData(4, 5, 60, null, null, 55)]
     [InlineData(5, 5, -30, 100, 100, 30)]
     [InlineData(5, 5, -60, null, null, null)]
     [InlineData(10, 6, 60, null, null, 50)]
     [InlineData(20, 20, 10, 100, 100, 70)]
+    [InlineData(20, 8, 10, 100, null, 2)]
+    [InlineData(9, 20, 10, null, 100, 1)]
     public void ReminderChecks(int scaleSetLeadTime, int cosmosDbLeadTime, int eventOffset, int? scaleSetScale, int? cosmosScale, int? reminder)
     {
         _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(scaleSetLeadTime);

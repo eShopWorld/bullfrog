@@ -214,19 +214,25 @@
             var configuration = await _configuration.Get(cancellationToken);
             var events = await _events.Get(cancellationToken);
             var now = _dateTimeProvider.UtcNow;
-            var expectedRequestsNumber = CalculateCurrentTotalScaleRequest(events, now);
 
             // TODO: can all scale operations be done concurrently (if it's too long to do it sequentially)? Is Azure Fluent safe to use in such scenario?
-            var scaleSetInstances = await UpdateScaleSets(configuration.ScaleSetConfigurations, expectedRequestsNumber);
-            var cosmosScaleState = await UpdateCosmosInstances(configuration.CosmosConfigurations, expectedRequestsNumber);
+            var scaleSetScale = CalculateCurrentTotalScaleRequest(events, now, configuration.ScaleSetPrescaleLeadTime);
+            var scaleSetInstances = await UpdateScaleSets(configuration.ScaleSetConfigurations, scaleSetScale);
+            var cosmosDbScale = CalculateCurrentTotalScaleRequest(events, now, configuration.CosmosDbPrescaleLeadTime);
+            var cosmosScaleState = await UpdateCosmosInstances(configuration.CosmosConfigurations, cosmosDbScale);
 
-            var nextWakeUpTime = FindNextWakeUpTime(events, now);
+            var nextWakeUpTime = FindNextWakeUpTime(
+                events,
+                now,
+                configuration.ScaleSetPrescaleLeadTime,
+                configuration.CosmosDbPrescaleLeadTime);
             await WakeMeAt(nextWakeUpTime);
 
             _bigBrother.Publish(new ScaleAgentStatus
             {
                 ActorId = Id.ToString(),
-                RequestedScale = expectedRequestsNumber,
+                RequestedScaleSetScale = scaleSetScale,
+                RequestedCosmosDbScale = cosmosDbScale,
                 NextWakeUpTime = nextWakeUpTime,
                 ScaleSets = scaleSetInstances,
                 Cosmos = cosmosScaleState,
@@ -324,10 +330,10 @@
             }
         }
 
-        private static int? CalculateCurrentTotalScaleRequest(IEnumerable<ManagedScaleEvent> events, DateTimeOffset now)
+        private static int? CalculateCurrentTotalScaleRequest(IEnumerable<ManagedScaleEvent> events, DateTimeOffset now, TimeSpan leadTime)
         {
             int? total = null;
-            foreach (var ev in events.Where(e => e.EstimatedScaleUpAt <= now && now < e.StartScaleDownAt))
+            foreach (var ev in events.Where(e => e.RequiredScaleAt - leadTime <= now && now < e.StartScaleDownAt))
             {
                 total = checked(ev.Scale + total.GetValueOrDefault());
             }
@@ -335,26 +341,14 @@
             return total;
         }
 
-        private static DateTimeOffset? FindNextWakeUpTime(IEnumerable<ManagedScaleEvent> events, DateTimeOffset now)
+        private static DateTimeOffset? FindNextWakeUpTime(IEnumerable<ManagedScaleEvent> events, DateTimeOffset now, TimeSpan scaleSetLeadTime, TimeSpan cosmosDbLeadTime)
         {
-            var nextTime = DateTimeOffset.MaxValue;
+            var nextTime = events.SelectMany(ev => new[] { ev.StartScaleDownAt, ev.RequiredScaleAt - cosmosDbLeadTime, ev.RequiredScaleAt - scaleSetLeadTime })
+                .Where(t => t > now)
+                .Cast<DateTimeOffset?>()
+                .Min();
 
-            foreach (var ev in events)
-            {
-                if (now < ev.EstimatedScaleUpAt)
-                {
-                    if (ev.EstimatedScaleUpAt < nextTime)
-                    {
-                        nextTime = ev.EstimatedScaleUpAt;
-                    }
-                }
-                else if (now < ev.StartScaleDownAt && ev.StartScaleDownAt < nextTime)
-                {
-                    nextTime = ev.StartScaleDownAt;
-                }
-            }
-
-            return nextTime == DateTimeOffset.MaxValue ? null : (DateTimeOffset?)nextTime;
+            return nextTime;
         }
     }
 }

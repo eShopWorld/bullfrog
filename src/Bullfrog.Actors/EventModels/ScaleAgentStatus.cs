@@ -8,7 +8,9 @@ namespace Bullfrog.Actors.EventModels
     {
         public string ActorId { get; set; }
 
-        public int? RequestedScale { get; set; }
+        public int? RequestedScaleSetScale { get; set; }
+
+        public int? RequestedCosmosDbScale { get; set; }
 
         public List<ScaleSetScale> ScaleSets { get; set; }
 
