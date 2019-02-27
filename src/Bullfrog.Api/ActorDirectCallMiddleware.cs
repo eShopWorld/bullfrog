@@ -87,6 +87,7 @@ namespace Bullfrog.Api
     /// <remarks>
     /// By design only actors with a specific interface schema are supported.
     /// </remarks>
+    [ExcludeFromCodeCoverage]
     public class ActorDirectCallMiddleware
     {
         private readonly RequestDelegate _next;
