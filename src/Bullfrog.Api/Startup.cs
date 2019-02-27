@@ -140,7 +140,7 @@ namespace Bullfrog.Api
         /// <param name="builder">The builder for an <see cref="T:Autofac.IContainer" /> from component registrations.</param>
         public void ConfigureContainer(ContainerBuilder builder)
         {
-            builder.RegisterModule(new CoreModule());
+            builder.RegisterModule<CoreModule>();
             builder.RegisterModule<AzureManagementFluentModule>();
             builder.RegisterModule<ServiceFabricModule>();
         }

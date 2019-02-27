@@ -26,7 +26,7 @@ namespace Bullfrog.Actors
             try
             {
                 var builder = new ContainerBuilder();
-                builder.RegisterModule(new CoreModule());
+                builder.RegisterModule<CoreModule>();
                 builder.RegisterModule<AzureManagementFluentModule>();
                 builder.RegisterModule<ServiceFabricModule>();
                 builder.RegisterType<ScaleSetManager>().As<IScaleSetManager>();

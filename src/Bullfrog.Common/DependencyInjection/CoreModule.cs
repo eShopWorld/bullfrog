@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Autofac;
 using Eshopworld.Core;
 using Eshopworld.DevOps;
@@ -15,20 +13,9 @@ namespace Bullfrog.Common.DependencyInjection
     /// </summary>
     public class CoreModule : Module
     {
-        private bool TestMode { get; }
-
-        /// <summary>
-        /// core module constructor allowing to enable test mode - disabled by default
-        /// </summary>
-        /// <param name="testMode">test mode flag</param>
-        public CoreModule(bool testMode = false)
-        {
-            TestMode = testMode;
-        }
-
         protected override void Load(ContainerBuilder builder)
         {
-            var config = EswDevOpsSdk.BuildConfiguration(TestMode);
+            var config = EswDevOpsSdk.BuildConfiguration();
 
             builder.RegisterInstance(config)
                    .As<IConfigurationRoot>()

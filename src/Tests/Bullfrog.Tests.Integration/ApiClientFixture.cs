@@ -13,7 +13,7 @@ public class ApiClientFixture
 
     public ApiClientFixture()
     {
-        configuration = Eshopworld.DevOps.EswDevOpsSdk.BuildConfiguration(useTest: true);
+        configuration = Eshopworld.DevOps.EswDevOpsSdk.BuildConfiguration();
     }
 
     public TokenCredentials GetAuthToken(string user)
