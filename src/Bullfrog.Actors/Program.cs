@@ -9,9 +9,9 @@ using Bullfrog.Actors.Helpers;
 using Bullfrog.Common.DependencyInjection;
 using Castle.Core.Internal;
 using Eshopworld.Telemetry;
-using Microsoft.ServiceFabric.Actors.Client;
 
 [assembly: InternalsVisibleTo(InternalsVisible.ToDynamicProxyGenAssembly2)]
+[assembly: InternalsVisibleTo("Bullfrog.Tests")]
 
 namespace Bullfrog.Actors
 {

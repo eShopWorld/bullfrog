@@ -8,7 +8,7 @@ using CM = Microsoft.Azure.Cosmos;
 
 namespace Bullfrog.Actors.Helpers
 {
-    class CosmosManager : ICosmosManager
+    internal class CosmosManager : ICosmosManager
     {
         private readonly IConfigurationRoot _configuration;
 

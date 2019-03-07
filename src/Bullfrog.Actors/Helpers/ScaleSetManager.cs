@@ -8,7 +8,7 @@ using Microsoft.Azure.Management.Monitor.Fluent;
 
 namespace Bullfrog.Actors.Helpers
 {
-    class ScaleSetManager : IScaleSetManager
+    internal class ScaleSetManager : IScaleSetManager
     {
         private readonly IAzure _azure;
 

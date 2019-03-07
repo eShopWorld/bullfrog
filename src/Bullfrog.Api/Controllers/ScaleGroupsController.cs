@@ -45,7 +45,6 @@ namespace Bullfrog.Api.Controllers
         /// <returns></returns>
         [HttpGet("{scaleGroup}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesDefaultResponseType]
         public async Task<ActionResult<ScaleGroupState>> GetCurrentState(string scaleGroup)
         {
