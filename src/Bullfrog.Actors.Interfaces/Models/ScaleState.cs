@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Bullfrog.Actors.Interfaces.Models
 {
@@ -20,6 +21,16 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// <summary>
         /// The current scale.
         /// </summary>
-        public int Scale { get; set; }
+        public decimal Scale { get; set; }
+
+        /// <summary>
+        /// The scale which is requested by scale events.
+        /// </summary>
+        public int? RequestedScale { get; set; }
+
+        /// <summary>
+        /// State of each scale set.
+        /// </summary>
+        public IDictionary<string, decimal> ScaleSetState { get; set; }
     }
 }

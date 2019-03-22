@@ -8,17 +8,29 @@ using Microsoft.AspNetCore.Http;
 
 namespace Bullfrog.Api.Helpers
 {
+    /// <summary>
+    /// The development-only authentication middleware which allows to similate specified access.
+    /// </summary>
     [ExcludeFromCodeCoverage]
     public class FakeAuthenticationMiddleware
     {
         private const string FakeClaimHeaderPrefix = "FakeClaim-";
         private readonly RequestDelegate _next;
 
+        /// <summary>
+        /// Creates an instance.
+        /// </summary>
+        /// <param name="next">The next request delegate.</param>
         public FakeAuthenticationMiddleware(RequestDelegate next)
         {
             _next = next ?? throw new ArgumentNullException(nameof(next));
         }
 
+        /// <summary>
+        /// Invokes the request processing.
+        /// </summary>
+        /// <param name="context">The request context.</param>
+        /// <returns></returns>
         public async Task Invoke(HttpContext context)
         {
             if (!context.User.Identity.IsAuthenticated)

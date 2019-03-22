@@ -25,13 +25,9 @@ namespace Bullfrog.Api.Controllers
         /// <summary>
         /// Creates an instance of <see cref="ScaleGroupsController"/>.
         /// </summary>
-        /// <param name="hostingEnvironment">The hosting environment.</param>
-        /// <param name="bigBrother">The BigBrather instance.</param>
         /// <param name="sfContext">The stateless service context.</param>
         /// <param name="proxyFactory">A factory used to create actor proxies.</param>
         public ScaleGroupsController(
-            IHostingEnvironment hostingEnvironment,
-            IBigBrother bigBrother,
             StatelessServiceContext sfContext,
             IActorProxyFactory proxyFactory)
             : base(sfContext, proxyFactory)
@@ -75,8 +71,10 @@ namespace Bullfrog.Api.Controllers
                     {
                         Name = regions[i],
                         Scale = tasks[i].Result.Scale,
+                        RequestedScale = tasks[i].Result.RequestedScale,
                         WasScaledUpAt = tasks[i].Result.WasScaleUpAt,
                         WillScaleDownAt = tasks[i].Result.WillScaleDownAt,
+                        ScaleSetState = tasks[i].Result.ScaleSetState,
                     });
                 }
             }

@@ -21,8 +21,10 @@
         private const string ReminderName = "wakeupReminder";
         private readonly StateItem<List<ManagedScaleEvent>> _events;
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
+        private readonly StateItem<DateTimeOffset> _scaleOutStarted;
         private readonly IScaleSetManager _scaleSetManager;
         private readonly ICosmosManager _cosmosManager;
+        private readonly IScaleSetMonitor _scaleSetMonitor;
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IBigBrother _bigBrother;
 
@@ -33,6 +35,7 @@
         /// <param name="actorId">The Microsoft.ServiceFabric.Actors.ActorId for this actor instance.</param>
         /// <param name="scaleSetManager">Updates the configuration of a VM scale set to handle a requested thoughput.</param>
         /// <param name="cosmosManager">Updates configuration of the Cosmos DB to handle a requested thoughput.</param>
+        /// <param name="scaleSetMonitor">Reads performance details of a scale set.</param>
         /// <param name="dateTimeProvider">Gets the current time.</param>
         /// <param name="bigBrother">Performs the logging.</param>
         public ScaleManager(
@@ -40,14 +43,17 @@
             ActorId actorId,
             IScaleSetManager scaleSetManager,
             ICosmosManager cosmosManager,
+            IScaleSetMonitor scaleSetMonitor,
             IDateTimeProvider dateTimeProvider,
             IBigBrother bigBrother)
             : base(actorService, actorId)
         {
             _events = new StateItem<List<ManagedScaleEvent>>(StateManager, "scaleEvents");
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
+            _scaleOutStarted = new StateItem<DateTimeOffset>(StateManager, "scaleOutStarted");
             _scaleSetManager = scaleSetManager;
             _cosmosManager = cosmosManager;
+            _scaleSetMonitor = scaleSetMonitor;
             _dateTimeProvider = dateTimeProvider;
             _bigBrother = bigBrother;
         }
@@ -98,23 +104,71 @@
 
         async Task<ScaleState> IScaleManager.GetScaleSet(CancellationToken cancellationToken)
         {
-            // TODO: base scale calculation of the state of controlled resources instead of on the events
             var events = await _events.Get();
             var now = _dateTimeProvider.UtcNow;
 
-            // TODO: include events which start before last of the executing events finishes
-            var current = events.Where(e => e.GetState(now) == ScaleEventState.Executing).ToList();
-            if (current.Count == 0)
-            {
+            var scaleOutStarted = await _scaleOutStarted.TryGet();
+            if (!scaleOutStarted.HasValue)
                 return null;
+
+            var configuration = await _configuration.TryGet(cancellationToken);
+            if (!configuration.HasValue)
+                return null;
+
+            var requestedScale = events
+                .Where(e => e.GetState(now) == ScaleEventState.Executing)
+                .Sum(e => (int?)e.Scale);
+
+            var scaleSetStates = new Dictionary<string, decimal>();
+            foreach (var scaleSet in configuration.Value.ScaleSetConfigurations)
+            {
+                var workingInstances = await _scaleSetMonitor.GetNumberOfWorkingInstances(scaleSet.LoadBalancerResourceId, scaleSet.HealthPortPort);
+                var usableInstances = Math.Max(workingInstances - scaleSet.ReservedInstances, 0);
+                scaleSetStates.Add(scaleSet.Name, usableInstances * scaleSet.RequestsPerInstance);
             }
+
+            var leadTime = configuration.Value.ScaleSetPrescaleLeadTime;
+            if (leadTime < configuration.Value.CosmosDbPrescaleLeadTime)
+                leadTime = configuration.Value.CosmosDbPrescaleLeadTime;
+            var combindedEnd = ScaleOutEnds(events, now, leadTime);
 
             return new ScaleState
             {
-                Scale = current.Sum(e => e.Scale),
-                WasScaleUpAt = current.Min(e => e.RequiredScaleAt),
-                WillScaleDownAt = current.Max(e => e.StartScaleDownAt),
+                Scale = scaleSetStates.Values.Cast<decimal?>().Min() ?? 0,
+                RequestedScale = requestedScale,
+                WasScaleUpAt = scaleOutStarted.Value,
+                WillScaleDownAt = combindedEnd,
+                ScaleSetState = scaleSetStates,
             };
+        }
+
+        /// <summary>
+        /// Finds the end of of the last event in a series of overlapped events.
+        /// </summary>
+        private DateTimeOffset ScaleOutEnds(IEnumerable<ManagedScaleEvent> events, DateTimeOffset now, TimeSpan leadTime)
+        {
+            var sortedEvents = events.Select(e => (start: e.RequiredScaleAt - leadTime, end: e.StartScaleDownAt))
+                .Where(x => x.end > now)
+                .OrderBy(x => x.start)
+                .ToList();
+            if (sortedEvents.Count == 0)
+                return now;
+
+            var combindedEnd = sortedEvents[0].end;
+            foreach (var (start, end) in sortedEvents)
+            {
+                if (start <= combindedEnd)
+                {
+                    if (combindedEnd < end)
+                        combindedEnd = end;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return combindedEnd;
         }
 
         async Task<List<ScheduledScaleEvent>> IScaleManager.ListScaleEvents(CancellationToken cancellationToken)
@@ -220,6 +274,18 @@
             var scaleSetInstances = await UpdateScaleSets(configuration.ScaleSetConfigurations, scaleSetScale);
             var cosmosDbScale = CalculateCurrentTotalScaleRequest(events, now, configuration.CosmosDbPrescaleLeadTime);
             var cosmosScaleState = await UpdateCosmosInstances(configuration.CosmosConfigurations, cosmosDbScale);
+
+            var scaleOutStarted = await _scaleOutStarted.TryGet();
+            if (scaleSetScale.HasValue || cosmosDbScale.HasValue)
+            {
+                if (!scaleOutStarted.HasValue)
+                    await _scaleOutStarted.Set(_dateTimeProvider.UtcNow);
+            }
+            else
+            {
+                if (scaleOutStarted.HasValue)
+                    await _scaleOutStarted.TryRemove();
+            }
 
             var nextWakeUpTime = FindNextWakeUpTime(
                 events,

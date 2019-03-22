@@ -34,6 +34,11 @@ namespace Client.Models
         /// scaling.</param>
         /// <param name="profileName">The name of the profile of autoscale
         /// settings which is used to control VMSS scaling.</param>
+        /// <param name="loadBalancerResourceId">The resource id of a load
+        /// balancer of virtual machine scale set.</param>
+        /// <param name="healthPortPort">The port used for health probes by a
+        /// load balancer which should be used to check
+        /// availability of VMs in the scale set.</param>
         /// <param name="requestsPerInstance">The number of requests per VMSS
         /// instance</param>
         /// <param name="minInstanceCount">The minimal number of instances
@@ -42,11 +47,13 @@ namespace Client.Models
         /// defined in the profile.</param>
         /// <param name="reservedInstances">The number (might be partial) of VM
         /// instances which are not used to handle requests.</param>
-        public ScaleSetConfiguration(string name, string autoscaleSettingsResourceId, string profileName, int? requestsPerInstance = default(int?), int? minInstanceCount = default(int?), int? defaultInstanceCount = default(int?), double? reservedInstances = default(double?))
+        public ScaleSetConfiguration(string name, string autoscaleSettingsResourceId, string profileName, string loadBalancerResourceId, int? healthPortPort = default(int?), int? requestsPerInstance = default(int?), int? minInstanceCount = default(int?), int? defaultInstanceCount = default(int?), double? reservedInstances = default(double?))
         {
             Name = name;
             AutoscaleSettingsResourceId = autoscaleSettingsResourceId;
             ProfileName = profileName;
+            LoadBalancerResourceId = loadBalancerResourceId;
+            HealthPortPort = healthPortPort;
             RequestsPerInstance = requestsPerInstance;
             MinInstanceCount = minInstanceCount;
             DefaultInstanceCount = defaultInstanceCount;
@@ -79,6 +86,21 @@ namespace Client.Models
         /// </summary>
         [JsonProperty(PropertyName = "profileName")]
         public string ProfileName { get; set; }
+
+        /// <summary>
+        /// Gets or sets the resource id of a load balancer of virtual machine
+        /// scale set.
+        /// </summary>
+        [JsonProperty(PropertyName = "loadBalancerResourceId")]
+        public string LoadBalancerResourceId { get; set; }
+
+        /// <summary>
+        /// Gets or sets the port used for health probes by a load balancer
+        /// which should be used to check
+        /// availability of VMs in the scale set.
+        /// </summary>
+        [JsonProperty(PropertyName = "healthPortPort")]
+        public int? HealthPortPort { get; set; }
 
         /// <summary>
         /// Gets or sets the number of requests per VMSS instance
@@ -126,6 +148,18 @@ namespace Client.Models
             if (ProfileName == null)
             {
                 throw new ValidationException(ValidationRules.CannotBeNull, "ProfileName");
+            }
+            if (LoadBalancerResourceId == null)
+            {
+                throw new ValidationException(ValidationRules.CannotBeNull, "LoadBalancerResourceId");
+            }
+            if (HealthPortPort > 65535)
+            {
+                throw new ValidationException(ValidationRules.InclusiveMaximum, "HealthPortPort", 65535);
+            }
+            if (HealthPortPort < 1)
+            {
+                throw new ValidationException(ValidationRules.InclusiveMinimum, "HealthPortPort", 1);
             }
             if (RequestsPerInstance > 1000000000)
             {

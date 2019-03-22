@@ -22,9 +22,12 @@ namespace Bullfrog.Api.Controllers
     [Authorize(Policy = AuthenticationPolicies.EventsReaderScope)]
     public class ScaleEventsController : BaseManagementController
     {
+        /// <summary>
+        /// Creates an instance of the <see cref="ScaleEventsController"/>.
+        /// </summary>
+        /// <param name="sfContext">The Service Fabric context.</param>
+        /// <param name="proxyFactory">The actor proxy factory.</param>
         public ScaleEventsController(
-            IHostingEnvironment hostingEnvironment,
-            IBigBrother bigBrother,
             StatelessServiceContext sfContext,
             IActorProxyFactory proxyFactory)
             : base(sfContext, proxyFactory)

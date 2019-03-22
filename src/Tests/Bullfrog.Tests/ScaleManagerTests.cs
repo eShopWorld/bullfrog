@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Client;
@@ -237,6 +236,137 @@ public class ScaleManagerTests : BaseApiTests
             reminders.Should().BeEmpty();
     }
 
+    [Fact, IsLayer0]
+    public void CurrentStateWithoutActiveEvent()
+    {
+        CreateScaleGroup();
+
+        var state = ApiClient.GetCurrentState("sg");
+
+        state.Should().NotBeNull();
+        state.Regions.Should().BeEmpty();
+    }
+
+    [Fact, IsLayer0]
+    public async Task CurrentStateWithActiveEvent()
+    {
+        var start = UtcNow;
+        _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(10);
+        CreateScaleGroup();
+        var scaleEvent = new Client.Models.ScaleEvent
+        {
+            Name = "aa",
+            RegionConfig = new List<RegionScaleValue>
+            {
+                new RegionScaleValue
+                {
+                    Name = "eu",
+                    Scale = 10,
+                }
+            },
+            RequiredScaleAt = start + TimeSpan.FromMinutes(15),
+            StartScaleDownAt = start + TimeSpan.FromHours(2),
+        };
+        ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
+        await AdvanceTimeTo(start + TimeSpan.FromMinutes(30));
+        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("lb", 9999))
+            .ReturnsAsync(2);
+
+        var state = ApiClient.GetCurrentState("sg");
+
+        state.Should().NotBeNull();
+        state.Regions.Should().HaveCount(1);
+        state.Regions[0].Should().BeEquivalentTo(
+            new ScaleRegionState
+            {
+                Name = "eu",
+                WasScaledUpAt = start + TimeSpan.FromMinutes(5),
+                WillScaleDownAt = start + TimeSpan.FromHours(2),
+                Scale = 200,
+            });
+    }
+
+    [Fact, IsLayer0]
+    public async Task CurrentStateWithOverlappingEvents()
+    {
+        var start = UtcNow;
+        _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(10);
+        CreateScaleGroup();
+
+        var events = new[]
+        {
+            (start: 15, end: 30),
+            (start: 35, end: 50),
+            (start: 36, end: 52),
+            (start: 64, end: 80),
+        };
+        foreach (var e in events)
+        {
+            var scaleEvent = new Client.Models.ScaleEvent
+            {
+                Name = "aa",
+                RegionConfig = new List<RegionScaleValue>
+                {
+                    new RegionScaleValue
+                    {
+                        Name = "eu",
+                        Scale = 10,
+                    }
+                },
+                RequiredScaleAt = start + TimeSpan.FromMinutes(e.start),
+                StartScaleDownAt = start + TimeSpan.FromMinutes(e.end),
+            };
+            ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
+        }
+        await AdvanceTimeTo(start + TimeSpan.FromMinutes(24));
+        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("lb", 9999))
+            .ReturnsAsync(2);
+
+        var state = ApiClient.GetCurrentState("sg");
+
+        state.Should().NotBeNull();
+        state.Regions.Should().HaveCount(1);
+        state.Regions[0].Should().BeEquivalentTo(
+            new ScaleRegionState
+            {
+                Name = "eu",
+                WasScaledUpAt = start + TimeSpan.FromMinutes(5),
+                WillScaleDownAt = start + TimeSpan.FromMinutes(52),
+                Scale = 200,
+            });
+    }
+
+    [Fact, IsLayer0]
+    public async Task CurrentStateAfterEventCompleted()
+    {
+        var start = UtcNow;
+        _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(10);
+        CreateScaleGroup();
+        var scaleEvent = new Client.Models.ScaleEvent
+        {
+            Name = "aa",
+            RegionConfig = new List<RegionScaleValue>
+            {
+                new RegionScaleValue
+                {
+                    Name = "eu",
+                    Scale = 10,
+                }
+            },
+            RequiredScaleAt = start + TimeSpan.FromMinutes(15),
+            StartScaleDownAt = start + TimeSpan.FromHours(2),
+        };
+        ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
+        await AdvanceTimeTo(start + TimeSpan.FromHours(3));
+        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("lb", 9999))
+            .ReturnsAsync(2);
+
+        var state = ApiClient.GetCurrentState("sg");
+
+        state.Should().NotBeNull();
+        state.Regions.Should().BeEmpty();
+    }
+
     private void CreateScaleGroup()
     {
         ApiClient.SetDefinition("sg", new Client.Models.ScaleGroupDefinition
@@ -265,6 +395,8 @@ public class ScaleManagerTests : BaseApiTests
                             Name = "s",
                             AutoscaleSettingsResourceId = "ri",
                             ProfileName = "pr",
+                            LoadBalancerResourceId = "lb",
+                            HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,
                             RequestsPerInstance = 100,

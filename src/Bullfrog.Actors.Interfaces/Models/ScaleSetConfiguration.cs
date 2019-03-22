@@ -33,6 +33,19 @@ namespace Bullfrog.Actors.Interfaces.Models
         public string ProfileName { get; set; }
 
         /// <summary>
+        /// The resource id of a load balancer of virtual machine scale set.
+        /// </summary>
+        [Required]
+        public string LoadBalancerResourceId { get; set; }
+
+        /// <summary>
+        /// The port used for health probes by a load balancer which should be used to check
+        /// availability of VMs in the scale set.
+        /// </summary>
+        [Range(1, 0xffff)]
+        public int HealthPortPort { get; set; }
+
+        /// <summary>
         /// The number of requests per VMSS instance
         /// </summary>
         [Range(0, 1000_000_000)]
@@ -112,6 +125,17 @@ namespace Bullfrog.Actors.Interfaces.Models
                 return new ValidationResult(
                     $"The specified default instance count {DefaultInstanceCount} is higher than the profile's max instance count {profile.MaxInstanceCount}",
                     new[] { nameof(DefaultInstanceCount) });
+            }
+
+            try
+            {
+                await azure.MetricDefinitions.ListByResourceAsync(LoadBalancerResourceId);
+            }
+            catch (Exception ex)
+            {
+                return new ValidationResult(
+                                   $"Failed to read metric definitions of {LoadBalancerResourceId}: {ex.Message}",
+                                   new[] { nameof(LoadBalancerResourceId) });
             }
 
             return ValidationResult.Success;

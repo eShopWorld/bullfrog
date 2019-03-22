@@ -31,6 +31,7 @@ namespace Bullfrog.Actors
                 builder.RegisterModule<ServiceFabricModule>();
                 builder.RegisterType<ScaleSetManager>().As<IScaleSetManager>();
                 builder.RegisterType<CosmosManager>().As<ICosmosManager>();
+                builder.RegisterType<ScaleSetMonitor>().As<IScaleSetMonitor>();
 
                 builder.RegisterServiceFabricSupport();
 

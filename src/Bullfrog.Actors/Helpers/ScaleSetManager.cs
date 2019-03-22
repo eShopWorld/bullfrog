@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Bullfrog.Actors.EventModels;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common;
+using Eshopworld.Core;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.Monitor.Fluent;
 
@@ -11,10 +13,12 @@ namespace Bullfrog.Actors.Helpers
     internal class ScaleSetManager : IScaleSetManager
     {
         private readonly IAzure _azure;
+        private readonly IBigBrother _bigBrother;
 
-        public ScaleSetManager(IAzure azure)
+        public ScaleSetManager(IAzure azure, IBigBrother bigBrother)
         {
             _azure = azure;
+            _bigBrother = bigBrother;
         }
 
         public async Task<int> SetScale(int scale, ScaleSetConfiguration configuration, CancellationToken cancellationToken)
@@ -43,12 +47,19 @@ namespace Bullfrog.Actors.Helpers
             Func<IAutoscaleProfile, (int minInstance, int defaultInstances)> newInstanceCounts,
             CancellationToken cancellationToken)
         {
+            var listResourcesOperation = new AzureOperationDurationEvent
+            {
+                Operation = "UpdateAutoscale",
+                ResourceId = configuration.AutoscaleSettingsResourceId,
+            };
+
             await _azure.UpdateAutoscaleProfile(
                 configuration.AutoscaleSettingsResourceId,
                 configuration.ProfileName,
                 newInstanceCounts,
                 forceUpdate: false,
                 cancellationToken);
-       }
+            _bigBrother.Publish(listResourcesOperation);
+        }
     }
 }

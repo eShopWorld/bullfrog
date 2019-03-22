@@ -32,7 +32,7 @@ namespace Client.Models
         /// scaled in to the minimal value.</param>
         /// <param name="scale">The number of requests which can be processed
         /// currently.</param>
-        public ScaleRegionState(string name = default(string), System.DateTimeOffset? wasScaledUpAt = default(System.DateTimeOffset?), System.DateTimeOffset? willScaleDownAt = default(System.DateTimeOffset?), int? scale = default(int?))
+        public ScaleRegionState(string name = default(string), System.DateTimeOffset? wasScaledUpAt = default(System.DateTimeOffset?), System.DateTimeOffset? willScaleDownAt = default(System.DateTimeOffset?), double? scale = default(double?))
         {
             Name = name;
             WasScaledUpAt = wasScaledUpAt;
@@ -70,7 +70,7 @@ namespace Client.Models
         /// currently.
         /// </summary>
         [JsonProperty(PropertyName = "scale")]
-        public int? Scale { get; set; }
+        public double? Scale { get; set; }
 
     }
 }

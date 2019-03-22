@@ -1,13 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using Bullfrog.Actors;
 using Bullfrog.Actors.Helpers;
 using Bullfrog.Common;
 using Client;
 using Eshopworld.Core;
+using Helpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Azure.Management.Fluent;
@@ -44,8 +47,10 @@ public class BaseApiTests
 
     protected DateTimeOffset UtcNow { get; set; } = new DateTimeOffset(2019, 2, 22, 0, 0, 0, 0,
        System.Globalization.CultureInfo.InvariantCulture.Calendar, TimeSpan.Zero);
+    private Mock<IDateTimeProvider> DateTimeProviderMoq;
     protected Mock<IScaleSetManager> ScaleSetManagerMoq { get; private set; }
     protected Mock<ICosmosManager> CosmosManagerMoq { get; private set; }
+    protected Mock<IScaleSetMonitor> ScaleSetMonitorMoq { get; private set; }
 
     private void ConfigureServices(IServiceCollection services)
     {
@@ -57,14 +62,15 @@ public class BaseApiTests
         actorProxyFactory.MissingActor += ActoryProxyFactory_MissingActor;
         services.AddSingleton<IActorProxyFactory>(actorProxyFactory);
 
-        var dateTimeProviderMoq = new Mock<IDateTimeProvider>();
-        dateTimeProviderMoq.SetupGet(o => o.UtcNow).Returns(() => UtcNow);
+        DateTimeProviderMoq = new Mock<IDateTimeProvider>();
+        DateTimeProviderMoq.SetupGet(o => o.UtcNow).Returns(() => UtcNow);
 
         RegisterConfigurationManagerActor(actorProxyFactory);
         
         ScaleSetManagerMoq = new Mock<IScaleSetManager>();
         CosmosManagerMoq = new Mock<ICosmosManager>();
-        RegisterScaleManagerActor("sg", "eu", ScaleSetManagerMoq, CosmosManagerMoq, dateTimeProviderMoq.Object, bigBrotherMoq.Object, actorProxyFactory);
+        ScaleSetMonitorMoq = new Mock<IScaleSetMonitor>();
+        RegisterScaleManagerActor("sg", "eu", ScaleSetManagerMoq, CosmosManagerMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, bigBrotherMoq.Object, actorProxyFactory);
 
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
         autoscaleProfile.SetupGet(p => p.MaxInstanceCount).Returns(10);
@@ -78,6 +84,9 @@ public class BaseApiTests
         autoscaleSettingsMoq.Setup(x => x.Update().UpdateAutoscaleProfile(It.IsAny<string>()).WithMetricBasedScale(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()).Parent().ApplyAsync(It.IsAny<CancellationToken>(), true))
             .ReturnsAsync(autoscaleSettingsMoq.Object);
         services.AddSingleton(azureMoq.Object);
+
+        azureMoq.Setup(x => x.MetricDefinitions.ListByResourceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Mock<IReadOnlyList<IMetricDefinition>>().Object);
 
         var cosmosDbManagerMoq = new Mock<ICosmosDbHelper>();
         cosmosDbManagerMoq.Setup(m => m.ValidateConfiguration(It.IsAny<CosmosDbConfiguration>()))
@@ -94,11 +103,12 @@ public class BaseApiTests
         services.AddSingleton(configuration);
     }
 
-    private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IScaleSetManager> scaleSetManagerMoq, Mock<ICosmosManager> cosmosManagerMoq, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
+    private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IScaleSetManager> scaleSetManagerMoq, Mock<ICosmosManager> cosmosManagerMoq, Mock<IScaleSetMonitor> scaleSetMonitor, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
     {
         ActorBase scaleManagerActorFactory(ActorService service, ActorId id)
-            => new ScaleManager(service, id, scaleSetManagerMoq.Object, cosmosManagerMoq.Object, dateTimeProvider, bigBrother);
-        var scaleManagerSvc = MockActorServiceFactory.CreateActorServiceForActor<ScaleManager>(scaleManagerActorFactory);
+            => new ScaleManager(service, id, scaleSetManagerMoq.Object, cosmosManagerMoq.Object, scaleSetMonitor.Object,  dateTimeProvider, bigBrother);
+        var stateProvider = new MyActorStateProvider(DateTimeProviderMoq.Object);
+        var scaleManagerSvc = MockActorServiceFactory.CreateActorServiceForActor<ScaleManager>(scaleManagerActorFactory, stateProvider);
         var scaleManagerActor = scaleManagerSvc.Activate(new ActorId($"ScaleManager:{scaleGroup}/{region}"));
         scaleManagerActor.InvokeOnActivateAsync().GetAwaiter().GetResult();
         actorProxyFactory.RegisterActor(scaleManagerActor);
@@ -110,7 +120,8 @@ public class BaseApiTests
         var id = new ActorId("configuration");
         ActorBase actorFactory(ActorService service, ActorId actorId)
             => new ConfigurationManager(service, actorId, actoryProxyFactory);
-        var svc = MockActorServiceFactory.CreateActorServiceForActor<ConfigurationManager>(actorFactory);
+        var stateProvider = new MyActorStateProvider(DateTimeProviderMoq.Object);
+        var svc = MockActorServiceFactory.CreateActorServiceForActor<ConfigurationManager>(actorFactory, stateProvider);
         ConfigurationManagerActor = svc.Activate(id);
         ConfigurationManagerActor.InvokeOnActivateAsync().GetAwaiter().GetResult();
         actoryProxyFactory.RegisterActor(ConfigurationManagerActor);
@@ -119,5 +130,50 @@ public class BaseApiTests
     private void ActoryProxyFactory_MissingActor(object sender, MissingActorEventArgs e)
     {
         throw new NotImplementedException(e.Id.ToString());
+    }
+
+    protected async Task AdvanceTimeTo(DateTimeOffset newTime)
+    {
+        while (true)
+        {
+            var reminders = ScaleManagerActors
+                .SelectMany(a => a.Value.GetActorReminders())
+                .Cast<MyActorReminderState>()
+                .ToList();
+
+            if (reminders.Count == 0)
+                break;
+
+            var nextExecution = reminders.Min(r => r.NextExecution);
+            if (newTime < nextExecution)
+                break;
+
+            if (UtcNow <= nextExecution)
+            {
+                UtcNow = nextExecution;
+
+                await RunSingleReminder(nextExecution);
+            }
+        }
+
+        UtcNow = newTime;
+    }
+
+    private async Task RunSingleReminder(DateTimeOffset nextExecution)
+    {
+        foreach (var actor in ScaleManagerActors.Values)
+        {
+            var actorReminders = actor.GetActorReminders();
+
+            var reminders = actor.GetActorReminders()
+                .Cast<MyActorReminderState>()
+                .ToList();
+
+            foreach (var reminder in reminders.Where(r => r.NextExecution == nextExecution))
+            {
+                await ((IRemindable)actor).ReceiveReminderAsync(reminder.Name, reminder.State, reminder.DueTime, reminder.Period);
+                return;
+            }
+        }
     }
 }

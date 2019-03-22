@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Bullfrog.Api.Models
 {
@@ -25,6 +26,16 @@ namespace Bullfrog.Api.Models
         /// <summary>
         /// The number of requests which can be processed currently.
         /// </summary>
-        public int Scale { get; set; }
+        public decimal Scale { get; set; }
+
+        /// <summary>
+        /// The scale which is requested by scale events.
+        /// </summary>
+        public int? RequestedScale { get; set; }
+
+        /// <summary>
+        /// State of each scale set.
+        /// </summary>
+        public IDictionary<string, decimal> ScaleSetState { get; set; }
     }
 }

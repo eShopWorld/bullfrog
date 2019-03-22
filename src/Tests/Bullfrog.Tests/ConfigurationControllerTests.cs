@@ -52,6 +52,8 @@ public class ConfigurationControllerTests : BaseApiTests
                             Name = "aa",
                              AutoscaleSettingsResourceId = "ri",
                             ProfileName = "pr",
+                            LoadBalancerResourceId = "lb",
+                            HealthPortPort = 9999,
                             MinInstanceCount = 1,
                             DefaultInstanceCount = 1,
                             RequestsPerInstance = 20,
