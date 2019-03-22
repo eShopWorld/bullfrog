@@ -185,7 +185,7 @@ namespace Client
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<object>> GetCurrentStateWithHttpMessagesAsync(string scaleGroup, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<ScaleGroupState>> GetCurrentStateWithHttpMessagesAsync(string scaleGroup, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
     }
 }

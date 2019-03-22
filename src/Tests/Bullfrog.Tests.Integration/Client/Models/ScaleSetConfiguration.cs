@@ -40,7 +40,9 @@ namespace Client.Models
         /// defined in the profile.</param>
         /// <param name="defaultInstanceCount">The default number of instances
         /// defined in the profile.</param>
-        public ScaleSetConfiguration(string name, string autoscaleSettingsResourceId, string profileName, int? requestsPerInstance = default(int?), int? minInstanceCount = default(int?), int? defaultInstanceCount = default(int?))
+        /// <param name="reservedInstances">The number (might be partial) of VM
+        /// instances which are not used to handle requests.</param>
+        public ScaleSetConfiguration(string name, string autoscaleSettingsResourceId, string profileName, int? requestsPerInstance = default(int?), int? minInstanceCount = default(int?), int? defaultInstanceCount = default(int?), double? reservedInstances = default(double?))
         {
             Name = name;
             AutoscaleSettingsResourceId = autoscaleSettingsResourceId;
@@ -48,6 +50,7 @@ namespace Client.Models
             RequestsPerInstance = requestsPerInstance;
             MinInstanceCount = minInstanceCount;
             DefaultInstanceCount = defaultInstanceCount;
+            ReservedInstances = reservedInstances;
             CustomInit();
         }
 
@@ -96,6 +99,13 @@ namespace Client.Models
         /// </summary>
         [JsonProperty(PropertyName = "defaultInstanceCount")]
         public int? DefaultInstanceCount { get; set; }
+
+        /// <summary>
+        /// Gets or sets the number (might be partial) of VM instances which
+        /// are not used to handle requests.
+        /// </summary>
+        [JsonProperty(PropertyName = "reservedInstances")]
+        public double? ReservedInstances { get; set; }
 
         /// <summary>
         /// Validate the object.

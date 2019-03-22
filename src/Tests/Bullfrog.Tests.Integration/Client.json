@@ -378,12 +378,6 @@
               "$ref": "#/definitions/ScaleGroupState"
             }
           },
-          "404": {
-            "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/ProblemDetails"
-            }
-          },
           "default": {
             "description": "Unexpected error",
             "schema": {
@@ -517,6 +511,11 @@
           "maximum": 1000,
           "minimum": 1,
           "type": "integer"
+        },
+        "reservedInstances": {
+          "format": "double",
+          "description": "The number (might be partial) of VM instances which are not used to handle requests.",
+          "type": "number"
         }
       }
     },

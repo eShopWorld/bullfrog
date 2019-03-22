@@ -334,7 +334,7 @@ namespace Client
             /// <param name='scaleGroup'>
             /// The name of the scale group.
             /// </param>
-            public static object GetCurrentState(this IBullfrogApi operations, string scaleGroup)
+            public static ScaleGroupState GetCurrentState(this IBullfrogApi operations, string scaleGroup)
             {
                 return operations.GetCurrentStateAsync(scaleGroup).GetAwaiter().GetResult();
             }
@@ -351,7 +351,7 @@ namespace Client
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<object> GetCurrentStateAsync(this IBullfrogApi operations, string scaleGroup, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<ScaleGroupState> GetCurrentStateAsync(this IBullfrogApi operations, string scaleGroup, CancellationToken cancellationToken = default(CancellationToken))
             {
                 using (var _result = await operations.GetCurrentStateWithHttpMessagesAsync(scaleGroup, null, cancellationToken).ConfigureAwait(false))
                 {

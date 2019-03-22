@@ -51,6 +51,13 @@ namespace Bullfrog.Actors.Interfaces.Models
         [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(MinInstanceCount))]
         public int DefaultInstanceCount { get; set; }
 
+        /// <summary>
+        /// The number (might be partial) of VM instances which are not used to handle requests.
+        /// </summary>
+        [ValueIs(ValueComparison.GreaterThanOrEqualTo, Value = 0)]
+        [ValueIs(ValueComparison.LessThanOrEqualTo, PropertyValue = nameof(MinInstanceCount))]
+        public decimal ReservedInstances { get; set; }
+
         #region Validation
 
         IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)

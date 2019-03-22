@@ -19,7 +19,7 @@ namespace Bullfrog.Actors.Helpers
 
         public async Task<int> SetScale(int scale, ScaleSetConfiguration configuration, CancellationToken cancellationToken)
         {
-            var instances = (scale + configuration.RequestsPerInstance - 1)
+            var instances = (int)(scale + (configuration.ReservedInstances + 1) * configuration.RequestsPerInstance - 1)
                 / configuration.RequestsPerInstance;
 
             await UpdateProfile(configuration, profile =>

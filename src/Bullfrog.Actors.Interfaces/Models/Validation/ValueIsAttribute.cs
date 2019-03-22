@@ -8,7 +8,7 @@ namespace Bullfrog.Actors.Interfaces.Models.Validation
     /// <summary>
     /// Value validator.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
     public class ValueIsAttribute : ValidationAttribute
     {
         /// <summary>
