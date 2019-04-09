@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
+using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors.Runtime;
@@ -12,7 +13,7 @@ using Microsoft.ServiceFabric.Actors.Runtime;
 namespace Bullfrog.Actors
 {
     [StatePersistence(StatePersistence.Persisted)]
-    public class ConfigurationManager : Actor, IConfigurationManager
+    public class ConfigurationManager : BullfrogActorBase, IConfigurationManager
     {
         private const string ScaleGroupKeyPrefix = "scaleGroup:";
         private readonly IActorProxyFactory _proxyFactory;
@@ -23,8 +24,11 @@ namespace Bullfrog.Actors
         /// <param name="actorService">The Microsoft.ServiceFabric.Actors.Runtime.ActorService that will host this actor instance.</param>
         /// <param name="actorId">The Microsoft.ServiceFabric.Actors.ActorId for this actor instance.</param>
         /// <param name="proxyFactory">The factory of actor client proxies.</param>
-        public ConfigurationManager(ActorService actorService, ActorId actorId, IActorProxyFactory proxyFactory)
-            : base(actorService, actorId)
+        public ConfigurationManager(ActorService actorService,
+            ActorId actorId,
+            IActorProxyFactory proxyFactory,
+            IBigBrother bigBrother)
+            : base(actorService, actorId, bigBrother)
         {
             _proxyFactory = proxyFactory;
         }

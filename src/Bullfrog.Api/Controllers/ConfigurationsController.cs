@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Fabric;
+using System.Linq;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
+using Eshopworld.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -19,14 +21,18 @@ namespace Bullfrog.Api.Controllers
     [Authorize(Policy = AuthenticationPolicies.AdminScope)]
     public class ConfigurationsController : BaseManagementController
     {
+        private readonly IBigBrother _bigBrother;
+
         /// <summary>
         /// Creates an instance of <see cref="ConfigurationsController"/>.
         /// </summary>
         /// <param name="statelessServiceContext">The instance of <see cref="StatelessServiceContext"/>.</param>
         /// <param name="proxyFactory">A factory used to create actor proxies.</param>
-        public ConfigurationsController(StatelessServiceContext statelessServiceContext, IActorProxyFactory proxyFactory)
+        /// <param name="bigBrother">Telemetry client.</param>
+        public ConfigurationsController(StatelessServiceContext statelessServiceContext, IActorProxyFactory proxyFactory, IBigBrother bigBrother)
             : base(statelessServiceContext, proxyFactory)
         {
+            _bigBrother = bigBrother;
         }
 
         /// <summary>
@@ -70,6 +76,10 @@ namespace Bullfrog.Api.Controllers
         public async Task<ActionResult> SetDefinition(string scaleGroup, ScaleGroupDefinition definition)
         {
             await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, definition, default);
+            _bigBrother.Publish(new Models.EventModels.ConfigurationChanged
+            {
+                ScaleGroup = scaleGroup,
+            });
             return NoContent();
         }
 
@@ -84,6 +94,10 @@ namespace Bullfrog.Api.Controllers
         public async Task<ActionResult> RemoveDefinition(string scaleGroup)
         {
             await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, null, default);
+            _bigBrother.Publish(new Models.EventModels.ScaleGroupDeleted
+            {
+                ScaleGroup = scaleGroup,
+            });
             return NoContent();
         }
 

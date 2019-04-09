@@ -16,7 +16,7 @@
     using Microsoft.ServiceFabric.Actors.Runtime;
 
     [StatePersistence(StatePersistence.Persisted)]
-    public class ScaleManager : Actor, IScaleManager, IRemindable
+    public class ScaleManager : BullfrogActorBase, IScaleManager, IRemindable
     {
         private const string ReminderName = "wakeupReminder";
         private readonly StateItem<List<ManagedScaleEvent>> _events;
@@ -26,7 +26,6 @@
         private readonly ICosmosManager _cosmosManager;
         private readonly IScaleSetMonitor _scaleSetMonitor;
         private readonly IDateTimeProvider _dateTimeProvider;
-        private readonly IBigBrother _bigBrother;
 
         /// <summary>
         /// Initializes a new instance of ScaleManager
@@ -46,7 +45,7 @@
             IScaleSetMonitor scaleSetMonitor,
             IDateTimeProvider dateTimeProvider,
             IBigBrother bigBrother)
-            : base(actorService, actorId)
+            : base(actorService, actorId, bigBrother)
         {
             _events = new StateItem<List<ManagedScaleEvent>>(StateManager, "scaleEvents");
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
@@ -55,7 +54,6 @@
             _cosmosManager = cosmosManager;
             _scaleSetMonitor = scaleSetMonitor;
             _dateTimeProvider = dateTimeProvider;
-            _bigBrother = bigBrother;
         }
 
         /// <summary>
@@ -294,7 +292,7 @@
                 configuration.CosmosDbPrescaleLeadTime);
             await WakeMeAt(nextWakeUpTime);
 
-            _bigBrother.Publish(new ScaleAgentStatus
+            BigBrother.Publish(new ScaleAgentStatus
             {
                 ActorId = Id.ToString(),
                 RequestedScaleSetScale = scaleSetScale,
@@ -326,7 +324,7 @@
                 {
                     scaleSetInstances = -1;
                     var error = new Exception($"Failed to scale {configuration.AutoscaleSettingsResourceId}.", ex);
-                    _bigBrother.Publish(error.ToExceptionEvent());
+                    BigBrother.Publish(error.ToExceptionEvent());
                 }
 
                 scales.Add(new ScaleSetScale
@@ -359,7 +357,7 @@
                 catch (Exception ex)
                 {
                     var error = new Exception($"Failed to scale the {cosmosConfiguration.Name} cosmos instance.", ex);
-                    _bigBrother.Publish(error.ToExceptionEvent());
+                    BigBrother.Publish(error.ToExceptionEvent());
                 }
 
                 cosmosScaleState.Add(new CosmosScale { Name = cosmosConfiguration.Name, RUs = cosmosRUs });

@@ -3,6 +3,8 @@ using Autofac;
 using Eshopworld.Core;
 using Eshopworld.DevOps;
 using Eshopworld.Telemetry;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Configuration;
 using Microsoft.ServiceFabric.Actors.Client;
 
@@ -21,10 +23,14 @@ namespace Bullfrog.Common.DependencyInjection
                    .As<IConfigurationRoot>()
                    .SingleInstance();
 
+            builder.RegisterInstance(new RoleNameTelemetryInitializer("Bullfrog"))
+                .As<ITelemetryInitializer>();
+
             builder.Register<IBigBrother>(c =>
             {
+                var telemetryClient = c.Resolve<TelemetryClient>();
                 var insKey = c.Resolve<IConfigurationRoot>()["BBInstrumentationKey"];
-                return new BigBrother(insKey, insKey);
+                return new BigBrother(telemetryClient, insKey);
             })
             .SingleInstance();
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -9,6 +10,9 @@ using Bullfrog.Actors.Helpers;
 using Bullfrog.Common.DependencyInjection;
 using Castle.Core.Internal;
 using Eshopworld.Telemetry;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
+using Microsoft.Extensions.Configuration;
 
 [assembly: InternalsVisibleTo(InternalsVisible.ToDynamicProxyGenAssembly2)]
 [assembly: InternalsVisibleTo("Bullfrog.Tests")]
@@ -32,6 +36,18 @@ namespace Bullfrog.Actors
                 builder.RegisterType<ScaleSetManager>().As<IScaleSetManager>();
                 builder.RegisterType<CosmosManager>().As<ICosmosManager>();
                 builder.RegisterType<ScaleSetMonitor>().As<IScaleSetMonitor>();
+
+                builder.Register(c =>
+                {
+                    var insKey = c.Resolve<IConfigurationRoot>()["BBInstrumentationKey"];
+                    var configuration = new TelemetryConfiguration(insKey);
+                    foreach (var initializer in c.Resolve<IEnumerable<ITelemetryInitializer>>())
+                    {
+                        configuration.TelemetryInitializers.Add(initializer);
+                    }
+                    return configuration;
+                });
+                builder.RegisterType<TelemetryClient>().SingleInstance();
 
                 builder.RegisterServiceFabricSupport();
 
