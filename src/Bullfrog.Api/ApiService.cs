@@ -47,6 +47,7 @@ namespace Bullfrog.Api
                                     {
                                         services.AddAutofac();
                                         services.AddSingleton(serviceContext);
+                                        services.AddSingleton<ServiceContext>(serviceContext);
                                     })
                                 .UseContentRoot(Directory.GetCurrentDirectory())
                                 .UseStartup<Startup>()
