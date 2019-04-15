@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Fabric;
 using System.Threading;
+using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors.Runtime;
@@ -18,6 +19,8 @@ public abstract class ActorTestsBase<T>
     protected ActorService ActorService { get; }
 
     protected Mock<IActorStateManager> ActorStateManagerMock { get; }
+
+    protected Mock<IBigBrother> BigBrotherMock { get; }
 
     private readonly Dictionary<(Type, ActorId), object> _registeredActorProxies
         = new Dictionary<(Type, ActorId), object>();
@@ -38,6 +41,7 @@ public abstract class ActorTestsBase<T>
         ActorService = new ActorService(serviceContext,
             ActorTypeInformation.Get(typeof(T)),
             stateManagerFactory: (actorBase, stateProvider) => ActorStateManagerMock.Object);
+        BigBrotherMock = MockRepository.Create<IBigBrother>();
     }
 
     protected T GetActor()
@@ -47,7 +51,7 @@ public abstract class ActorTestsBase<T>
 
     protected Mock<T> GetActorMock()
     {
-        return MockRepository.Create<T>(ActorService, new ActorId("conf"), new TestProxyFactory(_registeredActorProxies));
+        return MockRepository.Create<T>(ActorService, new ActorId("conf"), new TestProxyFactory(_registeredActorProxies), BigBrotherMock.Object);
     }
 
     protected void RegisterActorProxy<TActor>(ActorId actorId, TActor proxy)

@@ -20,6 +20,11 @@ namespace Bullfrog.Common.DependencyInjection
             var connectionString = _configuration.GetCosmosAccountConnectionString(configuration.AccountName);
             if (connectionString == null)
             {
+                _configuration.Reload();
+                connectionString = _configuration.GetCosmosAccountConnectionString(configuration.AccountName);
+            }
+            if (connectionString == null)
+            {
                 return new ValidationResult($"A connection string for the account {configuration.AccountName} has not found.", new[] { nameof(configuration.AccountName) });
             }
 

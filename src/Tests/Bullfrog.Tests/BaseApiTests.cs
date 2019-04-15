@@ -51,11 +51,12 @@ public class BaseApiTests
     protected Mock<IScaleSetManager> ScaleSetManagerMoq { get; private set; }
     protected Mock<ICosmosManager> CosmosManagerMoq { get; private set; }
     protected Mock<IScaleSetMonitor> ScaleSetMonitorMoq { get; private set; }
+    protected Mock<IBigBrother> BigBrotherMoq { get; private set; }
 
     private void ConfigureServices(IServiceCollection services)
     {
-        var bigBrotherMoq = new Mock<IBigBrother>();
-        services.AddSingleton(bigBrotherMoq.Object);
+        BigBrotherMoq = new Mock<IBigBrother>();
+        services.AddSingleton(BigBrotherMoq.Object);
 
         services.AddTransient(_ => MockStatelessServiceContextFactory.Default);
         var actorProxyFactory = new MockActorProxyFactory();
@@ -70,7 +71,7 @@ public class BaseApiTests
         ScaleSetManagerMoq = new Mock<IScaleSetManager>();
         CosmosManagerMoq = new Mock<ICosmosManager>();
         ScaleSetMonitorMoq = new Mock<IScaleSetMonitor>();
-        RegisterScaleManagerActor("sg", "eu", ScaleSetManagerMoq, CosmosManagerMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, bigBrotherMoq.Object, actorProxyFactory);
+        RegisterScaleManagerActor("sg", "eu", ScaleSetManagerMoq, CosmosManagerMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
 
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
         autoscaleProfile.SetupGet(p => p.MaxInstanceCount).Returns(10);
@@ -119,7 +120,7 @@ public class BaseApiTests
     {
         var id = new ActorId("configuration");
         ActorBase actorFactory(ActorService service, ActorId actorId)
-            => new ConfigurationManager(service, actorId, actoryProxyFactory);
+            => new ConfigurationManager(service, actorId, actoryProxyFactory, BigBrotherMoq.Object);
         var stateProvider = new MyActorStateProvider(DateTimeProviderMoq.Object);
         var svc = MockActorServiceFactory.CreateActorServiceForActor<ConfigurationManager>(actorFactory, stateProvider);
         ConfigurationManagerActor = svc.Activate(id);

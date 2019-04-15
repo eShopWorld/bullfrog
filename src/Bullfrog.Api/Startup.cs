@@ -67,7 +67,8 @@ namespace Bullfrog.Api
         {
             try
             {
-                services.AddApplicationInsightsTelemetry(_configuration);
+                var internalKey = _configuration["BBInstrumentationKey"];
+                services.AddApplicationInsightsTelemetry(internalKey);
                 services.AddSwaggerGen(c =>
                 {
                     c.SwaggerDoc(BullfrogVersion.LatestApi, new OpenApiInfo { Title = "Bullfrog Api", Version = BullfrogVersion.Bullfrog });
