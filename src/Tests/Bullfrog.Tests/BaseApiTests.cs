@@ -67,7 +67,7 @@ public class BaseApiTests
         DateTimeProviderMoq.SetupGet(o => o.UtcNow).Returns(() => UtcNow);
 
         RegisterConfigurationManagerActor(actorProxyFactory);
-        
+
         ScaleSetManagerMoq = new Mock<IScaleSetManager>();
         CosmosManagerMoq = new Mock<ICosmosManager>();
         ScaleSetMonitorMoq = new Mock<IScaleSetMonitor>();
@@ -107,7 +107,7 @@ public class BaseApiTests
     private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IScaleSetManager> scaleSetManagerMoq, Mock<ICosmosManager> cosmosManagerMoq, Mock<IScaleSetMonitor> scaleSetMonitor, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
     {
         ActorBase scaleManagerActorFactory(ActorService service, ActorId id)
-            => new ScaleManager(service, id, scaleSetManagerMoq.Object, cosmosManagerMoq.Object, scaleSetMonitor.Object,  dateTimeProvider, bigBrother);
+            => new ScaleManager(service, id, scaleSetManagerMoq.Object, cosmosManagerMoq.Object, scaleSetMonitor.Object, dateTimeProvider, bigBrother);
         var stateProvider = new MyActorStateProvider(DateTimeProviderMoq.Object);
         var scaleManagerSvc = MockActorServiceFactory.CreateActorServiceForActor<ScaleManager>(scaleManagerActorFactory, stateProvider);
         var scaleManagerActor = scaleManagerSvc.Activate(new ActorId($"ScaleManager:{scaleGroup}/{region}"));
@@ -164,13 +164,10 @@ public class BaseApiTests
     {
         foreach (var actor in ScaleManagerActors.Values)
         {
-            var actorReminders = actor.GetActorReminders();
-
             var reminders = actor.GetActorReminders()
-                .Cast<MyActorReminderState>()
-                .ToList();
-
-            foreach (var reminder in reminders.Where(r => r.NextExecution == nextExecution))
+                .Cast<MyActorReminderState>();
+            var reminder = reminders.FirstOrDefault(r => r.NextExecution == nextExecution);
+            if (reminder != null)
             {
                 await ((IRemindable)actor).ReceiveReminderAsync(reminder.Name, reminder.State, reminder.DueTime, reminder.Period);
                 return;

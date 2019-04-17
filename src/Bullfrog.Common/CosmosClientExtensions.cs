@@ -29,7 +29,7 @@ namespace Bullfrog.Common
                     throughput = await db.ReadProvisionedThroughputAsync(cancellationToken);
                     if (!throughput.HasValue)
                     {
-                        throw new Exception($"The database {database} does not have provisioned throughput set.");
+                        throw new BullfrogException($"The database {database} does not have provisioned throughput set.");
                     }
                 }
 
@@ -44,7 +44,7 @@ namespace Bullfrog.Common
                     throughput = await cnt.ReadProvisionedThroughputAsync(cancellationToken);
                     if (!throughput.HasValue)
                     {
-                        throw new Exception($"The container {container} in the database {database} does not have provisioned throughput set.");
+                        throw new BullfrogException($"The container {container} in the database {database} does not have provisioned throughput set.");
                     }
                 }
 

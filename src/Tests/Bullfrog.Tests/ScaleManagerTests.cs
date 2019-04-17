@@ -87,7 +87,7 @@ public class ScaleManagerTests : BaseApiTests
     public void AddingEvent()
     {
         CreateScaleGroup();
-        var scaleEvent = new Client.Models.ScaleEvent
+        var scaleEvent = new ScaleEvent
         {
             Name = "aa",
             RegionConfig = new List<RegionScaleValue>

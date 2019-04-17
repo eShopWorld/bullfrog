@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -43,6 +44,7 @@ namespace Bullfrog.Actors
             return Task.CompletedTask;
         }
 
+        [SuppressMessage("Major Code Smell", "S4457:Parameter validation in \"async\"/\"await\" methods should be wrapped", Justification = "Not necessary")]
         async Task IConfigurationManager.ConfigureScaleGroup(string name, ScaleGroupDefinition definition, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(name) || name.Trim() != name)
@@ -76,6 +78,7 @@ namespace Bullfrog.Actors
                 .ToList();
         }
 
+        [SuppressMessage("Major Code Smell", "S4457:Parameter validation in \"async\"/\"await\" methods should be wrapped", Justification = "Not necessary")]
         async Task<ScaleGroupDefinition> IConfigurationManager.GetScaleGroupConfiguration(string name, CancellationToken cancellationToken)
         {
             if (string.IsNullOrWhiteSpace(name) || name.Trim() != name)

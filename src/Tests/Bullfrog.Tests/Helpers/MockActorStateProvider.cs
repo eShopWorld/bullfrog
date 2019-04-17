@@ -55,6 +55,7 @@ namespace Helpers
 
         public void Abort()
         {
+            // not needed
         }
 
         public Task BackupAsync(Func<BackupInfo, CancellationToken, Task<bool>> backupCallback)
@@ -128,7 +129,7 @@ namespace Helpers
                         actorState.Remove(stateChange.StateName);
                         break;
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        throw new NotSupportedException($"Change kind {stateChange.ChangeKind} value is not valid.");
                 }
             }
 

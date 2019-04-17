@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using Autofac;
 using Bullfrog.Api.Helpers;
+using Bullfrog.Common;
 using Bullfrog.Common.DependencyInjection;
 using Eshopworld.Core;
 using Eshopworld.DevOps;
@@ -45,7 +46,7 @@ namespace Bullfrog.Api
                 var internalKey = _configuration["BBInstrumentationKey"];
                 if (string.IsNullOrEmpty(internalKey))
                 {
-                    throw new ApplicationException($"BBIntrumentationKey not found for environment {env.EnvironmentName}");
+                    throw new BullfrogException($"BBIntrumentationKey not found for environment {env.EnvironmentName}");
                 }
 
                 _bb = new BigBrother(internalKey, internalKey);

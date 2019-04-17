@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces;
 using Bullfrog.Api.Models;
 using Eshopworld.Core;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
@@ -22,16 +21,21 @@ namespace Bullfrog.Api.Controllers
     [Authorize(Policy = AuthenticationPolicies.EventsReaderScope)]
     public class ScaleEventsController : BaseManagementController
     {
+        private readonly IBigBrother _bigBrother;
+
         /// <summary>
         /// Creates an instance of the <see cref="ScaleEventsController"/>.
         /// </summary>
         /// <param name="sfContext">The Service Fabric context.</param>
         /// <param name="proxyFactory">The actor proxy factory.</param>
+        /// <param name="bigBrother">The BigBrother instance.</param>
         public ScaleEventsController(
             StatelessServiceContext sfContext,
-            IActorProxyFactory proxyFactory)
+            IActorProxyFactory proxyFactory,
+            IBigBrother bigBrother)
             : base(sfContext, proxyFactory)
         {
+            _bigBrother = bigBrother;
         }
 
         /// <summary>
@@ -57,8 +61,9 @@ namespace Bullfrog.Api.Controllers
             {
                 await Task.WhenAll(tasks);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _bigBrother.Publish(ex);
                 throw;
             }
 
@@ -129,8 +134,9 @@ namespace Bullfrog.Api.Controllers
             {
                 await Task.WhenAll(tasks);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _bigBrother.Publish(ex);
                 throw;
             }
 
@@ -212,10 +218,11 @@ namespace Bullfrog.Api.Controllers
             {
                 await Task.WhenAll(tasks);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // TODO: should we cancel other successfully created scale requests? if not, what should be returned?
                 // TODO: what about partially successful updates?
+                _bigBrother.Publish(ex);
                 throw;
             }
 
@@ -248,8 +255,9 @@ namespace Bullfrog.Api.Controllers
             {
                 await Task.WhenAll(tasks);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _bigBrother.Publish(ex);
                 throw;
             }
 
