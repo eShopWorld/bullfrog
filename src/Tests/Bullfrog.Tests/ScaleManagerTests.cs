@@ -187,7 +187,7 @@ public class ScaleManagerTests : BaseApiTests
     [InlineData(5, 5, -30, 100, 100, 30)]
     [InlineData(5, 5, -60, null, null, null)]
     [InlineData(10, 6, 60, null, null, 50)]
-    [InlineData(20, 20, 10, 100, 100, 70)]
+    [InlineData(20, 20, 10, 100, 100, 10)]
     [InlineData(20, 8, 10, 100, null, 2)]
     [InlineData(9, 20, 10, null, 100, 1)]
     public void ReminderChecks(int scaleSetLeadTime, int cosmosDbLeadTime, int eventOffset, int? scaleSetScale, int? cosmosScale, int? reminder)
