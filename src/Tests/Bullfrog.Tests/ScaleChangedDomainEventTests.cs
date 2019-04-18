@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Bullfrog.DomainEvents;
 using Client;
@@ -24,13 +25,11 @@ public class ScaleChangedDomainEventTests : BaseApiTests
     {
         var start = UtcNow;
         CreateScaleGroup();
-
         var events = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>();
         BigBrotherMoq.Setup(x => x.Publish(It.IsAny<ScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
             .Callback<ScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, sc.Type)));
         ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("lb", 9999))
             .ReturnsAsync(() => UtcNow >= start.AddMinutes(30) ? 1 : 0);
-
         var eventId = AddEvent(start.AddMinutes(30), start.AddMinutes(40), 10);
 
         await AdvanceTimeTo(start + TimeSpan.FromHours(1));
@@ -45,9 +44,44 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         events.Should().BeEquivalentTo(expected);
     }
 
+    [Fact, IsLayer0]
+    public async Task MultipleEvent()
+    {
+        var start = UtcNow;
+        CreateScaleGroup();
+        var events = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>();
+        BigBrotherMoq.Setup(x => x.Publish(It.IsAny<ScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
+            .Callback<ScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, sc.Type)));
+        var availableVMs = new (DateTimeOffset When, int Number)[]
+        {
+            (start, 0),
+            (start.AddMinutes(18), 1),
+            (start.AddMinutes(21), 2),
+        };
+        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("lb", 9999))
+            .ReturnsAsync(() => availableVMs.Last(x => x.When <= UtcNow).Number);
+        var eventId1 = AddEvent(start.AddMinutes(20), start.AddMinutes(40), 80);
+        var eventId2 = AddEvent(start.AddMinutes(22), start.AddMinutes(50), 30);
+
+        await AdvanceTimeTo(start + TimeSpan.FromHours(1));
+
+        var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
+        {
+            (start.AddMinutes(20).Add(-MaxLeadTime), eventId1, ScaleChangeType.ScaleOutStarted),
+            (start.AddMinutes(20), eventId1, ScaleChangeType.ScaleOutComplete),
+            (start.AddMinutes(40), eventId1, ScaleChangeType.ScaleInStarted),
+            (start.AddMinutes(40), eventId1, ScaleChangeType.ScaleInComplete),
+            (start.AddMinutes(22).Add(-MaxLeadTime), eventId2, ScaleChangeType.ScaleOutStarted),
+            (start.AddMinutes(21), eventId2, ScaleChangeType.ScaleOutComplete),
+            (start.AddMinutes(50), eventId2, ScaleChangeType.ScaleInStarted),
+            (start.AddMinutes(50), eventId2, ScaleChangeType.ScaleInComplete),
+        };
+        events.Should().BeEquivalentTo(expected);
+    }
+
     private Guid AddEvent(DateTimeOffset starts, DateTimeOffset ends, int scale)
     {
-        var scaleEvent = new Client.Models.ScaleEvent
+        var scaleEvent = new ScaleEvent
         {
             Name = "aa",
             RegionConfig = new List<RegionScaleValue>
