@@ -33,7 +33,7 @@ namespace Bullfrog.Common
             var autoscale = await azure.AutoscaleSettings.ValidateAccessAsync(autoscaleSettingsResourceId, cancellationToken);
             if (!autoscale.Profiles.TryGetValue(profileName, out var profile))
             {
-                throw new Exception($"The profile {profileName} has not been found in the autoscale settings {autoscaleSettingsResourceId}.");
+                throw new BullfrogException($"The profile {profileName} has not been found in the autoscale settings {autoscaleSettingsResourceId}.");
             }
 
             var (minInstance, defaultInstances) = instanceCalculator(profile);
@@ -70,11 +70,11 @@ namespace Bullfrog.Common
                 var message = ex.Response != null && ex.Response.StatusCode == System.Net.HttpStatusCode.NotFound
                     ? $"The autoscale settings {resourceId} has not been found"
                     : $"Failed to access autoscale settings {resourceId}: {ex.Message}";
-                throw new Exception(message);
+                throw new BullfrogException(message);
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to access autoscale settings {resourceId}: {ex.Message}");
+                throw new BullfrogException($"Failed to access autoscale settings {resourceId}: {ex.Message}");
             }
         }
     }

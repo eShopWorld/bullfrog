@@ -21,7 +21,7 @@ namespace Bullfrog.Actors.Helpers
             _bigBrother = bigBrother;
         }
 
-        public async Task<int> SetScale(int scale, ScaleSetConfiguration configuration, CancellationToken cancellationToken)
+        public async Task<int> SetScale(int scale, ScaleSetConfiguration configuration, CancellationToken cancellationToken = default)
         {
             var instances = (int)(scale + (configuration.ReservedInstances + 1) * configuration.RequestsPerInstance - 1)
                 / configuration.RequestsPerInstance;
@@ -36,7 +36,7 @@ namespace Bullfrog.Actors.Helpers
             return instances;
         }
 
-        public async Task<int> Reset(ScaleSetConfiguration configuration, CancellationToken cancellationToken)
+        public async Task<int> Reset(ScaleSetConfiguration configuration, CancellationToken cancellationToken = default)
         {
             await UpdateProfile(configuration, profile => (configuration.MinInstanceCount, configuration.DefaultInstanceCount), cancellationToken);
             return configuration.MinInstanceCount;

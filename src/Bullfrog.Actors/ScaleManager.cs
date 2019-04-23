@@ -11,6 +11,7 @@
     using Bullfrog.Actors.Interfaces.Models;
     using Bullfrog.Actors.Models;
     using Bullfrog.Common;
+    using Bullfrog.DomainEvents;
     using Eshopworld.Core;
     using Microsoft.ServiceFabric.Actors;
     using Microsoft.ServiceFabric.Actors.Runtime;
@@ -22,6 +23,7 @@
         private readonly StateItem<List<ManagedScaleEvent>> _events;
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
         private readonly StateItem<DateTimeOffset> _scaleOutStarted;
+        private readonly StateItem<Dictionary<Guid, ScaleChangeType>> _reportedEventStates;
         private readonly IScaleSetManager _scaleSetManager;
         private readonly ICosmosManager _cosmosManager;
         private readonly IScaleSetMonitor _scaleSetMonitor;
@@ -50,6 +52,7 @@
             _events = new StateItem<List<ManagedScaleEvent>>(StateManager, "scaleEvents");
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
             _scaleOutStarted = new StateItem<DateTimeOffset>(StateManager, "scaleOutStarted");
+            _reportedEventStates = new StateItem<Dictionary<Guid, ScaleChangeType>>(StateManager, "reportedEventStates");
             _scaleSetManager = scaleSetManager;
             _cosmosManager = cosmosManager;
             _scaleSetMonitor = scaleSetMonitor;
@@ -117,13 +120,7 @@
                 .Where(e => e.GetState(now) == ScaleEventState.Executing)
                 .Sum(e => (int?)e.Scale);
 
-            var scaleSetStates = new Dictionary<string, decimal>();
-            foreach (var scaleSet in configuration.Value.ScaleSetConfigurations)
-            {
-                var workingInstances = await _scaleSetMonitor.GetNumberOfWorkingInstances(scaleSet.LoadBalancerResourceId, scaleSet.HealthPortPort);
-                var usableInstances = Math.Max(workingInstances - scaleSet.ReservedInstances, 0);
-                scaleSetStates.Add(scaleSet.Name, usableInstances * scaleSet.RequestsPerInstance);
-            }
+            var scaleSetStates = await ReadScaleSetScales(configuration.Value);
 
             var leadTime = configuration.Value.ScaleSetPrescaleLeadTime;
             if (leadTime < configuration.Value.CosmosDbPrescaleLeadTime)
@@ -182,7 +179,7 @@
             if (!configuration.HasValue)
             {
                 // TODO: return something instead of throwing an exception
-                throw new Exception($"The scale manager {Id} is not active");
+                throw new BullfrogException($"The scale manager {Id} is not active");
             }
 
             var events = await _events.Get();
@@ -285,6 +282,14 @@
                     await _scaleOutStarted.TryRemove();
             }
 
+            var maxLeadTime = configuration.ScaleSetPrescaleLeadTime < configuration.CosmosDbPrescaleLeadTime
+                ? configuration.CosmosDbPrescaleLeadTime
+                : configuration.ScaleSetPrescaleLeadTime;
+            var currentScale = configuration.ScaleSetConfigurations.Any()
+                ? (await ReadScaleSetScales(configuration)).Values.Max(v => (int)v)
+                : CalculateCurrentTotalScaleRequest(events, now, TimeSpan.Zero) ?? 0;
+            await ReportEventState(events, now, maxLeadTime, currentScale);
+
             var nextWakeUpTime = FindNextWakeUpTime(
                 events,
                 now,
@@ -301,6 +306,56 @@
                 ScaleSets = scaleSetInstances,
                 Cosmos = cosmosScaleState,
             });
+        }
+
+        private async Task ReportEventState(List<ManagedScaleEvent> events, DateTimeOffset now, TimeSpan leadTime, int currentScale)
+        {
+            var activeEvents = events.Where(e => e.IsActive(now, leadTime)).ToHashSet();
+            var executingEvents = events.Where(e => e.IsActive(now, TimeSpan.Zero)).ToHashSet();
+            var reportedEventStates = (await _reportedEventStates.TryGet()).Value ?? new Dictionary<Guid, ScaleChangeType>();
+            var statesChanged = false;
+
+            void ChangeState(Guid id, ScaleChangeType type)
+            {
+                reportedEventStates[id] = type;
+                statesChanged = true;
+                BigBrother.Publish(new ScaleChange
+                {
+                    Id = id,
+                    Type = type,
+                });
+            }
+
+            foreach (var ev in activeEvents.Where(e => !reportedEventStates.ContainsKey(e.Id)))
+            {
+                ChangeState(ev.Id, ScaleChangeType.ScaleOutStarted);
+            }
+
+
+            if (activeEvents.Sum(e => e.Scale) <= currentScale)
+            {
+                foreach (var ev in activeEvents.Where(e => reportedEventStates[e.Id] == ScaleChangeType.ScaleOutStarted))
+                {
+                    ChangeState(ev.Id, ScaleChangeType.ScaleOutComplete);
+                }
+            }
+            else if (executingEvents.Sum(e => e.Scale) <= currentScale)
+            {
+                foreach (var ev in executingEvents.Where(e => reportedEventStates[e.Id] == ScaleChangeType.ScaleOutStarted))
+                {
+                    ChangeState(ev.Id, ScaleChangeType.ScaleOutComplete);
+                }
+            }
+
+            foreach (var key in reportedEventStates.Keys.Except(activeEvents.Select(e => e.Id)).ToList())
+            {
+                ChangeState(key, ScaleChangeType.ScaleInStarted);
+                ChangeState(key, ScaleChangeType.ScaleInComplete);
+                reportedEventStates.Remove(key);
+            }
+
+            if (statesChanged)
+                await _reportedEventStates.Set(reportedEventStates);
         }
 
         private async Task<List<ScaleSetScale>> UpdateScaleSets(List<ScaleSetConfiguration> configurations, int? expectedRequestsNumber)
@@ -394,10 +449,23 @@
             }
         }
 
+        private async Task<Dictionary<string, decimal>> ReadScaleSetScales(ScaleManagerConfiguration configuration)
+        {
+            var scaleSetStates = new Dictionary<string, decimal>();
+            foreach (var scaleSet in configuration.ScaleSetConfigurations)
+            {
+                var workingInstances = await _scaleSetMonitor.GetNumberOfWorkingInstances(scaleSet.LoadBalancerResourceId, scaleSet.HealthPortPort);
+                var usableInstances = Math.Max(workingInstances - scaleSet.ReservedInstances, 0);
+                scaleSetStates.Add(scaleSet.Name, usableInstances * scaleSet.RequestsPerInstance);
+            }
+
+            return scaleSetStates;
+        }
+
         private static int? CalculateCurrentTotalScaleRequest(IEnumerable<ManagedScaleEvent> events, DateTimeOffset now, TimeSpan leadTime)
         {
             int? total = null;
-            foreach (var ev in events.Where(e => e.RequiredScaleAt - leadTime <= now && now < e.StartScaleDownAt))
+            foreach (var ev in events.Where(e => e.IsActive(now, leadTime)))
             {
                 total = checked(ev.Scale + total.GetValueOrDefault());
             }
@@ -407,7 +475,7 @@
 
         private static DateTimeOffset? FindNextWakeUpTime(IEnumerable<ManagedScaleEvent> events, DateTimeOffset now, TimeSpan scaleSetLeadTime, TimeSpan cosmosDbLeadTime)
         {
-            var nextTime = events.SelectMany(ev => new[] { ev.StartScaleDownAt, ev.RequiredScaleAt - cosmosDbLeadTime, ev.RequiredScaleAt - scaleSetLeadTime })
+            var nextTime = events.SelectMany(ev => new[] { ev.StartScaleDownAt, ev.RequiredScaleAt, ev.RequiredScaleAt - cosmosDbLeadTime, ev.RequiredScaleAt - scaleSetLeadTime })
                 .Where(t => t > now)
                 .Cast<DateTimeOffset?>()
                 .Min();

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces;
 using Bullfrog.Api.Models;
 using Eshopworld.Core;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
@@ -22,16 +21,21 @@ namespace Bullfrog.Api.Controllers
     [Authorize(Policy = AuthenticationPolicies.EventsReaderScope)]
     public class ScaleGroupsController : BaseManagementController
     {
+        private readonly IBigBrother _bigBrother;
+
         /// <summary>
         /// Creates an instance of <see cref="ScaleGroupsController"/>.
         /// </summary>
         /// <param name="sfContext">The stateless service context.</param>
         /// <param name="proxyFactory">A factory used to create actor proxies.</param>
+        /// <param name="bigBrother">The BigBrother instance.</param>
         public ScaleGroupsController(
             StatelessServiceContext sfContext,
-            IActorProxyFactory proxyFactory)
+            IActorProxyFactory proxyFactory,
+            IBigBrother bigBrother)
             : base(sfContext, proxyFactory)
         {
+            _bigBrother = bigBrother;
         }
 
         /// <summary>
@@ -57,8 +61,9 @@ namespace Bullfrog.Api.Controllers
             {
                 await Task.WhenAll(tasks);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                _bigBrother.Publish(ex);
                 throw;
             }
 

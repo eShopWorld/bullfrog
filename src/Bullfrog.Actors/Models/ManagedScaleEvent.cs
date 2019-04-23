@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics;
 using Bullfrog.Actors.Interfaces.Models;
 
 namespace Bullfrog.Actors.Models
 {
+    [DebuggerDisplay("{Id} {Scale} {RequiredScaleAt} {StartScaleDownAt}")]
     public class ManagedScaleEvent
     {
         public Guid Id { get; set; }
@@ -16,6 +18,9 @@ namespace Bullfrog.Actors.Models
         public DateTimeOffset StartScaleDownAt { get; set; }
 
         public int Scale { get; set; }
+
+        public bool IsActive(DateTimeOffset now, TimeSpan leadTime)
+            => RequiredScaleAt - leadTime <= now && now < StartScaleDownAt;
 
         public ScaleEventState GetState(DateTimeOffset now)
         {

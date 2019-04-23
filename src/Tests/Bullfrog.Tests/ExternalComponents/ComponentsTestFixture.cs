@@ -11,7 +11,7 @@ using Xunit;
 
 namespace ExternalComponents
 {
-    public class ComponentsTestFixture : IDisposable
+    public sealed class ComponentsTestFixture : IDisposable
     {
         private readonly IConfigurationRoot _configuration;
         private readonly HashSet<string> _temporaryCosmosDatabases = new HashSet<string>();
