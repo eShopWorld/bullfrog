@@ -66,6 +66,24 @@ namespace Bullfrog.Actors
 
             if (definition != null)
             {
+                // Handle creation or updating of a scale group.
+                if (existingGroups.HasValue)
+                {
+                    // Make sure no existing region used by a scale event is removed.
+                    var removedRegions = existingGroups.Value.Regions.Select(r => r.RegionName)
+                        .Except(definition.Regions.Select(r => r.RegionName))
+                        .ToHashSet();
+
+                    if (removedRegions.Any())
+                    {
+                        var events = (await GetScaleEventsStateItem(name).Get());
+                        if (events.Any(e => e.Value.Regions.Keys.Intersect(removedRegions).Any()))
+                        {
+                            throw new InvalidRequestException("The region used by scale events cannot be removed.");
+                        }
+                    }
+                }
+
                 await UpdateScaleManagers(name, definition, existingGroups);
                 await state.Set(definition, default);
             }
@@ -108,7 +126,10 @@ namespace Bullfrog.Actors
             var list = await scaleEventsState.Get();
             if (list.TryGetValue(eventId, out var scaleEvent))
             {
-                return scaleEvent.ToScheduledScaleEvent(eventId, scaleGroupDefinition.MaxLeadTime);
+                var leadTime = scaleEvent.Regions
+                 .Select(r => scaleGroupDefinition.Regions.First(sr => sr.RegionName == r.Key).ScaleSetPrescaleLeadTime)
+                 .Max();
+                return scaleEvent.ToScheduledScaleEvent(eventId, leadTime);
             }
             else
             {
@@ -121,8 +142,12 @@ namespace Bullfrog.Actors
             var scaleGroupDefinition = await GetScaleGroupDefinition(scaleGroup);
             var scaleEventsState = GetScaleEventsStateItem(scaleGroup);
             var list = await scaleEventsState.Get();
-            var maxLeadTime = scaleGroupDefinition.MaxLeadTime;
-            return list.Select(r => r.Value.ToScheduledScaleEvent(r.Key, maxLeadTime)).ToList();
+            return list.Select(r => r.Value.ToScheduledScaleEvent(r.Key, LeadTime(r.Value))).ToList();
+
+            TimeSpan LeadTime(RegisteredScaleEvent scaleEvent) => scaleEvent.Regions
+                .Select(r => scaleGroupDefinition.Regions.First(sr => sr.RegionName == r.Key).ScaleSetPrescaleLeadTime)
+                .Max();
+
         }
 
         async Task<(SaveScaleEventResult result, ScheduledScaleEvent scheduledScaleEvent)> IConfigurationManager.SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent)
@@ -197,7 +222,19 @@ namespace Bullfrog.Actors
 
             await eventsListAccessor.Set(scaleEvents);
 
-            return (saveResult, null);
+            var leadTime = scaleEvent.RegionConfig
+                .Select(r => scaleGroupDefinition.Regions.First(sr => sr.RegionName == r.Name).ScaleSetPrescaleLeadTime)
+                .Max();
+            var scheduledScaleEvent = new ScheduledScaleEvent
+            {
+                EstimatedScaleUpAt = scaleEvent.RequiredScaleAt - leadTime,
+                Id = eventId,
+                Name = scaleEvent.Name,
+                RegionConfig = scaleEvent.RegionConfig,
+                RequiredScaleAt = scaleEvent.RequiredScaleAt,
+                StartScaleDownAt = scaleEvent.StartScaleDownAt,
+            };
+            return (saveResult, scheduledScaleEvent);
         }
 
         async Task<ScaleEventState> IConfigurationManager.DeleteScaleEvent(string scaleGroup, Guid eventId)

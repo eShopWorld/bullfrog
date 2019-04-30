@@ -40,9 +40,6 @@ namespace Client
         ServiceClientCredentials Credentials { get; }
 
 
-        /// <summary>
-        /// Lists names of all configured scale groups.
-        /// </summary>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
         /// </param>
@@ -51,11 +48,7 @@ namespace Client
         /// </param>
         Task<HttpOperationResponse<IList<string>>> ListScaleGroupsWithHttpMessagesAsync(Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <summary>
-        /// Gets the definition of the specified scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The scale group name.
         /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
@@ -65,11 +58,7 @@ namespace Client
         /// </param>
         Task<HttpOperationResponse<ScaleGroupDefinition>> GetDefinitionWithHttpMessagesAsync(string scaleGroup, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <summary>
-        /// Configures the specified scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The name of the scale group to configure.
         /// </param>
         /// <param name='body'>
         /// </param>
@@ -81,11 +70,7 @@ namespace Client
         /// </param>
         Task<HttpOperationResponse> SetDefinitionWithHttpMessagesAsync(string scaleGroup, ScaleGroupDefinition body = default(ScaleGroupDefinition), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <summary>
-        /// Removes the scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The name of the scale group.
         /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
@@ -95,9 +80,6 @@ namespace Client
         /// </param>
         Task<HttpOperationResponse> RemoveDefinitionWithHttpMessagesAsync(string scaleGroup, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <summary>
-        /// probe endpoint
-        /// </summary>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
         /// </param>
@@ -106,11 +88,7 @@ namespace Client
         /// </param>
         Task<HttpOperationResponse> GetWithHttpMessagesAsync(Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <summary>
-        /// Lists all scheduled events from the specified scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The name of the scale group.
         /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
@@ -120,14 +98,9 @@ namespace Client
         /// </param>
         Task<HttpOperationResponse<IList<ScheduledScaleEvent>>> ListScheduledEventsWithHttpMessagesAsync(string scaleGroup, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <summary>
-        /// Gets the specified scale event.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The scale group which own the event.
         /// </param>
         /// <param name='eventId'>
-        /// The scale event ID.
         /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
@@ -137,14 +110,9 @@ namespace Client
         /// </param>
         Task<HttpOperationResponse<ScheduledScaleEvent>> GetScheduledEventWithHttpMessagesAsync(string scaleGroup, System.Guid eventId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <summary>
-        /// Creates or updates the scale event.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The scale group.
         /// </param>
         /// <param name='eventId'>
-        /// The scale event ID.
         /// </param>
         /// <param name='body'>
         /// </param>
@@ -154,16 +122,11 @@ namespace Client
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<ScaleEvent>> SaveScaleEventWithHttpMessagesAsync(string scaleGroup, System.Guid eventId, ScaleEvent body = default(ScaleEvent), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<ScheduledScaleEvent>> SaveScaleEventWithHttpMessagesAsync(string scaleGroup, System.Guid eventId, ScaleEvent body = default(ScaleEvent), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <summary>
-        /// Deletes the scale event.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The scale group which owns the event.
         /// </param>
         /// <param name='eventId'>
-        /// The ID of the event to delete.
         /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
@@ -173,11 +136,7 @@ namespace Client
         /// </param>
         Task<HttpOperationResponse> DeleteScaleEventWithHttpMessagesAsync(string scaleGroup, System.Guid eventId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
-        /// <summary>
-        /// Gets the current state of the specified scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The name of the scale group.
         /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.

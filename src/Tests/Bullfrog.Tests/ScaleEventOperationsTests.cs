@@ -59,7 +59,7 @@ public class ScaleEventOperationsTests : BaseApiTests
         var eventId = Guid.NewGuid();
         await AdvanceTimeTo(UtcNow.AddHours(2));
 
-        Func<Task<HttpOperationResponse<ScaleEvent>>> call =
+        Func<Task<HttpOperationResponse<ScheduledScaleEvent>>> call =
             () => ApiClient.SaveScaleEventWithHttpMessagesAsync("sg", eventId, NewScaleEvent(-2, -1));
 
         var response = call.Should().Throw<ProblemDetailsException>()
@@ -85,7 +85,7 @@ public class ScaleEventOperationsTests : BaseApiTests
         var eventId = Guid.NewGuid();
         await AdvanceTimeTo(UtcNow.AddHours(2));
 
-        Func<Task<HttpOperationResponse<ScaleEvent>>> call =
+        Func<Task<HttpOperationResponse<ScheduledScaleEvent>>> call =
             () => ApiClient.SaveScaleEventWithHttpMessagesAsync("sg", eventId, NewScaleEvent(-2, -1, new[] { ("r1", 30) }));
 
         var response = call.Should().Throw<ProblemDetailsException>()

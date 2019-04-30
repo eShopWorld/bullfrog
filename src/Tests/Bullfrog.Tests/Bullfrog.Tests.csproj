@@ -29,6 +29,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Bullfrog.Actors\Bullfrog.Actors.csproj" />
     <ProjectReference Include="..\..\Bullfrog.Api\Bullfrog.Api.csproj" />
+    <ProjectReference Include="..\Bullfrog.Client\Bullfrog.Client.csproj" />
   </ItemGroup>
 
   <ItemGroup>

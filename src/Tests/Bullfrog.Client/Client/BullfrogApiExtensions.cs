@@ -13,14 +13,14 @@ namespace Client
     using System.Threading.Tasks;
 
     /// <summary>
-    /// Extension methods for MyAPI.
+    /// Extension methods for BullfrogApi.
     /// </summary>
-    public static partial class MyAPIExtensions
+    public static partial class BullfrogApiExtensions
     {
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
-            public static IList<string> ListScaleGroups(this IMyAPI operations)
+            public static IList<string> ListScaleGroups(this IBullfrogApi operations)
             {
                 return operations.ListScaleGroupsAsync().GetAwaiter().GetResult();
             }
@@ -31,7 +31,7 @@ namespace Client
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<IList<string>> ListScaleGroupsAsync(this IMyAPI operations, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<IList<string>> ListScaleGroupsAsync(this IBullfrogApi operations, CancellationToken cancellationToken = default(CancellationToken))
             {
                 using (var _result = await operations.ListScaleGroupsWithHttpMessagesAsync(null, cancellationToken).ConfigureAwait(false))
                 {
@@ -44,7 +44,7 @@ namespace Client
             /// </param>
             /// <param name='scaleGroup'>
             /// </param>
-            public static ScaleGroupDefinition GetDefinition(this IMyAPI operations, string scaleGroup)
+            public static ScaleGroupDefinition GetDefinition(this IBullfrogApi operations, string scaleGroup)
             {
                 return operations.GetDefinitionAsync(scaleGroup).GetAwaiter().GetResult();
             }
@@ -57,7 +57,7 @@ namespace Client
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<ScaleGroupDefinition> GetDefinitionAsync(this IMyAPI operations, string scaleGroup, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<ScaleGroupDefinition> GetDefinitionAsync(this IBullfrogApi operations, string scaleGroup, CancellationToken cancellationToken = default(CancellationToken))
             {
                 using (var _result = await operations.GetDefinitionWithHttpMessagesAsync(scaleGroup, null, cancellationToken).ConfigureAwait(false))
                 {
@@ -72,7 +72,7 @@ namespace Client
             /// </param>
             /// <param name='body'>
             /// </param>
-            public static void SetDefinition(this IMyAPI operations, string scaleGroup, ScaleGroupDefinition body = default(ScaleGroupDefinition))
+            public static void SetDefinition(this IBullfrogApi operations, string scaleGroup, ScaleGroupDefinition body = default(ScaleGroupDefinition))
             {
                 operations.SetDefinitionAsync(scaleGroup, body).GetAwaiter().GetResult();
             }
@@ -87,7 +87,7 @@ namespace Client
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task SetDefinitionAsync(this IMyAPI operations, string scaleGroup, ScaleGroupDefinition body = default(ScaleGroupDefinition), CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task SetDefinitionAsync(this IBullfrogApi operations, string scaleGroup, ScaleGroupDefinition body = default(ScaleGroupDefinition), CancellationToken cancellationToken = default(CancellationToken))
             {
                 (await operations.SetDefinitionWithHttpMessagesAsync(scaleGroup, body, null, cancellationToken).ConfigureAwait(false)).Dispose();
             }
@@ -97,7 +97,7 @@ namespace Client
             /// </param>
             /// <param name='scaleGroup'>
             /// </param>
-            public static void RemoveDefinition(this IMyAPI operations, string scaleGroup)
+            public static void RemoveDefinition(this IBullfrogApi operations, string scaleGroup)
             {
                 operations.RemoveDefinitionAsync(scaleGroup).GetAwaiter().GetResult();
             }
@@ -110,7 +110,7 @@ namespace Client
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task RemoveDefinitionAsync(this IMyAPI operations, string scaleGroup, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task RemoveDefinitionAsync(this IBullfrogApi operations, string scaleGroup, CancellationToken cancellationToken = default(CancellationToken))
             {
                 (await operations.RemoveDefinitionWithHttpMessagesAsync(scaleGroup, null, cancellationToken).ConfigureAwait(false)).Dispose();
             }
@@ -118,7 +118,7 @@ namespace Client
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
-            public static void Get(this IMyAPI operations)
+            public static void Get(this IBullfrogApi operations)
             {
                 operations.GetAsync().GetAwaiter().GetResult();
             }
@@ -129,7 +129,7 @@ namespace Client
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task GetAsync(this IMyAPI operations, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task GetAsync(this IBullfrogApi operations, CancellationToken cancellationToken = default(CancellationToken))
             {
                 (await operations.GetWithHttpMessagesAsync(null, cancellationToken).ConfigureAwait(false)).Dispose();
             }
@@ -139,7 +139,7 @@ namespace Client
             /// </param>
             /// <param name='scaleGroup'>
             /// </param>
-            public static IList<ScheduledScaleEvent> ListScheduledEvents(this IMyAPI operations, string scaleGroup)
+            public static IList<ScheduledScaleEvent> ListScheduledEvents(this IBullfrogApi operations, string scaleGroup)
             {
                 return operations.ListScheduledEventsAsync(scaleGroup).GetAwaiter().GetResult();
             }
@@ -152,7 +152,7 @@ namespace Client
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<IList<ScheduledScaleEvent>> ListScheduledEventsAsync(this IMyAPI operations, string scaleGroup, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<IList<ScheduledScaleEvent>> ListScheduledEventsAsync(this IBullfrogApi operations, string scaleGroup, CancellationToken cancellationToken = default(CancellationToken))
             {
                 using (var _result = await operations.ListScheduledEventsWithHttpMessagesAsync(scaleGroup, null, cancellationToken).ConfigureAwait(false))
                 {
@@ -167,7 +167,7 @@ namespace Client
             /// </param>
             /// <param name='eventId'>
             /// </param>
-            public static ScheduledScaleEvent GetScheduledEvent(this IMyAPI operations, string scaleGroup, System.Guid eventId)
+            public static ScheduledScaleEvent GetScheduledEvent(this IBullfrogApi operations, string scaleGroup, System.Guid eventId)
             {
                 return operations.GetScheduledEventAsync(scaleGroup, eventId).GetAwaiter().GetResult();
             }
@@ -182,7 +182,7 @@ namespace Client
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<ScheduledScaleEvent> GetScheduledEventAsync(this IMyAPI operations, string scaleGroup, System.Guid eventId, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<ScheduledScaleEvent> GetScheduledEventAsync(this IBullfrogApi operations, string scaleGroup, System.Guid eventId, CancellationToken cancellationToken = default(CancellationToken))
             {
                 using (var _result = await operations.GetScheduledEventWithHttpMessagesAsync(scaleGroup, eventId, null, cancellationToken).ConfigureAwait(false))
                 {
@@ -199,7 +199,7 @@ namespace Client
             /// </param>
             /// <param name='body'>
             /// </param>
-            public static ScaleEvent SaveScaleEvent(this IMyAPI operations, string scaleGroup, System.Guid eventId, ScaleEvent body = default(ScaleEvent))
+            public static ScheduledScaleEvent SaveScaleEvent(this IBullfrogApi operations, string scaleGroup, System.Guid eventId, ScaleEvent body = default(ScaleEvent))
             {
                 return operations.SaveScaleEventAsync(scaleGroup, eventId, body).GetAwaiter().GetResult();
             }
@@ -216,7 +216,7 @@ namespace Client
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<ScaleEvent> SaveScaleEventAsync(this IMyAPI operations, string scaleGroup, System.Guid eventId, ScaleEvent body = default(ScaleEvent), CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<ScheduledScaleEvent> SaveScaleEventAsync(this IBullfrogApi operations, string scaleGroup, System.Guid eventId, ScaleEvent body = default(ScaleEvent), CancellationToken cancellationToken = default(CancellationToken))
             {
                 using (var _result = await operations.SaveScaleEventWithHttpMessagesAsync(scaleGroup, eventId, body, null, cancellationToken).ConfigureAwait(false))
                 {
@@ -231,9 +231,9 @@ namespace Client
             /// </param>
             /// <param name='eventId'>
             /// </param>
-            public static ProblemDetails DeleteScaleEvent(this IMyAPI operations, string scaleGroup, System.Guid eventId)
+            public static void DeleteScaleEvent(this IBullfrogApi operations, string scaleGroup, System.Guid eventId)
             {
-                return operations.DeleteScaleEventAsync(scaleGroup, eventId).GetAwaiter().GetResult();
+                operations.DeleteScaleEventAsync(scaleGroup, eventId).GetAwaiter().GetResult();
             }
 
             /// <param name='operations'>
@@ -246,12 +246,9 @@ namespace Client
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<ProblemDetails> DeleteScaleEventAsync(this IMyAPI operations, string scaleGroup, System.Guid eventId, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task DeleteScaleEventAsync(this IBullfrogApi operations, string scaleGroup, System.Guid eventId, CancellationToken cancellationToken = default(CancellationToken))
             {
-                using (var _result = await operations.DeleteScaleEventWithHttpMessagesAsync(scaleGroup, eventId, null, cancellationToken).ConfigureAwait(false))
-                {
-                    return _result.Body;
-                }
+                (await operations.DeleteScaleEventWithHttpMessagesAsync(scaleGroup, eventId, null, cancellationToken).ConfigureAwait(false)).Dispose();
             }
 
             /// <param name='operations'>
@@ -259,7 +256,7 @@ namespace Client
             /// </param>
             /// <param name='scaleGroup'>
             /// </param>
-            public static ScaleGroupState GetCurrentState(this IMyAPI operations, string scaleGroup)
+            public static ScaleGroupState GetCurrentState(this IBullfrogApi operations, string scaleGroup)
             {
                 return operations.GetCurrentStateAsync(scaleGroup).GetAwaiter().GetResult();
             }
@@ -272,7 +269,7 @@ namespace Client
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<ScaleGroupState> GetCurrentStateAsync(this IMyAPI operations, string scaleGroup, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<ScaleGroupState> GetCurrentStateAsync(this IBullfrogApi operations, string scaleGroup, CancellationToken cancellationToken = default(CancellationToken))
             {
                 using (var _result = await operations.GetCurrentStateWithHttpMessagesAsync(scaleGroup, null, cancellationToken).ConfigureAwait(false))
                 {

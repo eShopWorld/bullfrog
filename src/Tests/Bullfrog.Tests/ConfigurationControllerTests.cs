@@ -88,6 +88,77 @@ public class ConfigurationControllerTests : BaseApiTests
         await ApiClient.SetDefinitionAsync("sg", scaleGroup);
     }
 
+    [Fact, IsLayer0]
+    public async Task FailIfNewDefinitionMissesUsedRegions()
+    {
+        var scaleGroup = new Client.Models.ScaleGroupDefinition
+        {
+            Regions = new List<ScaleGroupRegion>
+            {
+                new ScaleGroupRegion
+                {
+                    RegionName = "eu1",
+                    Cosmos = new List<CosmosConfiguration>(),
+                    ScaleSets = new List<ScaleSetConfiguration>(),
+                },
+                new ScaleGroupRegion
+                {
+                    RegionName = "eu2",
+                    Cosmos = new List<CosmosConfiguration>(),
+                    ScaleSets = new List<ScaleSetConfiguration>(),
+                },
+            },
+        };
+        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        await ApiClient.SaveScaleEventAsync("sg", Guid.NewGuid(), new ScaleEvent
+        {
+            Name = "n",
+            RegionConfig = new[] { new RegionScaleValue { Name = "eu2", Scale = 10 } },
+            RequiredScaleAt = UtcNow.AddHours(1),
+            StartScaleDownAt = UtcNow.AddHours(2),
+        });
+        scaleGroup.Regions.RemoveAt(1); // try to remove eu2
+
+        //act
+        Func<Task> call = () => ApiClient.SetDefinitionAsync("sg", scaleGroup);
+
+        call.Should().Throw<ProblemDetailsException>();
+    }
+
+    [Fact, IsLayer0]
+    public async Task NotUsedRegionsMayBeRemoved()
+    {
+        var scaleGroup = new Client.Models.ScaleGroupDefinition
+        {
+            Regions = new List<ScaleGroupRegion>
+            {
+                new ScaleGroupRegion
+                {
+                    RegionName = "eu1",
+                    Cosmos = new List<CosmosConfiguration>(),
+                    ScaleSets = new List<ScaleSetConfiguration>(),
+                },
+                new ScaleGroupRegion
+                {
+                    RegionName = "eu2",
+                    Cosmos = new List<CosmosConfiguration>(),
+                    ScaleSets = new List<ScaleSetConfiguration>(),
+                },
+            },
+        };
+        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        await ApiClient.SaveScaleEventAsync("sg", Guid.NewGuid(), new ScaleEvent
+        {
+            Name = "n",
+            RegionConfig = new[] { new RegionScaleValue { Name = "eu1", Scale = 10 } },
+            RequiredScaleAt = UtcNow.AddHours(1),
+            StartScaleDownAt = UtcNow.AddHours(2),
+        });
+        scaleGroup.Regions.RemoveAt(1); // try to remove eu2
+
+        //act
+        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+    }
 
     [Fact, IsLayer0]
     public async Task RemoveExistingScaleGroup()

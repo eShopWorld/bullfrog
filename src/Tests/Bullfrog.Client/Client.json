@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "My API",
+    "title": "Bullfrog Api",
     "version": "v1"
   },
   "paths": {
@@ -285,7 +285,7 @@
           "201": {
             "description": "Success",
             "schema": {
-              "$ref": "#/definitions/ScaleEvent"
+              "$ref": "#/definitions/ScheduledScaleEvent"
             }
           },
           "202": {
@@ -330,12 +330,6 @@
           }
         ],
         "responses": {
-          "404": {
-            "description": "Not Found",
-            "schema": {
-              "$ref": "#/definitions/ProblemDetails"
-            }
-          },
           "204": {
             "description": "Success"
           },

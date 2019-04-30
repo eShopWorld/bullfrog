@@ -89,7 +89,7 @@ namespace Bullfrog.Api.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesDefaultResponseType]
         [Authorize(Policy = AuthenticationPolicies.EventsManagerScope)]
-        public async Task<ActionResult<ScaleEvent>> SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent)
+        public async Task<ActionResult<ScheduledScaleEvent>> SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent)
         {
             try
             {
@@ -147,7 +147,6 @@ namespace Bullfrog.Api.Controllers
         /// <param name="eventId">The ID of the event to delete.</param>
         /// <returns></returns>
         [HttpDelete("{scaleGroup}/{eventId}")]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status202Accepted)]
         [ProducesDefaultResponseType]
