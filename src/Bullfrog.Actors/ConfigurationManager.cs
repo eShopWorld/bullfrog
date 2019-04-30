@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
+using Bullfrog.Actors.Models;
+using Bullfrog.Common;
 using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
@@ -17,20 +19,26 @@ namespace Bullfrog.Actors
     public class ConfigurationManager : BullfrogActorBase, IConfigurationManager
     {
         private const string ScaleGroupKeyPrefix = "scaleGroup:";
+        private const string EventsListKeyPrefix = "events:";
+        private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IActorProxyFactory _proxyFactory;
 
         /// <summary>
         /// Initializes a new instance of ScaleManager
         /// </summary>
         /// <param name="actorService">The Microsoft.ServiceFabric.Actors.Runtime.ActorService that will host this actor instance.</param>
+        /// <param name="dateTimeProvider">The provider of the current time.</param>
         /// <param name="actorId">The Microsoft.ServiceFabric.Actors.ActorId for this actor instance.</param>
         /// <param name="proxyFactory">The factory of actor client proxies.</param>
+        /// <param name="bigBrother">The Big Brother client.</param>
         public ConfigurationManager(ActorService actorService,
             ActorId actorId,
+            IDateTimeProvider dateTimeProvider,
             IActorProxyFactory proxyFactory,
             IBigBrother bigBrother)
             : base(actorService, actorId, bigBrother)
         {
+            _dateTimeProvider = dateTimeProvider;
             _proxyFactory = proxyFactory;
         }
 
@@ -67,6 +75,9 @@ namespace Bullfrog.Actors
                 await DisableRegions(name, existingGroups.Value.Regions);
                 await state.Remove(default);
             }
+
+            var eventsList = GetScaleEventsStateItem(name);
+            await eventsList.TryAdd(new Dictionary<Guid, RegisteredScaleEvent>());
         }
 
         async Task<List<string>> IConfigurationManager.ListConfiguredScaleGroup(CancellationToken cancellationToken)
@@ -90,9 +101,150 @@ namespace Bullfrog.Actors
             return configuration.HasValue ? configuration.Value : null;
         }
 
+        async Task<ScheduledScaleEvent> IConfigurationManager.GetScaleEvent(string scaleGroup, Guid eventId)
+        {
+            var scaleGroupDefinition = await GetScaleGroupDefinition(scaleGroup);
+            var scaleEventsState = GetScaleEventsStateItem(scaleGroup);
+            var list = await scaleEventsState.Get();
+            if (list.TryGetValue(eventId, out var scaleEvent))
+            {
+                return scaleEvent.ToScheduledScaleEvent(eventId, scaleGroupDefinition.MaxLeadTime);
+            }
+            else
+            {
+                throw new ScaleEventNotFoundException();
+            }
+        }
+
+        async Task<List<ScheduledScaleEvent>> IConfigurationManager.ListScaleEvents(string scaleGroup)
+        {
+            var scaleGroupDefinition = await GetScaleGroupDefinition(scaleGroup);
+            var scaleEventsState = GetScaleEventsStateItem(scaleGroup);
+            var list = await scaleEventsState.Get();
+            var maxLeadTime = scaleGroupDefinition.MaxLeadTime;
+            return list.Select(r => r.Value.ToScheduledScaleEvent(r.Key, maxLeadTime)).ToList();
+        }
+
+        async Task<(SaveScaleEventResult result, ScheduledScaleEvent scheduledScaleEvent)> IConfigurationManager.SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent)
+        {
+            var scaleGroupDefinition = await GetScaleGroupDefinition(scaleGroup);
+
+            if (scaleEvent.RegionConfig.Select(r => r.Name).Except(scaleGroupDefinition.Regions.Select(r => r.RegionName)).Any())
+            {
+                throw new ScaleEventSaveException("Only configured regions may be used by the scale event.", ScaleEventSaveFailureReason.InvalidRegionName);
+            }
+
+            SaveScaleEventResult saveResult;
+            var eventsListAccessor = GetScaleEventsStateItem(scaleGroup);
+            var scaleEvents = await eventsListAccessor.Get();
+            var isEventUpdated = scaleEvents.TryGetValue(eventId, out var registeredEvent);
+            var now = _dateTimeProvider.UtcNow;
+            var isTooLate = isEventUpdated
+                ? registeredEvent.StartScaleDownAt <= now
+                : scaleEvent.StartScaleDownAt <= now;
+            if (isTooLate)
+                throw new ScaleEventSaveException("Can't register scale event in the past.", ScaleEventSaveFailureReason.RegistrationInThePast);
+
+            foreach (var regionConfig in scaleEvent.RegionConfig)
+            {
+                var regionScaleEvent = new RegionScaleEvent
+                {
+                    Id = eventId,
+                    Name = scaleEvent.Name,
+                    RequiredScaleAt = scaleEvent.RequiredScaleAt,
+                    StartScaleDownAt = scaleEvent.StartScaleDownAt,
+                    Scale = regionConfig.Scale,
+                };
+                var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, regionConfig.Name);
+                await scaleManagerActor.ScheduleScaleEvent(regionScaleEvent);
+            }
+
+            if (isEventUpdated)
+            {
+                saveResult = registeredEvent.RequiredScaleAt <= now && now < registeredEvent.StartScaleDownAt
+                    ? SaveScaleEventResult.ReplacedExecuting
+                    : SaveScaleEventResult.ReplacedWaiting;
+
+                registeredEvent.Name = scaleEvent.Name;
+                registeredEvent.RequiredScaleAt = scaleEvent.RequiredScaleAt;
+                registeredEvent.StartScaleDownAt = scaleEvent.StartScaleDownAt;
+
+                var removedRegions = registeredEvent.Regions.Keys.Except(scaleEvent.RegionConfig.Select(r => r.Name)).ToList();
+                foreach (var regionName in removedRegions)
+                {
+                    var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, regionName);
+                    await scaleManagerActor.DeleteScaleEvent(eventId);
+                    registeredEvent.Regions.Remove(regionName);
+                }
+
+                foreach (var region in scaleEvent.RegionConfig)
+                {
+                }
+            }
+            else
+            {
+                registeredEvent = new RegisteredScaleEvent
+                {
+                    Name = scaleEvent.Name,
+                    RequiredScaleAt = scaleEvent.RequiredScaleAt,
+                    StartScaleDownAt = scaleEvent.StartScaleDownAt,
+                    Regions = scaleEvent.RegionConfig.ToDictionary(r => r.Name, r => new ScaleEventRegionState { Scale = r.Scale }),
+                };
+
+                scaleEvents.Add(eventId, registeredEvent);
+                saveResult = SaveScaleEventResult.Created;
+            }
+
+            await eventsListAccessor.Set(scaleEvents);
+
+            return (saveResult, null);
+        }
+
+        async Task<ScaleEventState> IConfigurationManager.DeleteScaleEvent(string scaleGroup, Guid eventId)
+        {
+            var definition = await GetScaleGroupDefinition(scaleGroup);
+            var scaleEventsState = GetScaleEventsStateItem(scaleGroup);
+            var list = await scaleEventsState.Get();
+            if (list.TryGetValue(eventId, out var scaleEvent))
+            {
+                foreach (var region in scaleEvent.Regions)
+                {
+                    var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, region.Key);
+                    await scaleManagerActor.DeleteScaleEvent(eventId);
+                }
+
+                list.Remove(eventId);
+                await scaleEventsState.Set(list);
+
+                var now = _dateTimeProvider.UtcNow;
+                if (now < scaleEvent.RequiredScaleAt - definition.MaxLeadTime)
+                    return ScaleEventState.Waiting;
+                return now < scaleEvent.StartScaleDownAt ? ScaleEventState.Executing : ScaleEventState.Completed;
+            }
+            else
+            {
+                throw new ScaleEventNotFoundException();
+            }
+        }
+
         private StateItem<ScaleGroupDefinition> GetScaleGroupState(string name)
         {
             return new StateItem<ScaleGroupDefinition>(StateManager, ScaleGroupKeyPrefix + name);
+        }
+
+        private StateItem<Dictionary<Guid, RegisteredScaleEvent>> GetScaleEventsStateItem(string scaleGroup)
+        {
+            return new StateItem<Dictionary<Guid, RegisteredScaleEvent>>(StateManager, EventsListKeyPrefix + scaleGroup);
+        }
+
+        private async Task<ScaleGroupDefinition> GetScaleGroupDefinition(string name)
+        {
+            var state = GetScaleGroupState(name);
+            var configuration = await state.TryGet();
+            if (configuration.HasValue)
+                return configuration.Value;
+
+            throw new ScaleGroupNotFoundException($"The scale group {name} has not been defined.");
         }
 
         private async Task DisableRegions(string name, IEnumerable<ScaleGroupRegion> regions)

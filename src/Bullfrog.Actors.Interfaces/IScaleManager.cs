@@ -20,31 +20,16 @@ namespace Bullfrog.Actors.Interfaces
         /// </summary>
         /// <param name="scaleEvent">The scale event details.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>The updated scale event details.</returns>
-        Task<UpdatedScheduledScaleEvent> ScheduleScaleEvent(ScaleEvent scaleEvent, CancellationToken cancellationToken);
-
-        /// <summary>
-        /// Returns an existing scale event.
-        /// </summary>
-        /// <param name="id">The scale event ID.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns></returns>
-        Task<ScheduledScaleEvent> GetScaleEvent(Guid id, CancellationToken cancellationToken);
-
-        /// <summary>
-        /// List all defined scale events.
-        /// </summary>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>The list of scale events.</returns>
-        Task<List<ScheduledScaleEvent>> ListScaleEvents(CancellationToken cancellationToken);
+        /// <returns>The task.</returns>
+        Task ScheduleScaleEvent(RegionScaleEvent scaleEvent, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Removes the specified scale event.
         /// </summary>
         /// <param name="id">The scale event to remove.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>The state of removed scale event.</returns>
-        Task<ScaleEventState> DeleteScaleEvent(Guid id, CancellationToken cancellationToken);
+        /// <returns>The task.</returns>
+        Task DeleteScaleEvent(Guid id, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the scale manager state.

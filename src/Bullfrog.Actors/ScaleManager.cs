@@ -76,31 +76,17 @@
             await _events.TryAdd(new List<ManagedScaleEvent>());
         }
 
-        async Task<ScaleEventState> IScaleManager.DeleteScaleEvent(Guid id, CancellationToken cancellationToken)
+        async Task IScaleManager.DeleteScaleEvent(Guid id, CancellationToken cancellationToken)
         {
             var events = await _events.Get(cancellationToken);
-            var now = _dateTimeProvider.UtcNow;
 
             var eventToDelete = events.Find(e => e.Id == id);
-            var state = eventToDelete?.GetState(now) ?? ScaleEventState.NotFound;
             if (eventToDelete != null)
             {
                 events.Remove(eventToDelete);
                 await _events.Set(events, cancellationToken);
                 await UpdateState();
             }
-
-            return state;
-        }
-
-        async Task<ScheduledScaleEvent> IScaleManager.GetScaleEvent(Guid id, CancellationToken cancellationToken)
-        {
-            var events = await _events.Get();
-
-            var foundEvent = events.Find(e => e.Id == id);
-            if (foundEvent == null)
-                return null;
-            return ToScheduledScaleEvent(foundEvent);
         }
 
         async Task<ScaleState> IScaleManager.GetScaleSet(CancellationToken cancellationToken)
@@ -166,27 +152,17 @@
             return combindedEnd;
         }
 
-        async Task<List<ScheduledScaleEvent>> IScaleManager.ListScaleEvents(CancellationToken cancellationToken)
-        {
-            var events = await _events.Get();
-
-            return events.Select(ToScheduledScaleEvent).ToList();
-        }
-
-        async Task<UpdatedScheduledScaleEvent> IScaleManager.ScheduleScaleEvent(ScaleEvent scaleEvent, CancellationToken cancellationToken)
+        async Task IScaleManager.ScheduleScaleEvent(RegionScaleEvent scaleEvent, CancellationToken cancellationToken)
         {
             var configuration = await _configuration.TryGet(cancellationToken);
             if (!configuration.HasValue)
             {
-                // TODO: return something instead of throwing an exception
                 throw new BullfrogException($"The scale manager {Id} is not active");
             }
 
             var events = await _events.Get();
 
             var modifiedEvent = events.Find(e => e.Id == scaleEvent.Id);
-            var state = modifiedEvent?.GetState(_dateTimeProvider.UtcNow) ?? ScaleEventState.NotFound;
-
             if (modifiedEvent == null)
             {
                 modifiedEvent = new ManagedScaleEvent { Id = scaleEvent.Id };
@@ -204,17 +180,6 @@
             await _events.Set(events, cancellationToken);
 
             await UpdateState();
-
-            return new UpdatedScheduledScaleEvent
-            {
-                PreState = state,
-                Id = modifiedEvent.Id,
-                EstimatedScaleUpAt = modifiedEvent.EstimatedScaleUpAt,
-                Name = modifiedEvent.Name,
-                RequiredScaleAt = modifiedEvent.RequiredScaleAt,
-                Scale = modifiedEvent.Scale,
-                StartScaleDownAt = modifiedEvent.StartScaleDownAt,
-            };
         }
 
         async Task IScaleManager.Disable(CancellationToken cancellationToken)
@@ -238,19 +203,6 @@
             await _events.Set(events);
 
             await UpdateState();
-        }
-
-        private static ScheduledScaleEvent ToScheduledScaleEvent(ManagedScaleEvent foundEvent)
-        {
-            return new ScheduledScaleEvent
-            {
-                EstimatedScaleUpAt = foundEvent.EstimatedScaleUpAt,
-                Id = foundEvent.Id,
-                Name = foundEvent.Name,
-                RequiredScaleAt = foundEvent.RequiredScaleAt,
-                Scale = foundEvent.Scale,
-                StartScaleDownAt = foundEvent.StartScaleDownAt,
-            };
         }
 
         async Task IRemindable.ReceiveReminderAsync(string reminderName, byte[] state, TimeSpan dueTime, TimeSpan period)

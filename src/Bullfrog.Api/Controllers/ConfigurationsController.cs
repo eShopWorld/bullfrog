@@ -100,10 +100,5 @@ namespace Bullfrog.Api.Controllers
             });
             return NoContent();
         }
-
-        private IConfigurationManager GetConfigurationManager()
-        {
-            return GetActor<IConfigurationManager>(new ActorId("configuration"));
-        }
     }
 }

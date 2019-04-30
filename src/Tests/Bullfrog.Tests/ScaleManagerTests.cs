@@ -185,7 +185,6 @@ public class ScaleManagerTests : BaseApiTests
     [Theory, IsLayer0]
     [InlineData(4, 5, 60, null, null, 55)]
     [InlineData(5, 5, -30, 100, 100, 30)]
-    [InlineData(5, 5, -60, null, null, null)]
     [InlineData(10, 6, 60, null, null, 50)]
     [InlineData(20, 20, 10, 100, 100, 10)]
     [InlineData(20, 8, 10, 100, null, 2)]
@@ -253,7 +252,7 @@ public class ScaleManagerTests : BaseApiTests
         var start = UtcNow;
         _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(10);
         CreateScaleGroup();
-        var scaleEvent = new Client.Models.ScaleEvent
+        var scaleEvent = new ScaleEvent
         {
             Name = "aa",
             RegionConfig = new List<RegionScaleValue>
@@ -283,6 +282,8 @@ public class ScaleManagerTests : BaseApiTests
                 WasScaledUpAt = start + TimeSpan.FromMinutes(5),
                 WillScaleDownAt = start + TimeSpan.FromHours(2),
                 Scale = 200,
+                RequestedScale = 10,
+                ScaleSetState = new Dictionary<string, double?> { ["s"] = 200 },
             });
     }
 
@@ -333,6 +334,8 @@ public class ScaleManagerTests : BaseApiTests
                 WasScaledUpAt = start + TimeSpan.FromMinutes(5),
                 WillScaleDownAt = start + TimeSpan.FromMinutes(52),
                 Scale = 200,
+                RequestedScale = 10,
+                ScaleSetState = new Dictionary<string, double?> { ["s"] = 200 },
             });
     }
 

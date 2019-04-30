@@ -61,7 +61,7 @@ public class BaseApiTests
         services.AddTransient(_ => MockStatelessServiceContextFactory.Default);
         var actorProxyFactory = new MockActorProxyFactory();
         actorProxyFactory.MissingActor += ActoryProxyFactory_MissingActor;
-        services.AddSingleton<IActorProxyFactory>(actorProxyFactory);
+        services.AddSingleton<IActorProxyFactory>(new BullfrogMockActorProxyFactory(actorProxyFactory));
 
         DateTimeProviderMoq = new Mock<IDateTimeProvider>();
         DateTimeProviderMoq.SetupGet(o => o.UtcNow).Returns(() => UtcNow);
@@ -120,7 +120,7 @@ public class BaseApiTests
     {
         var id = new ActorId("configuration");
         ActorBase actorFactory(ActorService service, ActorId actorId)
-            => new ConfigurationManager(service, actorId, actoryProxyFactory, BigBrotherMoq.Object);
+            => new ConfigurationManager(service, actorId, DateTimeProviderMoq.Object, actoryProxyFactory, BigBrotherMoq.Object);
         var stateProvider = new MyActorStateProvider(DateTimeProviderMoq.Object);
         var svc = MockActorServiceFactory.CreateActorServiceForActor<ConfigurationManager>(actorFactory, stateProvider);
         ConfigurationManagerActor = svc.Activate(id);

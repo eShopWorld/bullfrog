@@ -11,9 +11,6 @@ namespace Client.Models
     using System.Collections.Generic;
     using System.Linq;
 
-    /// <summary>
-    /// Describes the current state of the scale group.
-    /// </summary>
     public partial class ScaleGroupState
     {
         /// <summary>
@@ -27,8 +24,6 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleGroupState class.
         /// </summary>
-        /// <param name="regions">The list of scale group's regions which
-        /// currently are scaled out.</param>
         public ScaleGroupState(IList<ScaleRegionState> regions = default(IList<ScaleRegionState>))
         {
             Regions = regions;
@@ -41,8 +36,6 @@ namespace Client.Models
         partial void CustomInit();
 
         /// <summary>
-        /// Gets or sets the list of scale group's regions which currently are
-        /// scaled out.
         /// </summary>
         [JsonProperty(PropertyName = "regions")]
         public IList<ScaleRegionState> Regions { get; set; }

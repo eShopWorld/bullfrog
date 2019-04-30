@@ -1,0 +1,11 @@
+﻿using System;
+using System.Collections.Generic;
+
+namespace Bullfrog.Common
+{
+    public static class ValueTupleExtensions
+    {
+        public static KeyValuePair<TKey, TValue> ToKeyValuePair<TKey, TValue>(this ValueTuple<TKey, TValue> tuple)
+            => new KeyValuePair<TKey, TValue>(tuple.Item1, tuple.Item2);
+    }
+}

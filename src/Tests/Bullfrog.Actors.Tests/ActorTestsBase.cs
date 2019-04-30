@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Fabric;
 using System.Threading;
+using Bullfrog.Common;
 using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
@@ -22,12 +23,18 @@ public abstract class ActorTestsBase<T>
 
     protected Mock<IBigBrother> BigBrotherMock { get; }
 
+    protected Mock<IDateTimeProvider> DateTimeProvider { get; }
+
     private readonly Dictionary<(Type, ActorId), object> _registeredActorProxies
         = new Dictionary<(Type, ActorId), object>();
 
     protected ActorTestsBase()
     {
         MockRepository = new MockRepository(MockBehavior.Strict);
+        DateTimeProvider = MockRepository.Create<IDateTimeProvider>();
+        DateTimeProvider.SetupGet(x => x.UtcNow).Returns(new DateTimeOffset(2019, 2, 22, 0, 0, 0, 0,
+            System.Globalization.CultureInfo.InvariantCulture.Calendar, TimeSpan.Zero));
+
         var codePackageActivationContextMock = MockRepository.Create<ICodePackageActivationContext>();
         var serviceContext = new StatefulServiceContext(
             new NodeContext("", new NodeId(8, 8), 8, "", ""),
@@ -51,7 +58,7 @@ public abstract class ActorTestsBase<T>
 
     protected Mock<T> GetActorMock()
     {
-        return MockRepository.Create<T>(ActorService, new ActorId("conf"), new TestProxyFactory(_registeredActorProxies), BigBrotherMock.Object);
+        return MockRepository.Create<T>(ActorService, new ActorId("conf"), DateTimeProvider.Object, new TestProxyFactory(_registeredActorProxies), BigBrotherMock.Object);
     }
 
     protected void RegisterActorProxy<TActor>(ActorId actorId, TActor proxy)

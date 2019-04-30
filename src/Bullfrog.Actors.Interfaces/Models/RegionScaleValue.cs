@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Bullfrog.Api.Models
+namespace Bullfrog.Actors.Interfaces.Models
 {
     /// <summary>
     /// Defines the scale requirements for the specified region.

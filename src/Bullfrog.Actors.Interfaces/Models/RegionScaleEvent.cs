@@ -1,38 +1,42 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Bullfrog.Actors.Interfaces.Models.Validation;
 
 namespace Bullfrog.Actors.Interfaces.Models
 {
     /// <summary>
-    /// Defines a new scale event.
+    /// A scale event for a specified region.
     /// </summary>
-    public class ScaleEvent
+    public class RegionScaleEvent
     {
         /// <summary>
-        /// The scale event name.
+        /// The scale event ID.
         /// </summary>
-        [Required]
+        public Guid Id { get; set; }
+
+        /// <summary>
+        /// The name of the scale event.
+        /// </summary>
+        /// <remarks>
+        /// Preserved but not used internally.
+        /// </remarks>
         public string Name { get; set; }
 
         /// <summary>
-        /// The time when all resources should be scaled to the level which allows to handle the requested traffic.
+        /// The beginning of the scale event.
         /// </summary>
         public DateTimeOffset RequiredScaleAt { get; set; }
 
         /// <summary>
-        /// The time when the scale event ends and all resources can be scaled in.
+        /// The end of the scale event.
         /// </summary>
         [ValueIs(ValueComparison.GreaterThen, PropertyValue = nameof(RequiredScaleAt))]
         public DateTimeOffset StartScaleDownAt { get; set; }
 
         /// <summary>
-        /// The list of regions which require scaling.
+        /// The requested scale.
         /// </summary>
-        [Required]
-        [MinLength(1, ErrorMessage = "At least one region must be defined.")]
-        [ElementsHaveDistinctValues(nameof(RegionScaleValue.Name))]
-        public List<RegionScaleValue> RegionConfig { get; set; }
+        [Range(1, 1_000_000)]
+        public int Scale { get; set; }
     }
 }

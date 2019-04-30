@@ -12,9 +12,6 @@ namespace Client.Models
     using System.Collections.Generic;
     using System.Linq;
 
-    /// <summary>
-    /// Defines a new scale event.
-    /// </summary>
     public partial class ScaleEvent
     {
         /// <summary>
@@ -28,14 +25,6 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleEvent class.
         /// </summary>
-        /// <param name="name">The scale event name.</param>
-        /// <param name="regionConfig">The list of regions which require
-        /// scaling.</param>
-        /// <param name="requiredScaleAt">The time when all resources should be
-        /// scaled to the level which allows to handle the requested
-        /// traffic.</param>
-        /// <param name="startScaleDownAt">The time when the scale event ends
-        /// and all resources can be scaled in.</param>
         public ScaleEvent(string name, IList<RegionScaleValue> regionConfig, System.DateTimeOffset? requiredScaleAt = default(System.DateTimeOffset?), System.DateTimeOffset? startScaleDownAt = default(System.DateTimeOffset?))
         {
             Name = name;
@@ -51,27 +40,21 @@ namespace Client.Models
         partial void CustomInit();
 
         /// <summary>
-        /// Gets or sets the scale event name.
         /// </summary>
         [JsonProperty(PropertyName = "name")]
         public string Name { get; set; }
 
         /// <summary>
-        /// Gets or sets the time when all resources should be scaled to the
-        /// level which allows to handle the requested traffic.
         /// </summary>
         [JsonProperty(PropertyName = "requiredScaleAt")]
         public System.DateTimeOffset? RequiredScaleAt { get; set; }
 
         /// <summary>
-        /// Gets or sets the time when the scale event ends and all resources
-        /// can be scaled in.
         /// </summary>
         [JsonProperty(PropertyName = "startScaleDownAt")]
         public System.DateTimeOffset? StartScaleDownAt { get; set; }
 
         /// <summary>
-        /// Gets or sets the list of regions which require scaling.
         /// </summary>
         [JsonProperty(PropertyName = "regionConfig")]
         public IList<RegionScaleValue> RegionConfig { get; set; }

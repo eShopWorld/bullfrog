@@ -17,7 +17,7 @@ namespace Client
     using System.Threading;
     using System.Threading.Tasks;
 
-    public partial class BullfrogApi : ServiceClient<BullfrogApi>, IBullfrogApi
+    public partial class MyAPI : ServiceClient<MyAPI>, IMyAPI
     {
         /// <summary>
         /// The base URI of the service.
@@ -40,31 +40,31 @@ namespace Client
         public ServiceClientCredentials Credentials { get; private set; }
 
         /// <summary>
-        /// Initializes a new instance of the BullfrogApi class.
+        /// Initializes a new instance of the MyAPI class.
         /// </summary>
         /// <param name='httpClient'>
         /// HttpClient to be used
         /// </param>
         /// <param name='disposeHttpClient'>
-        /// True: will dispose the provided httpClient on calling BullfrogApi.Dispose(). False: will not dispose provided httpClient</param>
-        protected BullfrogApi(HttpClient httpClient, bool disposeHttpClient) : base(httpClient, disposeHttpClient)
+        /// True: will dispose the provided httpClient on calling MyAPI.Dispose(). False: will not dispose provided httpClient</param>
+        protected MyAPI(HttpClient httpClient, bool disposeHttpClient) : base(httpClient, disposeHttpClient)
         {
             Initialize();
         }
 
         /// <summary>
-        /// Initializes a new instance of the BullfrogApi class.
+        /// Initializes a new instance of the MyAPI class.
         /// </summary>
         /// <param name='handlers'>
         /// Optional. The delegating handlers to add to the http client pipeline.
         /// </param>
-        protected BullfrogApi(params DelegatingHandler[] handlers) : base(handlers)
+        protected MyAPI(params DelegatingHandler[] handlers) : base(handlers)
         {
             Initialize();
         }
 
         /// <summary>
-        /// Initializes a new instance of the BullfrogApi class.
+        /// Initializes a new instance of the MyAPI class.
         /// </summary>
         /// <param name='rootHandler'>
         /// Optional. The http client handler used to handle http transport.
@@ -72,13 +72,13 @@ namespace Client
         /// <param name='handlers'>
         /// Optional. The delegating handlers to add to the http client pipeline.
         /// </param>
-        protected BullfrogApi(HttpClientHandler rootHandler, params DelegatingHandler[] handlers) : base(rootHandler, handlers)
+        protected MyAPI(HttpClientHandler rootHandler, params DelegatingHandler[] handlers) : base(rootHandler, handlers)
         {
             Initialize();
         }
 
         /// <summary>
-        /// Initializes a new instance of the BullfrogApi class.
+        /// Initializes a new instance of the MyAPI class.
         /// </summary>
         /// <param name='baseUri'>
         /// Optional. The base URI of the service.
@@ -89,7 +89,7 @@ namespace Client
         /// <exception cref="System.ArgumentNullException">
         /// Thrown when a required parameter is null
         /// </exception>
-        protected BullfrogApi(System.Uri baseUri, params DelegatingHandler[] handlers) : this(handlers)
+        protected MyAPI(System.Uri baseUri, params DelegatingHandler[] handlers) : this(handlers)
         {
             if (baseUri == null)
             {
@@ -99,7 +99,7 @@ namespace Client
         }
 
         /// <summary>
-        /// Initializes a new instance of the BullfrogApi class.
+        /// Initializes a new instance of the MyAPI class.
         /// </summary>
         /// <param name='baseUri'>
         /// Optional. The base URI of the service.
@@ -113,7 +113,7 @@ namespace Client
         /// <exception cref="System.ArgumentNullException">
         /// Thrown when a required parameter is null
         /// </exception>
-        protected BullfrogApi(System.Uri baseUri, HttpClientHandler rootHandler, params DelegatingHandler[] handlers) : this(rootHandler, handlers)
+        protected MyAPI(System.Uri baseUri, HttpClientHandler rootHandler, params DelegatingHandler[] handlers) : this(rootHandler, handlers)
         {
             if (baseUri == null)
             {
@@ -123,7 +123,7 @@ namespace Client
         }
 
         /// <summary>
-        /// Initializes a new instance of the BullfrogApi class.
+        /// Initializes a new instance of the MyAPI class.
         /// </summary>
         /// <param name='credentials'>
         /// Required. Subscription credentials which uniquely identify client subscription.
@@ -134,7 +134,7 @@ namespace Client
         /// <exception cref="System.ArgumentNullException">
         /// Thrown when a required parameter is null
         /// </exception>
-        public BullfrogApi(ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : this(handlers)
+        public MyAPI(ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : this(handlers)
         {
             if (credentials == null)
             {
@@ -148,7 +148,7 @@ namespace Client
         }
 
         /// <summary>
-        /// Initializes a new instance of the BullfrogApi class.
+        /// Initializes a new instance of the MyAPI class.
         /// </summary>
         /// <param name='credentials'>
         /// Required. Subscription credentials which uniquely identify client subscription.
@@ -157,11 +157,11 @@ namespace Client
         /// HttpClient to be used
         /// </param>
         /// <param name='disposeHttpClient'>
-        /// True: will dispose the provided httpClient on calling BullfrogApi.Dispose(). False: will not dispose provided httpClient</param>
+        /// True: will dispose the provided httpClient on calling MyAPI.Dispose(). False: will not dispose provided httpClient</param>
         /// <exception cref="System.ArgumentNullException">
         /// Thrown when a required parameter is null
         /// </exception>
-        public BullfrogApi(ServiceClientCredentials credentials, HttpClient httpClient, bool disposeHttpClient) : this(httpClient, disposeHttpClient)
+        public MyAPI(ServiceClientCredentials credentials, HttpClient httpClient, bool disposeHttpClient) : this(httpClient, disposeHttpClient)
         {
             if (credentials == null)
             {
@@ -175,7 +175,7 @@ namespace Client
         }
 
         /// <summary>
-        /// Initializes a new instance of the BullfrogApi class.
+        /// Initializes a new instance of the MyAPI class.
         /// </summary>
         /// <param name='credentials'>
         /// Required. Subscription credentials which uniquely identify client subscription.
@@ -189,7 +189,7 @@ namespace Client
         /// <exception cref="System.ArgumentNullException">
         /// Thrown when a required parameter is null
         /// </exception>
-        public BullfrogApi(ServiceClientCredentials credentials, HttpClientHandler rootHandler, params DelegatingHandler[] handlers) : this(rootHandler, handlers)
+        public MyAPI(ServiceClientCredentials credentials, HttpClientHandler rootHandler, params DelegatingHandler[] handlers) : this(rootHandler, handlers)
         {
             if (credentials == null)
             {
@@ -203,7 +203,7 @@ namespace Client
         }
 
         /// <summary>
-        /// Initializes a new instance of the BullfrogApi class.
+        /// Initializes a new instance of the MyAPI class.
         /// </summary>
         /// <param name='baseUri'>
         /// Optional. The base URI of the service.
@@ -217,7 +217,7 @@ namespace Client
         /// <exception cref="System.ArgumentNullException">
         /// Thrown when a required parameter is null
         /// </exception>
-        public BullfrogApi(System.Uri baseUri, ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : this(handlers)
+        public MyAPI(System.Uri baseUri, ServiceClientCredentials credentials, params DelegatingHandler[] handlers) : this(handlers)
         {
             if (baseUri == null)
             {
@@ -236,7 +236,7 @@ namespace Client
         }
 
         /// <summary>
-        /// Initializes a new instance of the BullfrogApi class.
+        /// Initializes a new instance of the MyAPI class.
         /// </summary>
         /// <param name='baseUri'>
         /// Optional. The base URI of the service.
@@ -253,7 +253,7 @@ namespace Client
         /// <exception cref="System.ArgumentNullException">
         /// Thrown when a required parameter is null
         /// </exception>
-        public BullfrogApi(System.Uri baseUri, ServiceClientCredentials credentials, HttpClientHandler rootHandler, params DelegatingHandler[] handlers) : this(rootHandler, handlers)
+        public MyAPI(System.Uri baseUri, ServiceClientCredentials credentials, HttpClientHandler rootHandler, params DelegatingHandler[] handlers) : this(rootHandler, handlers)
         {
             if (baseUri == null)
             {
@@ -308,9 +308,6 @@ namespace Client
             };
             CustomInitialize();
         }
-        /// <summary>
-        /// Lists names of all configured scale groups.
-        /// </summary>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
         /// </param>
@@ -441,11 +438,7 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Gets the definition of the specified scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The scale group name.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -589,11 +582,7 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Configures the specified scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The name of the scale group to configure.
         /// </param>
         /// <param name='body'>
         /// </param>
@@ -729,11 +718,7 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Removes the scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The name of the scale group.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -856,9 +841,6 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// probe endpoint
-        /// </summary>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
         /// </param>
@@ -961,11 +943,7 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Lists all scheduled events from the specified scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The name of the scale group.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -1109,14 +1087,9 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Gets the specified scale event.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The scale group which own the event.
         /// </param>
         /// <param name='eventId'>
-        /// The scale event ID.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -1262,14 +1235,9 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Creates or updates the scale event.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The scale group.
         /// </param>
         /// <param name='eventId'>
-        /// The scale event ID.
         /// </param>
         /// <param name='body'>
         /// </param>
@@ -1428,14 +1396,9 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Deletes the scale event.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The scale group which owns the event.
         /// </param>
         /// <param name='eventId'>
-        /// The ID of the event to delete.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -1446,6 +1409,9 @@ namespace Client
         /// <exception cref="ProblemDetailsException">
         /// Thrown when the operation returned an invalid status code
         /// </exception>
+        /// <exception cref="SerializationException">
+        /// Thrown when unable to deserialize the response
+        /// </exception>
         /// <exception cref="ValidationException">
         /// Thrown when a required parameter is null
         /// </exception>
@@ -1455,7 +1421,7 @@ namespace Client
         /// <return>
         /// A response object containing the response body and response headers.
         /// </return>
-        public async Task<HttpOperationResponse> DeleteScaleEventWithHttpMessagesAsync(string scaleGroup, System.Guid eventId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<HttpOperationResponse<ProblemDetails>> DeleteScaleEventWithHttpMessagesAsync(string scaleGroup, System.Guid eventId, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (scaleGroup == null)
             {
@@ -1520,7 +1486,7 @@ namespace Client
             HttpStatusCode _statusCode = _httpResponse.StatusCode;
             cancellationToken.ThrowIfCancellationRequested();
             string _responseContent = null;
-            if ((int)_statusCode != 202 && (int)_statusCode != 204)
+            if ((int)_statusCode != 202 && (int)_statusCode != 204 && (int)_statusCode != 404)
             {
                 var ex = new ProblemDetailsException(string.Format("Operation returned an invalid status code '{0}'", _statusCode));
                 try
@@ -1550,9 +1516,27 @@ namespace Client
                 throw ex;
             }
             // Create Result
-            var _result = new HttpOperationResponse();
+            var _result = new HttpOperationResponse<ProblemDetails>();
             _result.Request = _httpRequest;
             _result.Response = _httpResponse;
+            // Deserialize Response
+            if ((int)_statusCode == 404)
+            {
+                _responseContent = await _httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+                try
+                {
+                    _result.Body = SafeJsonConvert.DeserializeObject<ProblemDetails>(_responseContent, DeserializationSettings);
+                }
+                catch (JsonException ex)
+                {
+                    _httpRequest.Dispose();
+                    if (_httpResponse != null)
+                    {
+                        _httpResponse.Dispose();
+                    }
+                    throw new SerializationException("Unable to deserialize the response.", _responseContent, ex);
+                }
+            }
             if (_shouldTrace)
             {
                 ServiceClientTracing.Exit(_invocationId, _result);
@@ -1560,11 +1544,7 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Gets the current state of the specified scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The name of the scale group.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.

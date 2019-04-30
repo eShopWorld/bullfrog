@@ -12,9 +12,6 @@ namespace Client.Models
     using System.Collections.Generic;
     using System.Linq;
 
-    /// <summary>
-    /// The scale group's region configuration.
-    /// </summary>
     public partial class ScaleGroupRegion
     {
         /// <summary>
@@ -28,15 +25,6 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleGroupRegion class.
         /// </summary>
-        /// <param name="regionName">The name of the region.</param>
-        /// <param name="scaleSets">The configurations of scaling of VM scale
-        /// sets.</param>
-        /// <param name="cosmos">The configuration of scaling of Cosmos DB
-        /// databases or containers.</param>
-        /// <param name="scaleSetPrescaleLeadTime">VM scale sets prescale lead
-        /// time.</param>
-        /// <param name="cosmosDbPrescaleLeadTime">Cosmos DB prescale lead
-        /// time.</param>
         public ScaleGroupRegion(string regionName, IList<ScaleSetConfiguration> scaleSets, IList<CosmosConfiguration> cosmos, string scaleSetPrescaleLeadTime = default(string), string cosmosDbPrescaleLeadTime = default(string))
         {
             RegionName = regionName;
@@ -53,32 +41,26 @@ namespace Client.Models
         partial void CustomInit();
 
         /// <summary>
-        /// Gets or sets the name of the region.
         /// </summary>
         [JsonProperty(PropertyName = "regionName")]
         public string RegionName { get; set; }
 
         /// <summary>
-        /// Gets or sets the configurations of scaling of VM scale sets.
         /// </summary>
         [JsonProperty(PropertyName = "scaleSets")]
         public IList<ScaleSetConfiguration> ScaleSets { get; set; }
 
         /// <summary>
-        /// Gets or sets the configuration of scaling of Cosmos DB databases or
-        /// containers.
         /// </summary>
         [JsonProperty(PropertyName = "cosmos")]
         public IList<CosmosConfiguration> Cosmos { get; set; }
 
         /// <summary>
-        /// Gets or sets VM scale sets prescale lead time.
         /// </summary>
         [JsonProperty(PropertyName = "scaleSetPrescaleLeadTime")]
         public string ScaleSetPrescaleLeadTime { get; set; }
 
         /// <summary>
-        /// Gets or sets cosmos DB prescale lead time.
         /// </summary>
         [JsonProperty(PropertyName = "cosmosDbPrescaleLeadTime")]
         public string CosmosDbPrescaleLeadTime { get; set; }

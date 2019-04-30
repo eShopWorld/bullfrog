@@ -85,6 +85,11 @@ namespace Bullfrog.Api.Controllers
             var configuration = await actor.GetScaleGroupConfiguration(scaleGroup, default);
             return configuration?.Regions.Select(r => r.RegionName).ToList();
         }
+
+        protected IConfigurationManager GetConfigurationManager()
+        {
+            return GetActor<IConfigurationManager>(new ActorId("configuration"));
+        }
     }
 }
 

@@ -12,9 +12,6 @@ namespace Client.Models
     using System.Collections.Generic;
     using System.Linq;
 
-    /// <summary>
-    /// Defines the configuration of a scale group.
-    /// </summary>
     public partial class ScaleGroupDefinition
     {
         /// <summary>
@@ -28,8 +25,6 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleGroupDefinition class.
         /// </summary>
-        /// <param name="regions">The configurations of scale group's
-        /// regions.</param>
         public ScaleGroupDefinition(IList<ScaleGroupRegion> regions)
         {
             Regions = regions;
@@ -42,7 +37,6 @@ namespace Client.Models
         partial void CustomInit();
 
         /// <summary>
-        /// Gets or sets the configurations of scale group's regions.
         /// </summary>
         [JsonProperty(PropertyName = "regions")]
         public IList<ScaleGroupRegion> Regions { get; set; }

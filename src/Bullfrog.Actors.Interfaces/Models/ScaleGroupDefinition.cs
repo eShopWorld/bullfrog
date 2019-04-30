@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Bullfrog.Actors.Interfaces.Models.Validation;
 
 namespace Bullfrog.Actors.Interfaces.Models
@@ -16,5 +18,14 @@ namespace Bullfrog.Actors.Interfaces.Models
         [MinLength(1)]
         [ElementsHaveDistinctValues(nameof(ScaleGroupRegion.RegionName))]
         public List<ScaleGroupRegion> Regions { get; set; }
+
+        /// <summary>
+        /// Returns the maximal lead time used by any of the regions.
+        /// </summary>
+        public TimeSpan MaxLeadTime => Regions?.Count > 0
+            ? Regions.Select(r => r.ScaleSetPrescaleLeadTime)
+            .Union(Regions.Select(r => r.CosmosDbPrescaleLeadTime))
+            .Max()
+            : TimeSpan.Zero;
     }
 }

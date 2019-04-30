@@ -3,7 +3,7 @@
     /// <summary>
     /// The details of the update of the scale event.
     /// </summary>
-    public class UpdatedScheduledScaleEvent : ScheduledScaleEvent
+    public class UpdatedScheduledScaleEvent : RegionScheduledScaleEvent
     {
         /// <summary>
         /// The state of the event before the operation has begun
