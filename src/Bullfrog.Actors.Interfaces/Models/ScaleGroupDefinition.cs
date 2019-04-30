@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Bullfrog.Actors.Interfaces.Models.Validation;
+using Newtonsoft.Json;
 
 namespace Bullfrog.Actors.Interfaces.Models
 {
@@ -22,6 +23,7 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// <summary>
         /// Returns the maximal lead time used by any of the regions.
         /// </summary>
+        [JsonIgnore]
         public TimeSpan MaxLeadTime => Regions?.Count > 0
             ? Regions.Select(r => r.ScaleSetPrescaleLeadTime)
             .Union(Regions.Select(r => r.CosmosDbPrescaleLeadTime))

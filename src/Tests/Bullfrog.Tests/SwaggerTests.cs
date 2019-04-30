@@ -13,4 +13,6 @@ public class SwaggerTests : BaseApiTests
         var obj = JsonConvert.DeserializeObject(json);
         obj.Should().NotBeNull();
     }
+
+    // TODO: add a test for changes in the definition of API
 }

@@ -227,6 +227,36 @@ namespace Bullfrog.Actors
             }
         }
 
+        async Task<ScaleGroupState> IConfigurationManager.GetScaleState(string scaleGroup)
+        {
+            var definition = await GetScaleGroupDefinition(scaleGroup);
+
+            var scaleRegionStates = new List<ScaleRegionState>();
+            foreach (var region in definition.Regions)
+            {
+                var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, region.RegionName);
+                var state = await scaleManagerActor.GetScaleSet(default);
+                if (state != null)
+                {
+                    scaleRegionStates.Add(new ScaleRegionState
+                    {
+                        Name = region.RegionName,
+                        Scale = state.Scale,
+                        RequestedScale = state.RequestedScale,
+                        WasScaledUpAt = state.WasScaleUpAt,
+                        WillScaleDownAt = state.WillScaleDownAt,
+                        ScaleSetState = state.ScaleSetState,
+                    });
+                }
+            }
+
+            return new ScaleGroupState
+            {
+                Regions = scaleRegionStates,
+            };
+
+        }
+
         private StateItem<ScaleGroupDefinition> GetScaleGroupState(string name)
         {
             return new StateItem<ScaleGroupDefinition>(StateManager, ScaleGroupKeyPrefix + name);

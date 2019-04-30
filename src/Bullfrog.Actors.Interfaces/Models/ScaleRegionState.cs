@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace Bullfrog.Api.Models
+namespace Bullfrog.Actors.Interfaces.Models
 {
     /// <summary>
     /// Describes the current state of the region of a scale group.
