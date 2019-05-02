@@ -75,6 +75,7 @@ public class BaseApiTests
         RegisterScaleManagerActor("sg", "eu1", ScaleSetManagerMoq, CosmosManagerMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
         RegisterScaleManagerActor("sg", "eu2", ScaleSetManagerMoq, CosmosManagerMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
         RegisterScaleManagerActor("sg", "eu3", ScaleSetManagerMoq, CosmosManagerMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
+        RegisterScaleManagerActor("sg", "$cosmos", ScaleSetManagerMoq, CosmosManagerMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
 
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
         autoscaleProfile.SetupGet(p => p.MaxInstanceCount).Returns(10);

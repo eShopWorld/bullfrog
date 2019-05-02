@@ -494,13 +494,13 @@
     },
     "ScaleGroupRegion": {
       "required": [
-        "cosmos",
         "regionName",
         "scaleSets"
       ],
       "type": "object",
       "properties": {
         "regionName": {
+          "pattern": "^[\\d\\w\\s-]*$",
           "type": "string"
         },
         "scaleSets": {
@@ -535,6 +535,15 @@
           "items": {
             "$ref": "#/definitions/ScaleGroupRegion"
           }
+        },
+        "cosmos": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CosmosConfiguration"
+          }
+        },
+        "cosmosDbPrescaleLeadTime": {
+          "type": "string"
         }
       }
     },

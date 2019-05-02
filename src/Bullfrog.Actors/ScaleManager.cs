@@ -220,7 +220,7 @@
             var scaleSetScale = CalculateCurrentTotalScaleRequest(events, now, configuration.ScaleSetPrescaleLeadTime);
             var scaleSetInstances = await UpdateScaleSets(configuration.ScaleSetConfigurations, scaleSetScale);
             var cosmosDbScale = CalculateCurrentTotalScaleRequest(events, now, configuration.CosmosDbPrescaleLeadTime);
-            var cosmosScaleState = await UpdateCosmosInstances(configuration.CosmosConfigurations, cosmosDbScale);
+            var cosmosScaleState = await UpdateCosmosInstances(configuration.CosmosConfigurations ?? Enumerable.Empty<CosmosConfiguration>(), cosmosDbScale);
 
             var scaleOutStarted = await _scaleOutStarted.TryGet();
             if (scaleSetScale.HasValue || cosmosDbScale.HasValue)
@@ -344,7 +344,7 @@
             return scales;
         }
 
-        private async Task<List<CosmosScale>> UpdateCosmosInstances(List<CosmosConfiguration> cosmosInstances, int? expectedRequestsNumber)
+        private async Task<List<CosmosScale>> UpdateCosmosInstances(IEnumerable<CosmosConfiguration> cosmosInstances, int? expectedRequestsNumber)
         {
             var cosmosScaleState = new List<CosmosScale>();
             foreach (var cosmosConfiguration in cosmosInstances)

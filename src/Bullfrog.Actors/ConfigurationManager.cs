@@ -20,6 +20,7 @@ namespace Bullfrog.Actors
     {
         private const string ScaleGroupKeyPrefix = "scaleGroup:";
         private const string EventsListKeyPrefix = "events:";
+        private const string SharedCosmosRegion = "$cosmos";
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IActorProxyFactory _proxyFactory;
 
@@ -90,7 +91,7 @@ namespace Bullfrog.Actors
             else if (existingGroups.HasValue)
             {
                 // Delete the scale group if it has been registered.
-                await DisableRegions(name, existingGroups.Value.Regions);
+                await DisableRegions(name, existingGroups.Value.Regions.Select(r => r.RegionName), existingGroups.Value.HasSharedCosmosDb);
                 await state.Remove(default);
             }
 
@@ -184,6 +185,20 @@ namespace Bullfrog.Actors
                 await scaleManagerActor.ScheduleScaleEvent(regionScaleEvent);
             }
 
+            if (scaleGroupDefinition.HasSharedCosmosDb)
+            {
+                var regionScaleEvent = new RegionScaleEvent
+                {
+                    Id = eventId,
+                    Name = scaleEvent.Name,
+                    RequiredScaleAt = scaleEvent.RequiredScaleAt,
+                    StartScaleDownAt = scaleEvent.StartScaleDownAt,
+                    Scale = scaleEvent.RegionConfig.Sum(r => r.Scale),
+                };
+                var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, SharedCosmosRegion);
+                await scaleManagerActor.ScheduleScaleEvent(regionScaleEvent);
+            }
+
             if (isEventUpdated)
             {
                 saveResult = registeredEvent.RequiredScaleAt <= now && now < registeredEvent.StartScaleDownAt
@@ -222,18 +237,8 @@ namespace Bullfrog.Actors
 
             await eventsListAccessor.Set(scaleEvents);
 
-            var leadTime = scaleEvent.RegionConfig
-                .Select(r => scaleGroupDefinition.Regions.First(sr => sr.RegionName == r.Name).ScaleSetPrescaleLeadTime)
-                .Max();
-            var scheduledScaleEvent = new ScheduledScaleEvent
-            {
-                EstimatedScaleUpAt = scaleEvent.RequiredScaleAt - leadTime,
-                Id = eventId,
-                Name = scaleEvent.Name,
-                RegionConfig = scaleEvent.RegionConfig,
-                RequiredScaleAt = scaleEvent.RequiredScaleAt,
-                StartScaleDownAt = scaleEvent.StartScaleDownAt,
-            };
+            var leadTime = scaleGroupDefinition.MaxLeadTime(scaleEvent.RegionConfig.Select(r => r.Name));
+            var scheduledScaleEvent = registeredEvent.ToScheduledScaleEvent(eventId, leadTime);
             return (saveResult, scheduledScaleEvent);
         }
 
@@ -250,11 +255,17 @@ namespace Bullfrog.Actors
                     await scaleManagerActor.DeleteScaleEvent(eventId);
                 }
 
+                if (definition.HasSharedCosmosDb)
+                {
+                    var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, SharedCosmosRegion);
+                    await scaleManagerActor.DeleteScaleEvent(eventId);
+                }
+
                 list.Remove(eventId);
                 await scaleEventsState.Set(list);
 
                 var now = _dateTimeProvider.UtcNow;
-                if (now < scaleEvent.RequiredScaleAt - definition.MaxLeadTime)
+                if (now < scaleEvent.RequiredScaleAt - definition.MaxLeadTime(scaleEvent.Regions.Select(r => r.Key)))
                     return ScaleEventState.Waiting;
                 return now < scaleEvent.StartScaleDownAt ? ScaleEventState.Executing : ScaleEventState.Completed;
             }
@@ -314,11 +325,13 @@ namespace Bullfrog.Actors
             throw new ScaleGroupNotFoundException($"The scale group {name} has not been defined.");
         }
 
-        private async Task DisableRegions(string name, IEnumerable<ScaleGroupRegion> regions)
+        private async Task DisableRegions(string name, IEnumerable<string> regions, bool disableCosmos)
         {
+            if (disableCosmos)
+                regions = regions.Union(new[] { SharedCosmosRegion });
             foreach (var region in regions)
             {
-                var actor = GetActor<IScaleManager>(name, region.RegionName);
+                var actor = GetActor<IScaleManager>(name, region);
                 await actor.Disable(default);
             }
         }
@@ -335,12 +348,28 @@ namespace Bullfrog.Actors
                     CosmosDbPrescaleLeadTime = region.CosmosDbPrescaleLeadTime,
                     ScaleSetPrescaleLeadTime = region.ScaleSetPrescaleLeadTime,
                 };
-                await actor.Configure(configuration, default);
+                await actor.Configure(configuration);
+            }
+
+            if (definition.HasSharedCosmosDb)
+            {
+                var actor = GetActor<IScaleManager>(name, SharedCosmosRegion);
+                var configuration = new ScaleManagerConfiguration
+                {
+                    ScaleSetConfigurations = new List<ScaleSetConfiguration>(),
+                    CosmosConfigurations = definition.Cosmos,
+                    CosmosDbPrescaleLeadTime = definition.CosmosDbPrescaleLeadTime,
+                };
+                await actor.Configure(configuration);
             }
 
             var existingRegions = existingGroup.HasValue ? existingGroup.Value.Regions : new List<ScaleGroupRegion>();
-            var removedRegions = existingRegions.Where(rg => !definition.Regions.Any(r => r.RegionName == rg.RegionName));
-            await DisableRegions(name, removedRegions);
+            var removedRegions = existingRegions
+                .Where(rg => !definition.Regions.Any(r => r.RegionName == rg.RegionName))
+                .Select(rg => rg.RegionName);
+            var disableCosmos = existingGroup.HasValue && existingGroup.Value.HasSharedCosmosDb
+                && !definition.HasSharedCosmosDb;
+            await DisableRegions(name, removedRegions, disableCosmos);
         }
 
         private TActor GetActor<TActor>(string scaleGroup, string region)

@@ -71,7 +71,6 @@ namespace Bullfrog.Actors.Interfaces
         /// <summary>
         /// Gets the scale manager state.
         /// </summary>
-        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The state of the scale manager.</returns>
         Task<ScaleGroupState> GetScaleState(string scaleGroup);
     }

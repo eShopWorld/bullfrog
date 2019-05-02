@@ -25,9 +25,11 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleGroupDefinition class.
         /// </summary>
-        public ScaleGroupDefinition(IList<ScaleGroupRegion> regions)
+        public ScaleGroupDefinition(IList<ScaleGroupRegion> regions, IList<CosmosConfiguration> cosmos = default(IList<CosmosConfiguration>), string cosmosDbPrescaleLeadTime = default(string))
         {
             Regions = regions;
+            Cosmos = cosmos;
+            CosmosDbPrescaleLeadTime = cosmosDbPrescaleLeadTime;
             CustomInit();
         }
 
@@ -40,6 +42,16 @@ namespace Client.Models
         /// </summary>
         [JsonProperty(PropertyName = "regions")]
         public IList<ScaleGroupRegion> Regions { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "cosmos")]
+        public IList<CosmosConfiguration> Cosmos { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "cosmosDbPrescaleLeadTime")]
+        public string CosmosDbPrescaleLeadTime { get; set; }
 
         /// <summary>
         /// Validate the object.
@@ -60,6 +72,16 @@ namespace Client.Models
                     if (element != null)
                     {
                         element.Validate();
+                    }
+                }
+            }
+            if (Cosmos != null)
+            {
+                foreach (var element1 in Cosmos)
+                {
+                    if (element1 != null)
+                    {
+                        element1.Validate();
                     }
                 }
             }

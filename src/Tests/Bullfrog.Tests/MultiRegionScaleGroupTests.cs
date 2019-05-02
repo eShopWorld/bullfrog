@@ -33,7 +33,7 @@ public class MultiRegionScaleGroupTests : BaseApiTests
         savedScaleEvent.EstimatedScaleUpAt.Should().Be(UtcNow.AddHours(10 - 2));
     }
 
-   [Fact, IsLayer0]
+    [Fact, IsLayer0]
     public async Task GetScaleEventReturnsCorrectLeadTime()
     {
         CreateScaleGroup();
@@ -55,6 +55,19 @@ public class MultiRegionScaleGroupTests : BaseApiTests
 
         savedScaleEvent.Should().HaveCount(1);
         savedScaleEvent[0].EstimatedScaleUpAt.Should().Be(UtcNow.AddHours(10 - 2));
+    }
+
+    [Fact, IsLayer0]
+    public async Task DeleteScaleEventsReturnsState()
+    {
+        CreateScaleGroup();
+        var eventId = Guid.NewGuid();
+        await ApiClient.SaveScaleEventAsync("sg", eventId, NewScaleEvent(regions: new[] { ("eu1", 15), ("eu2", 45) }));
+        await AdvanceTimeTo(UtcNow.AddHours(10 - 2.5));
+
+        var response = await ApiClient.DeleteScaleEventWithHttpMessagesAsync("sg", eventId);
+
+        response.Response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
     private ScaleEvent NewScaleEvent(int scaleOut = 10, int scaleIn = 20, IEnumerable<(string regionName, int scale)> regions = null)

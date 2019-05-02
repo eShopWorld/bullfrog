@@ -25,7 +25,7 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleGroupRegion class.
         /// </summary>
-        public ScaleGroupRegion(string regionName, IList<ScaleSetConfiguration> scaleSets, IList<CosmosConfiguration> cosmos, string scaleSetPrescaleLeadTime = default(string), string cosmosDbPrescaleLeadTime = default(string))
+        public ScaleGroupRegion(string regionName, IList<ScaleSetConfiguration> scaleSets, IList<CosmosConfiguration> cosmos = default(IList<CosmosConfiguration>), string scaleSetPrescaleLeadTime = default(string), string cosmosDbPrescaleLeadTime = default(string))
         {
             RegionName = regionName;
             ScaleSets = scaleSets;
@@ -81,9 +81,12 @@ namespace Client.Models
             {
                 throw new ValidationException(ValidationRules.CannotBeNull, "ScaleSets");
             }
-            if (Cosmos == null)
+            if (RegionName != null)
             {
-                throw new ValidationException(ValidationRules.CannotBeNull, "Cosmos");
+                if (!System.Text.RegularExpressions.Regex.IsMatch(RegionName, "^[\\d\\w\\s-]*$"))
+                {
+                    throw new ValidationException(ValidationRules.Pattern, "RegionName", "^[\\d\\w\\s-]*$");
+                }
             }
             if (ScaleSets != null)
             {

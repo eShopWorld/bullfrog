@@ -36,14 +36,14 @@ namespace Bullfrog.Actors.Interfaces
         /// </summary>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The state of the scale manager.</returns>
-        Task<ScaleState> GetScaleSet(CancellationToken cancellationToken);
+        Task<ScaleState> GetScaleSet(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Disables the scale set manager.
         /// </summary>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns></returns>
-        Task Disable(CancellationToken cancellationToken);
+        Task Disable(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Configures the scale manager.
@@ -51,6 +51,6 @@ namespace Bullfrog.Actors.Interfaces
         /// <param name="configuration">The new configuration of the scale manager.</param>
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns></returns>
-        Task Configure(ScaleManagerConfiguration configuration, CancellationToken cancellationToken);
+        Task Configure(ScaleManagerConfiguration configuration, CancellationToken cancellationToken = default);
     }
 }

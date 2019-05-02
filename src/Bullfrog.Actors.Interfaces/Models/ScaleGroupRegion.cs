@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Bullfrog.Actors.Interfaces.Models.Validation;
+using Newtonsoft.Json;
 
 namespace Bullfrog.Actors.Interfaces.Models
 {
@@ -14,6 +15,8 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// The name of the region.
         /// </summary>
         [Required]
+        // language=regex
+        [RegularExpression(@"^[\d\w\s-]*$")]
         public string RegionName { get; set; }
 
         /// <summary>
@@ -26,7 +29,6 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// <summary>
         /// The configuration of scaling of Cosmos DB databases or containers.
         /// </summary>
-        [Required]
         [ElementsHaveDistinctValues(nameof(CosmosConfiguration.Name))]
         public List<CosmosConfiguration> Cosmos { get; set; }
 
@@ -41,6 +43,14 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// </summary>
         [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(ZeroTimeSpan))]
         public TimeSpan CosmosDbPrescaleLeadTime { get; set; }
+
+        /// <summary>
+        /// The maximal lead time for this region
+        /// </summary>
+        [JsonIgnore]
+        public TimeSpan MaxLeadTime => CosmosDbPrescaleLeadTime < ScaleSetPrescaleLeadTime
+            ? ScaleSetPrescaleLeadTime
+            : CosmosDbPrescaleLeadTime;
 
 #pragma warning disable IDE0052 // Remove unread private members (required by the validator of CosmosDbPrescaleLeadTime)
         private TimeSpan ZeroTimeSpan => TimeSpan.Zero;
