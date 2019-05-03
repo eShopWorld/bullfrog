@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
     using Bullfrog.Actors.EventModels;
@@ -14,6 +15,7 @@
     using Bullfrog.DomainEvents;
     using Eshopworld.Core;
     using Microsoft.ServiceFabric.Actors;
+    using Microsoft.ServiceFabric.Actors.Client;
     using Microsoft.ServiceFabric.Actors.Runtime;
 
     [StatePersistence(StatePersistence.Persisted)]
@@ -28,6 +30,9 @@
         private readonly ICosmosManager _cosmosManager;
         private readonly IScaleSetMonitor _scaleSetMonitor;
         private readonly IDateTimeProvider _dateTimeProvider;
+        private readonly IActorProxyFactory _proxyFactory;
+        private readonly string _scaleGroupName;
+        private readonly string _regionName;
 
         /// <summary>
         /// Initializes a new instance of ScaleManager
@@ -46,6 +51,7 @@
             ICosmosManager cosmosManager,
             IScaleSetMonitor scaleSetMonitor,
             IDateTimeProvider dateTimeProvider,
+            IActorProxyFactory proxyFactory,
             IBigBrother bigBrother)
             : base(actorService, actorId, bigBrother)
         {
@@ -57,6 +63,12 @@
             _cosmosManager = cosmosManager;
             _scaleSetMonitor = scaleSetMonitor;
             _dateTimeProvider = dateTimeProvider;
+            _proxyFactory = proxyFactory;
+            var match = Regex.Match(actorId.ToString(), ":(.+)/(.+)$");
+            if (!match.Success)
+                throw new BullfrogException($"The ActorId {actorId} has invalid format.");
+            _scaleGroupName = match.Groups[1].Value;
+            _regionName = match.Groups[2].Value;
         }
 
         /// <summary>
@@ -270,17 +282,12 @@
             var activeEvents = events.Where(e => e.IsActive(now, leadTime)).ToHashSet();
             var executingEvents = events.Where(e => e.IsActive(now, TimeSpan.Zero)).ToHashSet();
             var reportedEventStates = (await _reportedEventStates.TryGet()).Value ?? new Dictionary<Guid, ScaleChangeType>();
-            var statesChanged = false;
+            var changes = new List<(Guid id, ScaleChangeType type)>();
 
             void ChangeState(Guid id, ScaleChangeType type)
             {
                 reportedEventStates[id] = type;
-                statesChanged = true;
-                BigBrother.Publish(new ScaleChange
-                {
-                    Id = id,
-                    Type = type,
-                });
+                changes.Add((id, type));
             }
 
             foreach (var ev in activeEvents.Where(e => !reportedEventStates.ContainsKey(e.Id)))
@@ -311,8 +318,11 @@
                 reportedEventStates.Remove(key);
             }
 
-            if (statesChanged)
+            if (changes.Any())
+            {
+                await GetConfigurationManager().ReportScaleEventState(_scaleGroupName, _regionName, changes);
                 await _reportedEventStates.Set(reportedEventStates);
+            }
         }
 
         private async Task<List<ScaleSetScale>> UpdateScaleSets(List<ScaleSetConfiguration> configurations, int? expectedRequestsNumber)
@@ -438,6 +448,11 @@
                 .Min();
 
             return nextTime;
+        }
+
+        private IConfigurationManager GetConfigurationManager()
+        {
+            return _proxyFactory.CreateActorProxy<IConfigurationManager>(new ActorId("configuration"));
         }
     }
 }

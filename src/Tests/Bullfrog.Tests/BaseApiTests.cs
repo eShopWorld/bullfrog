@@ -111,7 +111,7 @@ public class BaseApiTests
     private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IScaleSetManager> scaleSetManagerMoq, Mock<ICosmosManager> cosmosManagerMoq, Mock<IScaleSetMonitor> scaleSetMonitor, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
     {
         ActorBase scaleManagerActorFactory(ActorService service, ActorId id)
-            => new ScaleManager(service, id, scaleSetManagerMoq.Object, cosmosManagerMoq.Object, scaleSetMonitor.Object, dateTimeProvider, bigBrother);
+            => new ScaleManager(service, id, scaleSetManagerMoq.Object, cosmosManagerMoq.Object, scaleSetMonitor.Object, dateTimeProvider, actorProxyFactory, bigBrother);
         var stateProvider = new MyActorStateProvider(DateTimeProviderMoq.Object);
         var scaleManagerSvc = MockActorServiceFactory.CreateActorServiceForActor<ScaleManager>(scaleManagerActorFactory, stateProvider);
         var scaleManagerActor = scaleManagerSvc.Activate(new ActorId($"ScaleManager:{scaleGroup}/{region}"));

@@ -8,6 +8,7 @@ using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.Models;
 using Bullfrog.Common;
+using Bullfrog.DomainEvents;
 using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
@@ -209,7 +210,10 @@ namespace Bullfrog.Actors
                 registeredEvent.RequiredScaleAt = scaleEvent.RequiredScaleAt;
                 registeredEvent.StartScaleDownAt = scaleEvent.StartScaleDownAt;
 
-                var removedRegions = registeredEvent.Regions.Keys.Except(scaleEvent.RegionConfig.Select(r => r.Name)).ToList();
+                var removedRegions = registeredEvent.Regions.Keys
+                    .Except(scaleEvent.RegionConfig.Select(r => r.Name))
+                    .Where(r => r != SharedCosmosRegion)
+                    .ToList();
                 foreach (var regionName in removedRegions)
                 {
                     var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, regionName);
@@ -219,6 +223,23 @@ namespace Bullfrog.Actors
 
                 foreach (var region in scaleEvent.RegionConfig)
                 {
+                    if(!registeredEvent.Regions.TryGetValue(region.Name, out var regionState))
+                    {
+                        registeredEvent.Regions.Add(region.Name, new ScaleEventRegionState
+                        {
+                            Scale = region.Scale,
+                        });
+                    }
+
+                    var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, region.Name);
+                    await scaleManagerActor.ScheduleScaleEvent(new RegionScaleEvent
+                    {
+                        Id = eventId,
+                        Name = scaleEvent.Name,
+                        RequiredScaleAt = scaleEvent.RequiredScaleAt,
+                        Scale = region.Scale,
+                        StartScaleDownAt = scaleEvent.StartScaleDownAt,
+                    });
                 }
             }
             else
@@ -230,6 +251,11 @@ namespace Bullfrog.Actors
                     StartScaleDownAt = scaleEvent.StartScaleDownAt,
                     Regions = scaleEvent.RegionConfig.ToDictionary(r => r.Name, r => new ScaleEventRegionState { Scale = r.Scale }),
                 };
+
+                if (scaleGroupDefinition.HasSharedCosmosDb)
+                {
+                    registeredEvent.Regions.Add(SharedCosmosRegion, new ScaleEventRegionState());
+                }
 
                 scaleEvents.Add(eventId, registeredEvent);
                 saveResult = SaveScaleEventResult.Created;
@@ -265,7 +291,11 @@ namespace Bullfrog.Actors
                 await scaleEventsState.Set(list);
 
                 var now = _dateTimeProvider.UtcNow;
-                if (now < scaleEvent.RequiredScaleAt - definition.MaxLeadTime(scaleEvent.Regions.Select(r => r.Key)))
+                var regions = from region in scaleEvent.Regions
+                              where region.Key != SharedCosmosRegion
+                              select region.Key;
+                var leadTime = definition.MaxLeadTime(regions);
+                if (now < scaleEvent.RequiredScaleAt - leadTime)
                     return ScaleEventState.Waiting;
                 return now < scaleEvent.StartScaleDownAt ? ScaleEventState.Executing : ScaleEventState.Completed;
             }
@@ -302,7 +332,51 @@ namespace Bullfrog.Actors
             {
                 Regions = scaleRegionStates,
             };
+        }
 
+        async Task IConfigurationManager.ReportScaleEventState(string scaleGroup, string region, IEnumerable<(Guid eventId, ScaleChangeType scaleChangeType)> changes)
+        {
+            var scaleEvents = await GetScaleEventsStateItem(scaleGroup).Get();
+            foreach (var (eventId, scaleChangeType) in changes)
+            {
+                if (scaleEvents.TryGetValue(eventId, out var scaleEvent))
+                {
+                    scaleEvent.Regions[region].State = scaleChangeType;
+                    ReportEventStateChange(scaleGroup, eventId, scaleEvent);
+                }
+            }
+        }
+
+        private void ReportEventStateChange(string scaleGroup, Guid eventId, RegisteredScaleEvent scaleEvent)
+        {
+            var currentState = scaleEvent.CurrentState;
+            if (currentState == scaleEvent.ReportedState)
+                return;
+
+            if (currentState <= ScaleChangeType.ScaleOutStarted)
+            {
+                Report(currentState.Value);
+            }
+            else
+            {
+                var startFrom = scaleEvent.ReportedState ?? ScaleChangeType.ScaleIssue;
+                for (var state = startFrom + 1; state <= currentState.Value; state++)
+                {
+                    Report(state);
+                }
+            }
+
+            scaleEvent.ReportedState = currentState;
+
+            void Report(ScaleChangeType type)
+            {
+                BigBrother.Publish(new ScaleChange
+                {
+                    Id = eventId,
+                    Type = type,
+                    ScaleGroup = scaleGroup,
+                });
+            }
         }
 
         private StateItem<ScaleGroupDefinition> GetScaleGroupState(string name)

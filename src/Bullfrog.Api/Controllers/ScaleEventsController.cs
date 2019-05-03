@@ -127,11 +127,11 @@ namespace Bullfrog.Api.Controllers
                 {
                     Errors = new[]
                     {
-                                new {
-                                    Code = code,
-                                    Message = ex.Message,
-                                }
-                            }
+                        new {
+                            Code = code,
+                            ex.Message,
+                        }
+                    }
                 });
             }
             catch (AggregateException agEx) when (agEx.InnerException is ScaleGroupNotFoundException)

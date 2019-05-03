@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Client;
 using Client.Models;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
+using Moq;
 using Xunit;
+using InternalScaleSetConfituration = Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration;
 
 public class MultiRegionScaleGroupTests : BaseApiTests
 {
@@ -68,6 +71,42 @@ public class MultiRegionScaleGroupTests : BaseApiTests
         var response = await ApiClient.DeleteScaleEventWithHttpMessagesAsync("sg", eventId);
 
         response.Response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact, IsLayer0]
+    public async Task RemovedRegionsShouldNotBeUsed()
+    {
+        CreateScaleGroup();
+        var eventId = Guid.NewGuid();
+        var scaleEvent = NewScaleEvent(regions: new[] { ("eu1", 15), ("eu2", 45) });
+        await ApiClient.SaveScaleEventAsync("sg", eventId, scaleEvent);
+        await AdvanceTimeTo(UtcNow.AddHours(1));
+        ScaleSetManagerMoq.Setup(x => x.SetScale(It.IsAny<int>(), It.IsAny<InternalScaleSetConfituration>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(10);
+
+        scaleEvent.RegionConfig.RemoveAt(1);
+        await ApiClient.SaveScaleEventAsync("sg", eventId, scaleEvent);
+        await AdvanceTimeTo(UtcNow.AddHours(30));
+
+        ScaleSetManagerMoq.Verify(x => x.SetScale(45, It.IsAny<InternalScaleSetConfituration>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact, IsLayer0]
+    public async Task AddedRegionsShouldBeUsed()
+    {
+        CreateScaleGroup();
+        var eventId = Guid.NewGuid();
+        var scaleEvent = NewScaleEvent(regions: new[] { ("eu1", 15) });
+        await ApiClient.SaveScaleEventAsync("sg", eventId, scaleEvent);
+        await AdvanceTimeTo(UtcNow.AddHours(1));
+        ScaleSetManagerMoq.Setup(x => x.SetScale(It.IsAny<int>(), It.IsAny<InternalScaleSetConfituration>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(10);
+
+        scaleEvent.RegionConfig.Add(new RegionScaleValue("eu2", 45));
+        await ApiClient.SaveScaleEventAsync("sg", eventId, scaleEvent);
+        await AdvanceTimeTo(UtcNow.AddHours(30));
+
+        ScaleSetManagerMoq.Verify(x => x.SetScale(15, It.IsAny<InternalScaleSetConfituration>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     private ScaleEvent NewScaleEvent(int scaleOut = 10, int scaleIn = 20, IEnumerable<(string regionName, int scale)> regions = null)
@@ -190,5 +229,4 @@ public class MultiRegionScaleGroupTests : BaseApiTests
            },
         };
     }
-
 }

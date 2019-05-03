@@ -5,6 +5,7 @@ namespace Bullfrog.Actors.Models
     /// <summary>
     /// Details about a region of a scale event.
     /// </summary>
+    [System.Diagnostics.DebuggerDisplay("{State} {Scale}")]
     public class ScaleEventRegionState
     {
         /// <summary>

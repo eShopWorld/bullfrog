@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models;
+using Bullfrog.DomainEvents;
 using Microsoft.ServiceFabric.Actors;
 
 namespace Bullfrog.Actors.Interfaces
@@ -73,5 +74,14 @@ namespace Bullfrog.Actors.Interfaces
         /// </summary>
         /// <returns>The state of the scale manager.</returns>
         Task<ScaleGroupState> GetScaleState(string scaleGroup);
+
+        /// <summary>
+        /// Scale manager notification about changes to state of scale events.
+        /// </summary>
+        /// <param name="scaleGroup">The scale group name.</param>
+        /// <param name="region">The region name.</param>
+        /// <param name="changes">The lists of events with their new states.</param>
+        /// <returns>The task</returns>
+        Task ReportScaleEventState(string scaleGroup, string region, IEnumerable<(Guid eventId, ScaleChangeType scaleChangeType)> changes);
     }
 }
