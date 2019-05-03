@@ -116,7 +116,7 @@ public class ScaleManagerTests : BaseApiTests
     }
 
     [Fact, IsLayer0]
-    public void DeletingEvent()
+    public async Task DeletingEvent()
     {
         CreateScaleGroup();
         var scaleEvent = new Client.Models.ScaleEvent
@@ -138,6 +138,7 @@ public class ScaleManagerTests : BaseApiTests
 
         //act
         ApiClient.DeleteScaleEvent("sg", id);
+        await AdvanceTimeTo(UtcNow.AddMinutes(1));
 
         Action getEvent = () => ApiClient.GetScheduledEvent("sg", id);
         getEvent.Should().Throw<ProblemDetailsException>()
@@ -150,7 +151,7 @@ public class ScaleManagerTests : BaseApiTests
     }
 
     [Fact, IsLayer0]
-    public void AddingActiveEvent()
+    public async Task AddingActiveEvent()
     {
         _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(5);
         _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(5);
@@ -177,6 +178,7 @@ public class ScaleManagerTests : BaseApiTests
 
         //act
         ApiClient.SaveScaleEvent("sg", id, scaleEvent);
+        await AdvanceTimeTo(UtcNow);
 
         CosmosManagerMoq.Verify(x => x.SetScale(10, It.IsAny<Bullfrog.Actors.Interfaces.Models.CosmosConfiguration>(), It.IsAny<CancellationToken>()));
         ScaleSetManagerMoq.Verify(x => x.SetScale(10, It.IsAny<Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration>(), It.IsAny<CancellationToken>()));
@@ -189,7 +191,7 @@ public class ScaleManagerTests : BaseApiTests
     [InlineData(20, 20, 10, 100, 100, 10)]
     [InlineData(20, 8, 10, 100, null, 2)]
     [InlineData(9, 20, 10, null, 100, 1)]
-    public void ReminderChecks(int scaleSetLeadTime, int cosmosDbLeadTime, int eventOffset, int? scaleSetScale, int? cosmosScale, int? reminder)
+    public async Task ReminderChecks(int scaleSetLeadTime, int cosmosDbLeadTime, int eventOffset, int? scaleSetScale, int? cosmosScale, int? reminder)
     {
         _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(scaleSetLeadTime);
         _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(cosmosDbLeadTime);
@@ -224,6 +226,7 @@ public class ScaleManagerTests : BaseApiTests
 
         //act
         ApiClient.SaveScaleEvent("sg", id, scaleEvent);
+        await AdvanceTimeTo(UtcNow);
 
         CosmosManagerMoq.VerifyAll();
         ScaleSetManagerMoq.VerifyAll();

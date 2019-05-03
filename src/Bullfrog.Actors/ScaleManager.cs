@@ -85,7 +85,7 @@
             {
                 events.Remove(eventToDelete);
                 await _events.Set(events, cancellationToken);
-                await UpdateState();
+                await ScheduleStateUpdate();
             }
         }
 
@@ -179,7 +179,7 @@
 
             await _events.Set(events, cancellationToken);
 
-            await UpdateState();
+            await ScheduleStateUpdate();
         }
 
         async Task IScaleManager.Disable(CancellationToken cancellationToken)
@@ -202,12 +202,17 @@
             }
             await _events.Set(events);
 
-            await UpdateState();
+            await ScheduleStateUpdate();
         }
 
         async Task IRemindable.ReceiveReminderAsync(string reminderName, byte[] state, TimeSpan dueTime, TimeSpan period)
         {
             await UpdateState();
+        }
+
+        private Task ScheduleStateUpdate()
+        {
+            return WakeMeAt(_dateTimeProvider.UtcNow);
         }
 
         private async Task UpdateState(CancellationToken cancellationToken = default)
