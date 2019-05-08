@@ -21,7 +21,7 @@ namespace Bullfrog.Actors
     {
         private const string ScaleGroupKeyPrefix = "scaleGroup:";
         private const string EventsListKeyPrefix = "events:";
-        private const string SharedCosmosRegion = "$cosmos";
+        internal const string SharedCosmosRegion = "$cosmos";
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IActorProxyFactory _proxyFactory;
 
