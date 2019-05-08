@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models;
 using Microsoft.ServiceFabric.Actors;
@@ -19,38 +17,33 @@ namespace Bullfrog.Actors.Interfaces
         /// Creates or updates the scale event.
         /// </summary>
         /// <param name="scaleEvent">The scale event details.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The task.</returns>
-        Task ScheduleScaleEvent(RegionScaleEvent scaleEvent, CancellationToken cancellationToken = default);
+        Task ScheduleScaleEvent(RegionScaleEvent scaleEvent);
 
         /// <summary>
         /// Removes the specified scale event.
         /// </summary>
         /// <param name="id">The scale event to remove.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The task.</returns>
-        Task DeleteScaleEvent(Guid id, CancellationToken cancellationToken = default);
+        Task DeleteScaleEvent(Guid id);
 
         /// <summary>
         /// Gets the scale manager state.
         /// </summary>
-        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The state of the scale manager.</returns>
-        Task<ScaleState> GetScaleSet(CancellationToken cancellationToken = default);
+        Task<ScaleState> GetScaleSet();
 
         /// <summary>
         /// Disables the scale set manager.
         /// </summary>
-        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns></returns>
-        Task Disable(CancellationToken cancellationToken = default);
+        Task Disable();
 
         /// <summary>
         /// Configures the scale manager.
         /// </summary>
         /// <param name="configuration">The new configuration of the scale manager.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns></returns>
-        Task Configure(ScaleManagerConfiguration configuration, CancellationToken cancellationToken = default);
+        Task Configure(ScaleManagerConfiguration configuration);
     }
 }

@@ -55,7 +55,7 @@ namespace Bullfrog.Actors
         }
 
         [SuppressMessage("Major Code Smell", "S4457:Parameter validation in \"async\"/\"await\" methods should be wrapped", Justification = "Not necessary")]
-        async Task IConfigurationManager.ConfigureScaleGroup(string name, ScaleGroupDefinition definition, CancellationToken cancellationToken)
+        async Task IConfigurationManager.ConfigureScaleGroup(string name, ScaleGroupDefinition definition)
         {
             if (string.IsNullOrWhiteSpace(name) || name.Trim() != name)
             {
@@ -64,7 +64,7 @@ namespace Bullfrog.Actors
 
             var state = GetScaleGroupState(name);
 
-            var existingGroups = await state.TryGet(cancellationToken);
+            var existingGroups = await state.TryGet();
 
             if (definition != null)
             {
@@ -100,9 +100,9 @@ namespace Bullfrog.Actors
             await eventsList.TryAdd(new Dictionary<Guid, RegisteredScaleEvent>());
         }
 
-        async Task<List<string>> IConfigurationManager.ListConfiguredScaleGroup(CancellationToken cancellationToken)
+        async Task<List<string>> IConfigurationManager.ListConfiguredScaleGroup()
         {
-            var names = await StateManager.GetStateNamesAsync(cancellationToken);
+            var names = await StateManager.GetStateNamesAsync();
             return names
                 .Where(n => n.StartsWith(ScaleGroupKeyPrefix))
                 .Select(n => n.Substring(ScaleGroupKeyPrefix.Length))
@@ -110,14 +110,14 @@ namespace Bullfrog.Actors
         }
 
         [SuppressMessage("Major Code Smell", "S4457:Parameter validation in \"async\"/\"await\" methods should be wrapped", Justification = "Not necessary")]
-        async Task<ScaleGroupDefinition> IConfigurationManager.GetScaleGroupConfiguration(string name, CancellationToken cancellationToken)
+        async Task<ScaleGroupDefinition> IConfigurationManager.GetScaleGroupConfiguration(string name)
         {
             if (string.IsNullOrWhiteSpace(name) || name.Trim() != name)
             {
                 throw new ArgumentException("The name parameter is invalid", nameof(name));
             }
             var state = GetScaleGroupState(name);
-            var configuration = await state.TryGet(cancellationToken);
+            var configuration = await state.TryGet();
             return configuration.HasValue ? configuration.Value : null;
         }
 
@@ -313,7 +313,7 @@ namespace Bullfrog.Actors
             foreach (var region in definition.Regions)
             {
                 var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, region.RegionName);
-                var state = await scaleManagerActor.GetScaleSet(default);
+                var state = await scaleManagerActor.GetScaleSet();
                 if (state != null)
                 {
                     scaleRegionStates.Add(new ScaleRegionState
@@ -406,7 +406,7 @@ namespace Bullfrog.Actors
             foreach (var region in regions)
             {
                 var actor = GetActor<IScaleManager>(name, region);
-                await actor.Disable(default);
+                await actor.Disable();
             }
         }
 

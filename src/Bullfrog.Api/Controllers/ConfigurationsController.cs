@@ -46,7 +46,7 @@ namespace Bullfrog.Api.Controllers
         [HttpGet]
         public async Task<List<string>> ListScaleGroups()
         {
-            return await GetConfigurationManager().ListConfiguredScaleGroup(default);
+            return await GetConfigurationManager().ListConfiguredScaleGroup();
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Bullfrog.Api.Controllers
         [HttpGet("{scaleGroup}")]
         public async Task<ActionResult<ScaleGroupDefinition>> GetDefinition(string scaleGroup)
         {
-            var configuration = await GetConfigurationManager().GetScaleGroupConfiguration(scaleGroup, default);
+            var configuration = await GetConfigurationManager().GetScaleGroupConfiguration(scaleGroup);
             if (configuration != null)
                 return configuration;
             else
@@ -80,7 +80,7 @@ namespace Bullfrog.Api.Controllers
         {
             try
             {
-                await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, definition, default);
+                await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, definition);
             }
             catch (AggregateException agEx) when (agEx.InnerException is InvalidRequestException)
             {
@@ -104,7 +104,7 @@ namespace Bullfrog.Api.Controllers
         [HttpDelete("{scaleGroup}")]
         public async Task<ActionResult> RemoveDefinition(string scaleGroup)
         {
-            await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, null, default);
+            await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, null);
             _bigBrother.Publish(new Models.EventModels.ScaleGroupDeleted
             {
                 ScaleGroup = scaleGroup,

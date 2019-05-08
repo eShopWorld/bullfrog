@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.DomainEvents;
@@ -18,24 +17,21 @@ namespace Bullfrog.Actors.Interfaces
         /// </summary>
         /// <param name="name">The name of the scale group.</param>
         /// <param name="definition">The new definiton of the scale group or null if the scale group should be processed.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns></returns>
-        Task ConfigureScaleGroup(string name, ScaleGroupDefinition definition, CancellationToken cancellationToken);
+        Task ConfigureScaleGroup(string name, ScaleGroupDefinition definition);
 
         /// <summary>
         /// Returns the current definiton of the scale group (or null if the scale group is not defined).
         /// </summary>
         /// <param name="name">The name of the scale group.</param>
-        /// <param name="cancellationToken">The cancelation token.</param>
         /// <returns>Returns the current scale group definiton or nul if the scale group is not defined.</returns>
-        Task<ScaleGroupDefinition> GetScaleGroupConfiguration(string name, CancellationToken cancellationToken);
+        Task<ScaleGroupDefinition> GetScaleGroupConfiguration(string name);
 
         /// <summary>
         /// List all defined scale groups.
         /// </summary>
-        /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>The list of scale group names.</returns>
-        Task<List<string>> ListConfiguredScaleGroup(CancellationToken cancellationToken);
+        Task<List<string>> ListConfiguredScaleGroup();
 
         /// <summary>
         /// Saves a scale event.

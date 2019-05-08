@@ -88,20 +88,20 @@
             await _events.TryAdd(new List<ManagedScaleEvent>());
         }
 
-        async Task IScaleManager.DeleteScaleEvent(Guid id, CancellationToken cancellationToken)
+        async Task IScaleManager.DeleteScaleEvent(Guid id)
         {
-            var events = await _events.Get(cancellationToken);
+            var events = await _events.Get();
 
             var eventToDelete = events.Find(e => e.Id == id);
             if (eventToDelete != null)
             {
                 events.Remove(eventToDelete);
-                await _events.Set(events, cancellationToken);
+                await _events.Set(events);
                 await ScheduleStateUpdate();
             }
         }
 
-        async Task<ScaleState> IScaleManager.GetScaleSet(CancellationToken cancellationToken)
+        async Task<ScaleState> IScaleManager.GetScaleSet()
         {
             var events = await _events.Get();
             var now = _dateTimeProvider.UtcNow;
@@ -110,7 +110,7 @@
             if (!scaleOutStarted.HasValue)
                 return null;
 
-            var configuration = await _configuration.TryGet(cancellationToken);
+            var configuration = await _configuration.TryGet();
             if (!configuration.HasValue)
                 return null;
 
@@ -164,9 +164,9 @@
             return combindedEnd;
         }
 
-        async Task IScaleManager.ScheduleScaleEvent(RegionScaleEvent scaleEvent, CancellationToken cancellationToken)
+        async Task IScaleManager.ScheduleScaleEvent(RegionScaleEvent scaleEvent)
         {
-            var configuration = await _configuration.TryGet(cancellationToken);
+            var configuration = await _configuration.TryGet();
             if (!configuration.HasValue)
             {
                 throw new BullfrogException($"The scale manager {Id} is not active");
@@ -189,21 +189,21 @@
                 configuration.Value.ScaleSetPrescaleLeadTime.Ticks));
             modifiedEvent.EstimatedScaleUpAt = modifiedEvent.RequiredScaleAt - estimatedScaleTime;
 
-            await _events.Set(events, cancellationToken);
+            await _events.Set(events);
 
             await ScheduleStateUpdate();
         }
 
-        async Task IScaleManager.Disable(CancellationToken cancellationToken)
+        async Task IScaleManager.Disable()
         {
-            await _events.Set(new List<ManagedScaleEvent>(), cancellationToken);
+            await _events.Set(new List<ManagedScaleEvent>());
             await _configuration.TryRemove();
             await WakeMeAt(null);
         }
 
-        async Task IScaleManager.Configure(ScaleManagerConfiguration configuration, CancellationToken cancellationToken)
+        async Task IScaleManager.Configure(ScaleManagerConfiguration configuration)
         {
-            await _configuration.Set(configuration, cancellationToken);
+            await _configuration.Set(configuration);
 
             var estimatedScaleTime = TimeSpan.FromTicks(Math.Max(configuration.CosmosDbPrescaleLeadTime.Ticks,
                 configuration.ScaleSetPrescaleLeadTime.Ticks));
