@@ -6,11 +6,6 @@
     public enum ScaleEventState
     {
         /// <summary>
-        /// The scale event has not been found.
-        /// </summary>
-        NotFound,
-        
-        /// <summary>
         /// The scale event has not started yet.
         /// </summary>
         Waiting,

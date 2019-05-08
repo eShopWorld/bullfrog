@@ -15,11 +15,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Common", "Bullfrog
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{2EE623E8-CEAE-45FF-9836-C1B3B463706F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Actors.Tests", "Tests\Bullfrog.Actors.Tests\Bullfrog.Actors.Tests.csproj", "{93B5207C-B7AE-4C08-82BB-B82937433283}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Tests.Integration", "Tests\Bullfrog.Tests.Integration\Bullfrog.Tests.Integration.csproj", "{9DEEC768-BB5D-4C77-A2FE-6585E246D525}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bullfrog.Tests", "Tests\Bullfrog.Tests\Bullfrog.Tests.csproj", "{4A09A53F-EBAD-44D4-9A0C-A5B138531AC9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bullfrog.Client", "Tests\Bullfrog.Client\Bullfrog.Client.csproj", "{9C71282C-E0F3-4C71-9CF5-77433E3F0C0F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,12 +61,6 @@ Global
 		{DE51C8B8-DDAE-4D58-BD7E-E1FE0139EFBD}.Release|Any CPU.ActiveCfg = Release|x64
 		{DE51C8B8-DDAE-4D58-BD7E-E1FE0139EFBD}.Release|x64.ActiveCfg = Release|x64
 		{DE51C8B8-DDAE-4D58-BD7E-E1FE0139EFBD}.Release|x64.Build.0 = Release|x64
-		{93B5207C-B7AE-4C08-82BB-B82937433283}.Debug|Any CPU.ActiveCfg = Debug|x64
-		{93B5207C-B7AE-4C08-82BB-B82937433283}.Debug|x64.ActiveCfg = Debug|x64
-		{93B5207C-B7AE-4C08-82BB-B82937433283}.Debug|x64.Build.0 = Debug|x64
-		{93B5207C-B7AE-4C08-82BB-B82937433283}.Release|Any CPU.ActiveCfg = Release|x64
-		{93B5207C-B7AE-4C08-82BB-B82937433283}.Release|x64.ActiveCfg = Release|x64
-		{93B5207C-B7AE-4C08-82BB-B82937433283}.Release|x64.Build.0 = Release|x64
 		{9DEEC768-BB5D-4C77-A2FE-6585E246D525}.Debug|Any CPU.ActiveCfg = Debug|x64
 		{9DEEC768-BB5D-4C77-A2FE-6585E246D525}.Debug|x64.ActiveCfg = Debug|x64
 		{9DEEC768-BB5D-4C77-A2FE-6585E246D525}.Debug|x64.Build.0 = Debug|x64
@@ -79,14 +73,22 @@ Global
 		{4A09A53F-EBAD-44D4-9A0C-A5B138531AC9}.Release|Any CPU.ActiveCfg = Release|x64
 		{4A09A53F-EBAD-44D4-9A0C-A5B138531AC9}.Release|x64.ActiveCfg = Release|x64
 		{4A09A53F-EBAD-44D4-9A0C-A5B138531AC9}.Release|x64.Build.0 = Release|x64
+		{9C71282C-E0F3-4C71-9CF5-77433E3F0C0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C71282C-E0F3-4C71-9CF5-77433E3F0C0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C71282C-E0F3-4C71-9CF5-77433E3F0C0F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9C71282C-E0F3-4C71-9CF5-77433E3F0C0F}.Debug|x64.Build.0 = Debug|Any CPU
+		{9C71282C-E0F3-4C71-9CF5-77433E3F0C0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C71282C-E0F3-4C71-9CF5-77433E3F0C0F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C71282C-E0F3-4C71-9CF5-77433E3F0C0F}.Release|x64.ActiveCfg = Release|Any CPU
+		{9C71282C-E0F3-4C71-9CF5-77433E3F0C0F}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{93B5207C-B7AE-4C08-82BB-B82937433283} = {2EE623E8-CEAE-45FF-9836-C1B3B463706F}
 		{9DEEC768-BB5D-4C77-A2FE-6585E246D525} = {2EE623E8-CEAE-45FF-9836-C1B3B463706F}
 		{4A09A53F-EBAD-44D4-9A0C-A5B138531AC9} = {2EE623E8-CEAE-45FF-9836-C1B3B463706F}
+		{9C71282C-E0F3-4C71-9CF5-77433E3F0C0F} = {2EE623E8-CEAE-45FF-9836-C1B3B463706F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {52D22453-628E-48F3-8A36-B787F5049AA6}

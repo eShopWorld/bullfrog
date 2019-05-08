@@ -1,40 +1,42 @@
 ﻿using System;
+using System.Collections.Generic;
+using Bullfrog.Actors.Interfaces.Models;
 
 namespace Bullfrog.Actors.Interfaces.Models
 {
     /// <summary>
-    /// The details of an existing scale event.
+    /// Describes an existing scale event.
     /// </summary>
     public class ScheduledScaleEvent
     {
         /// <summary>
-        /// The scale event ID.
+        /// Identifier of the scale event.
         /// </summary>
         public Guid Id { get; set; }
 
         /// <summary>
-        /// The scale event name.
+        /// Name of the scale event.
         /// </summary>
         public string Name { get; set; }
 
         /// <summary>
-        /// The time when the scale event starts.
+        /// The time when all resources should be scaled to the level which allows to handle the requested traffic.
         /// </summary>
         public DateTimeOffset RequiredScaleAt { get; set; }
 
         /// <summary>
-        /// The time when resources are planed to scale out to prepare for the event.
+        /// The estimated time when the scaling of resources start.
         /// </summary>
         public DateTimeOffset EstimatedScaleUpAt { get; set; }
 
         /// <summary>
-        /// The time when resources can be scaled down.
+        /// The time when the scale event ends and all resources can be scaled in.
         /// </summary>
         public DateTimeOffset StartScaleDownAt { get; set; }
 
         /// <summary>
-        /// The requested scale.
+        /// The list of regions which require scaling.
         /// </summary>
-        public int Scale { get; set; }
+        public List<RegionScaleValue> RegionConfig { get; set; }
     }
 }

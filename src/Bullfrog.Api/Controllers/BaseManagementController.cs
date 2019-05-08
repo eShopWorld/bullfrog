@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Fabric;
-using System.Linq;
-using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -57,33 +55,12 @@ namespace Bullfrog.Api.Controllers
         }
 
         /// <summary>
-        /// Returns the actor responsible for managing region of the scale group.
+        /// Returns the configuration manager.
         /// </summary>
-        /// <typeparam name="TActor">The type of the actor.</typeparam>
-        /// <param name="scaleGroup">The scale group name.</param>
-        /// <param name="region">The region name.</param>
-        /// <returns>The actor proxy.</returns>
-        protected TActor GetActor<TActor>(string scaleGroup, string region)
-            where TActor : IActor
+        /// <returns>The configuration manager actor.</returns>
+        protected IConfigurationManager GetConfigurationManager()
         {
-            var actorName = typeof(TActor).Name;
-            if (actorName.StartsWith('I'))
-                actorName = actorName.Substring(1);
-            var actorId = new ActorId($"{actorName}:{scaleGroup}/{region}");
-            return GetActor<TActor>(actorId);
-        }
-
-        /// <summary>
-        /// Returns the list of regions of the specified scale groups.
-        /// </summary>
-        /// <param name="scaleGroup">The name of the scale group</param>
-        /// <returns>The list of region names or null if the scale group is not configured.</returns>
-        protected async Task<List<string>> ListRegionsOfScaleGroup(string scaleGroup)
-        {
-            var actor = GetActor<IConfigurationManager>(new ActorId("configuration"));
-            // TODO: caching would be nice
-            var configuration = await actor.GetScaleGroupConfiguration(scaleGroup, default);
-            return configuration?.Regions.Select(r => r.RegionName).ToList();
+            return GetActor<IConfigurationManager>(new ActorId("configuration"));
         }
     }
 }

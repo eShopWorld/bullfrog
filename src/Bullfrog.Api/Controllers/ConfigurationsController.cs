@@ -1,14 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Fabric;
-using System.Linq;
 using System.Threading.Tasks;
-using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
+using Bullfrog.Common;
 using Eshopworld.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
 
 namespace Bullfrog.Api.Controllers
@@ -44,7 +43,7 @@ namespace Bullfrog.Api.Controllers
         [HttpGet]
         public async Task<List<string>> ListScaleGroups()
         {
-            return await GetConfigurationManager().ListConfiguredScaleGroup(default);
+            return await GetConfigurationManager().ListConfiguredScaleGroup();
         }
 
         /// <summary>
@@ -52,12 +51,13 @@ namespace Bullfrog.Api.Controllers
         /// </summary>
         /// <param name="scaleGroup">The scale group name.</param>
         /// <returns></returns>
+        [Authorize(Policy = AuthenticationPolicies.EventsManagerScope)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesDefaultResponseType]
         [HttpGet("{scaleGroup}")]
         public async Task<ActionResult<ScaleGroupDefinition>> GetDefinition(string scaleGroup)
         {
-            var configuration = await GetConfigurationManager().GetScaleGroupConfiguration(scaleGroup, default);
+            var configuration = await GetConfigurationManager().GetScaleGroupConfiguration(scaleGroup);
             if (configuration != null)
                 return configuration;
             else
@@ -75,7 +75,15 @@ namespace Bullfrog.Api.Controllers
         [HttpPut("{scaleGroup}")]
         public async Task<ActionResult> SetDefinition(string scaleGroup, ScaleGroupDefinition definition)
         {
-            await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, definition, default);
+            try
+            {
+                await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, definition);
+            }
+            catch (AggregateException agEx) when (agEx.InnerException is InvalidRequestException)
+            {
+                return BadRequest();
+            }
+
             _bigBrother.Publish(new Models.EventModels.ConfigurationChanged
             {
                 ScaleGroup = scaleGroup,
@@ -93,17 +101,12 @@ namespace Bullfrog.Api.Controllers
         [HttpDelete("{scaleGroup}")]
         public async Task<ActionResult> RemoveDefinition(string scaleGroup)
         {
-            await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, null, default);
+            await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, null);
             _bigBrother.Publish(new Models.EventModels.ScaleGroupDeleted
             {
                 ScaleGroup = scaleGroup,
             });
             return NoContent();
-        }
-
-        private IConfigurationManager GetConfigurationManager()
-        {
-            return GetActor<IConfigurationManager>(new ActorId("configuration"));
         }
     }
 }

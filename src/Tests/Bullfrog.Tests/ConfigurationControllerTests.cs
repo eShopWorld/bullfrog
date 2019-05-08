@@ -26,7 +26,7 @@ public class ConfigurationControllerTests : BaseApiTests
     public async Task CreateNewScaleGroup()
     {
         //act
-        await ApiClient.SetDefinitionAsync("sg", new Client.Models.ScaleGroupDefinition
+        await ApiClient.SetDefinitionAsync("sg", new ScaleGroupDefinition
         {
             Regions = new List<ScaleGroupRegion>
             {
@@ -70,7 +70,7 @@ public class ConfigurationControllerTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task UpdateScaleGroupWithoutChanges()
     {
-        var scaleGroup = new Client.Models.ScaleGroupDefinition
+        var scaleGroup = new ScaleGroupDefinition
         {
             Regions = new List<ScaleGroupRegion>
             {
@@ -88,11 +88,82 @@ public class ConfigurationControllerTests : BaseApiTests
         await ApiClient.SetDefinitionAsync("sg", scaleGroup);
     }
 
+    [Fact, IsLayer0]
+    public async Task FailIfNewDefinitionMissesUsedRegions()
+    {
+        var scaleGroup = new ScaleGroupDefinition
+        {
+            Regions = new List<ScaleGroupRegion>
+            {
+                new ScaleGroupRegion
+                {
+                    RegionName = "eu1",
+                    Cosmos = new List<CosmosConfiguration>(),
+                    ScaleSets = new List<ScaleSetConfiguration>(),
+                },
+                new ScaleGroupRegion
+                {
+                    RegionName = "eu2",
+                    Cosmos = new List<CosmosConfiguration>(),
+                    ScaleSets = new List<ScaleSetConfiguration>(),
+                },
+            },
+        };
+        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        await ApiClient.SaveScaleEventAsync("sg", Guid.NewGuid(), new ScaleEvent
+        {
+            Name = "n",
+            RegionConfig = new[] { new RegionScaleValue { Name = "eu2", Scale = 10 } },
+            RequiredScaleAt = UtcNow.AddHours(1),
+            StartScaleDownAt = UtcNow.AddHours(2),
+        });
+        scaleGroup.Regions.RemoveAt(1); // try to remove eu2
+
+        //act
+        Func<Task> call = () => ApiClient.SetDefinitionAsync("sg", scaleGroup);
+
+        call.Should().Throw<ProblemDetailsException>();
+    }
+
+    [Fact, IsLayer0]
+    public async Task NotUsedRegionsMayBeRemoved()
+    {
+        var scaleGroup = new ScaleGroupDefinition
+        {
+            Regions = new List<ScaleGroupRegion>
+            {
+                new ScaleGroupRegion
+                {
+                    RegionName = "eu1",
+                    Cosmos = new List<CosmosConfiguration>(),
+                    ScaleSets = new List<ScaleSetConfiguration>(),
+                },
+                new ScaleGroupRegion
+                {
+                    RegionName = "eu2",
+                    Cosmos = new List<CosmosConfiguration>(),
+                    ScaleSets = new List<ScaleSetConfiguration>(),
+                },
+            },
+        };
+        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        await ApiClient.SaveScaleEventAsync("sg", Guid.NewGuid(), new ScaleEvent
+        {
+            Name = "n",
+            RegionConfig = new[] { new RegionScaleValue { Name = "eu1", Scale = 10 } },
+            RequiredScaleAt = UtcNow.AddHours(1),
+            StartScaleDownAt = UtcNow.AddHours(2),
+        });
+        scaleGroup.Regions.RemoveAt(1); // try to remove eu2
+
+        //act
+        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+    }
 
     [Fact, IsLayer0]
     public async Task RemoveExistingScaleGroup()
     {
-        var scaleGroup = new Client.Models.ScaleGroupDefinition
+        var scaleGroup = new ScaleGroupDefinition
         {
             Regions = new List<ScaleGroupRegion>
             {
@@ -117,7 +188,7 @@ public class ConfigurationControllerTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task GettingUnknownScaleGroup()
     {
-        var scaleGroup = new Client.Models.ScaleGroupDefinition
+        var scaleGroup = new ScaleGroupDefinition
         {
             Regions = new List<ScaleGroupRegion>
             {
@@ -141,7 +212,7 @@ public class ConfigurationControllerTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task GettingExistingScaleGroup()
     {
-        var scaleGroup = new Client.Models.ScaleGroupDefinition
+        var scaleGroup = new ScaleGroupDefinition
         {
             Regions = new List<ScaleGroupRegion>
             {
@@ -158,7 +229,7 @@ public class ConfigurationControllerTests : BaseApiTests
         //act
         var returnedScaleGroup = await ApiClient.GetDefinitionAsync("sg");
 
-        var expectedScaleGroup = new Client.Models.ScaleGroupDefinition
+        var expectedScaleGroup = new ScaleGroupDefinition
         {
             Regions = new List<ScaleGroupRegion>
             {
@@ -171,6 +242,7 @@ public class ConfigurationControllerTests : BaseApiTests
                     CosmosDbPrescaleLeadTime = TimeSpan.Zero.ToString(),
                 }
             },
+            CosmosDbPrescaleLeadTime = TimeSpan.Zero.ToString(),
         };
         returnedScaleGroup.Should().BeEquivalentTo(expectedScaleGroup);
     }

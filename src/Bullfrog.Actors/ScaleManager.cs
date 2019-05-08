@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text.RegularExpressions;
     using System.Threading;
     using System.Threading.Tasks;
     using Bullfrog.Actors.EventModels;
@@ -14,6 +15,7 @@
     using Bullfrog.DomainEvents;
     using Eshopworld.Core;
     using Microsoft.ServiceFabric.Actors;
+    using Microsoft.ServiceFabric.Actors.Client;
     using Microsoft.ServiceFabric.Actors.Runtime;
 
     [StatePersistence(StatePersistence.Persisted)]
@@ -28,6 +30,9 @@
         private readonly ICosmosManager _cosmosManager;
         private readonly IScaleSetMonitor _scaleSetMonitor;
         private readonly IDateTimeProvider _dateTimeProvider;
+        private readonly IActorProxyFactory _proxyFactory;
+        private readonly string _scaleGroupName;
+        private readonly string _regionName;
 
         /// <summary>
         /// Initializes a new instance of ScaleManager
@@ -46,6 +51,7 @@
             ICosmosManager cosmosManager,
             IScaleSetMonitor scaleSetMonitor,
             IDateTimeProvider dateTimeProvider,
+            IActorProxyFactory proxyFactory,
             IBigBrother bigBrother)
             : base(actorService, actorId, bigBrother)
         {
@@ -57,6 +63,12 @@
             _cosmosManager = cosmosManager;
             _scaleSetMonitor = scaleSetMonitor;
             _dateTimeProvider = dateTimeProvider;
+            _proxyFactory = proxyFactory;
+            var match = Regex.Match(actorId.ToString(), ":(.+)/(.+)$");
+            if (!match.Success)
+                throw new BullfrogException($"The ActorId {actorId} has invalid format.");
+            _scaleGroupName = match.Groups[1].Value;
+            _regionName = match.Groups[2].Value;
         }
 
         /// <summary>
@@ -76,34 +88,20 @@
             await _events.TryAdd(new List<ManagedScaleEvent>());
         }
 
-        async Task<ScaleEventState> IScaleManager.DeleteScaleEvent(Guid id, CancellationToken cancellationToken)
-        {
-            var events = await _events.Get(cancellationToken);
-            var now = _dateTimeProvider.UtcNow;
-
-            var eventToDelete = events.Find(e => e.Id == id);
-            var state = eventToDelete?.GetState(now) ?? ScaleEventState.NotFound;
-            if (eventToDelete != null)
-            {
-                events.Remove(eventToDelete);
-                await _events.Set(events, cancellationToken);
-                await UpdateState();
-            }
-
-            return state;
-        }
-
-        async Task<ScheduledScaleEvent> IScaleManager.GetScaleEvent(Guid id, CancellationToken cancellationToken)
+        async Task IScaleManager.DeleteScaleEvent(Guid id)
         {
             var events = await _events.Get();
 
-            var foundEvent = events.Find(e => e.Id == id);
-            if (foundEvent == null)
-                return null;
-            return ToScheduledScaleEvent(foundEvent);
+            var eventToDelete = events.Find(e => e.Id == id);
+            if (eventToDelete != null)
+            {
+                events.Remove(eventToDelete);
+                await _events.Set(events);
+                await ScheduleStateUpdate();
+            }
         }
 
-        async Task<ScaleState> IScaleManager.GetScaleSet(CancellationToken cancellationToken)
+        async Task<ScaleState> IScaleManager.GetScaleSet()
         {
             var events = await _events.Get();
             var now = _dateTimeProvider.UtcNow;
@@ -112,7 +110,7 @@
             if (!scaleOutStarted.HasValue)
                 return null;
 
-            var configuration = await _configuration.TryGet(cancellationToken);
+            var configuration = await _configuration.TryGet();
             if (!configuration.HasValue)
                 return null;
 
@@ -166,27 +164,17 @@
             return combindedEnd;
         }
 
-        async Task<List<ScheduledScaleEvent>> IScaleManager.ListScaleEvents(CancellationToken cancellationToken)
+        async Task IScaleManager.ScheduleScaleEvent(RegionScaleEvent scaleEvent)
         {
-            var events = await _events.Get();
-
-            return events.Select(ToScheduledScaleEvent).ToList();
-        }
-
-        async Task<UpdatedScheduledScaleEvent> IScaleManager.ScheduleScaleEvent(ScaleEvent scaleEvent, CancellationToken cancellationToken)
-        {
-            var configuration = await _configuration.TryGet(cancellationToken);
+            var configuration = await _configuration.TryGet();
             if (!configuration.HasValue)
             {
-                // TODO: return something instead of throwing an exception
                 throw new BullfrogException($"The scale manager {Id} is not active");
             }
 
             var events = await _events.Get();
 
             var modifiedEvent = events.Find(e => e.Id == scaleEvent.Id);
-            var state = modifiedEvent?.GetState(_dateTimeProvider.UtcNow) ?? ScaleEventState.NotFound;
-
             if (modifiedEvent == null)
             {
                 modifiedEvent = new ManagedScaleEvent { Id = scaleEvent.Id };
@@ -201,32 +189,21 @@
                 configuration.Value.ScaleSetPrescaleLeadTime.Ticks));
             modifiedEvent.EstimatedScaleUpAt = modifiedEvent.RequiredScaleAt - estimatedScaleTime;
 
-            await _events.Set(events, cancellationToken);
+            await _events.Set(events);
 
-            await UpdateState();
-
-            return new UpdatedScheduledScaleEvent
-            {
-                PreState = state,
-                Id = modifiedEvent.Id,
-                EstimatedScaleUpAt = modifiedEvent.EstimatedScaleUpAt,
-                Name = modifiedEvent.Name,
-                RequiredScaleAt = modifiedEvent.RequiredScaleAt,
-                Scale = modifiedEvent.Scale,
-                StartScaleDownAt = modifiedEvent.StartScaleDownAt,
-            };
+            await ScheduleStateUpdate();
         }
 
-        async Task IScaleManager.Disable(CancellationToken cancellationToken)
+        async Task IScaleManager.Disable()
         {
-            await _events.Set(new List<ManagedScaleEvent>(), cancellationToken);
+            await _events.Set(new List<ManagedScaleEvent>());
             await _configuration.TryRemove();
             await WakeMeAt(null);
         }
 
-        async Task IScaleManager.Configure(ScaleManagerConfiguration configuration, CancellationToken cancellationToken)
+        async Task IScaleManager.Configure(ScaleManagerConfiguration configuration)
         {
-            await _configuration.Set(configuration, cancellationToken);
+            await _configuration.Set(configuration);
 
             var estimatedScaleTime = TimeSpan.FromTicks(Math.Max(configuration.CosmosDbPrescaleLeadTime.Ticks,
                 configuration.ScaleSetPrescaleLeadTime.Ticks));
@@ -237,25 +214,17 @@
             }
             await _events.Set(events);
 
-            await UpdateState();
-        }
-
-        private static ScheduledScaleEvent ToScheduledScaleEvent(ManagedScaleEvent foundEvent)
-        {
-            return new ScheduledScaleEvent
-            {
-                EstimatedScaleUpAt = foundEvent.EstimatedScaleUpAt,
-                Id = foundEvent.Id,
-                Name = foundEvent.Name,
-                RequiredScaleAt = foundEvent.RequiredScaleAt,
-                Scale = foundEvent.Scale,
-                StartScaleDownAt = foundEvent.StartScaleDownAt,
-            };
+            await ScheduleStateUpdate();
         }
 
         async Task IRemindable.ReceiveReminderAsync(string reminderName, byte[] state, TimeSpan dueTime, TimeSpan period)
         {
             await UpdateState();
+        }
+
+        private Task ScheduleStateUpdate()
+        {
+            return WakeMeAt(_dateTimeProvider.UtcNow);
         }
 
         private async Task UpdateState(CancellationToken cancellationToken = default)
@@ -268,7 +237,7 @@
             var scaleSetScale = CalculateCurrentTotalScaleRequest(events, now, configuration.ScaleSetPrescaleLeadTime);
             var scaleSetInstances = await UpdateScaleSets(configuration.ScaleSetConfigurations, scaleSetScale);
             var cosmosDbScale = CalculateCurrentTotalScaleRequest(events, now, configuration.CosmosDbPrescaleLeadTime);
-            var cosmosScaleState = await UpdateCosmosInstances(configuration.CosmosConfigurations, cosmosDbScale);
+            var cosmosScaleState = await UpdateCosmosInstances(configuration.CosmosConfigurations ?? Enumerable.Empty<CosmosConfiguration>(), cosmosDbScale);
 
             var scaleOutStarted = await _scaleOutStarted.TryGet();
             if (scaleSetScale.HasValue || cosmosDbScale.HasValue)
@@ -313,15 +282,17 @@
             var activeEvents = events.Where(e => e.IsActive(now, leadTime)).ToHashSet();
             var executingEvents = events.Where(e => e.IsActive(now, TimeSpan.Zero)).ToHashSet();
             var reportedEventStates = (await _reportedEventStates.TryGet()).Value ?? new Dictionary<Guid, ScaleChangeType>();
-            var statesChanged = false;
+            var changes = new List<(Guid id, ScaleChangeType type)>();
 
             void ChangeState(Guid id, ScaleChangeType type)
             {
                 reportedEventStates[id] = type;
-                statesChanged = true;
-                BigBrother.Publish(new ScaleChange
+                changes.Add((id, type));
+                BigBrother.Publish(new EventRegionScaleChange
                 {
                     Id = id,
+                    RegionName = _regionName,
+                    ScaleGroup = _scaleGroupName,
                     Type = type,
                 });
             }
@@ -354,8 +325,12 @@
                 reportedEventStates.Remove(key);
             }
 
-            if (statesChanged)
+            if (changes.Any())
+            {
+                var reportedChanges = changes.Select(c => new ScaleEventStateChange { EventId = c.id, State = c.type }).ToList();
+                await GetConfigurationManager().ReportScaleEventState(_scaleGroupName, _regionName, reportedChanges);
                 await _reportedEventStates.Set(reportedEventStates);
+            }
         }
 
         private async Task<List<ScaleSetScale>> UpdateScaleSets(List<ScaleSetConfiguration> configurations, int? expectedRequestsNumber)
@@ -392,7 +367,7 @@
             return scales;
         }
 
-        private async Task<List<CosmosScale>> UpdateCosmosInstances(List<CosmosConfiguration> cosmosInstances, int? expectedRequestsNumber)
+        private async Task<List<CosmosScale>> UpdateCosmosInstances(IEnumerable<CosmosConfiguration> cosmosInstances, int? expectedRequestsNumber)
         {
             var cosmosScaleState = new List<CosmosScale>();
             foreach (var cosmosConfiguration in cosmosInstances)
@@ -481,6 +456,11 @@
                 .Min();
 
             return nextTime;
+        }
+
+        private IConfigurationManager GetConfigurationManager()
+        {
+            return _proxyFactory.CreateActorProxy<IConfigurationManager>(new ActorId("configuration"));
         }
     }
 }

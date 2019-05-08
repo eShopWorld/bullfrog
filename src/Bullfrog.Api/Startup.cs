@@ -111,7 +111,7 @@ namespace Bullfrog.Api
                         }
                     }
 
-                    c.OperationFilter<DefaultResponseFixFilter>();
+                    c.OperationFilter<OperationIdFilter>();
                 });
 
                 services.AddAuthorization(options =>
