@@ -36,6 +36,6 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// <summary>
         /// State of each scale set.
         /// </summary>
-        public IDictionary<string, decimal> ScaleSetState { get; set; }
+        public Dictionary<string, decimal> ScaleSetState { get; set; }
     }
 }

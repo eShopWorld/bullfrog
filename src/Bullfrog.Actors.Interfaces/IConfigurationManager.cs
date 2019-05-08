@@ -40,7 +40,7 @@ namespace Bullfrog.Actors.Interfaces
         /// <param name="eventId">The id of the event.</param>
         /// <param name="scaleEvent">The scale event details.</param>
         /// <returns>A task.</returns>
-        Task<(SaveScaleEventResult result, ScheduledScaleEvent scheduledScaleEvent)> SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent);
+        Task<SaveScaleEventReturnValue> SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent);
 
         /// <summary>
         /// Returns an existing scale event.
@@ -78,6 +78,6 @@ namespace Bullfrog.Actors.Interfaces
         /// <param name="region">The region name.</param>
         /// <param name="changes">The lists of events with their new states.</param>
         /// <returns>The task</returns>
-        Task ReportScaleEventState(string scaleGroup, string region, IEnumerable<(Guid eventId, ScaleChangeType scaleChangeType)> changes);
+        Task ReportScaleEventState(string scaleGroup, string region, List<ScaleEventStateChange> changes);
     }
 }

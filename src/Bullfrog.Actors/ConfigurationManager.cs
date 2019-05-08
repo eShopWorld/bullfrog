@@ -152,7 +152,7 @@ namespace Bullfrog.Actors
 
         }
 
-        async Task<(SaveScaleEventResult result, ScheduledScaleEvent scheduledScaleEvent)> IConfigurationManager.SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent)
+        async Task<SaveScaleEventReturnValue> IConfigurationManager.SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent)
         {
             var scaleGroupDefinition = await GetScaleGroupDefinition(scaleGroup);
 
@@ -265,7 +265,7 @@ namespace Bullfrog.Actors
 
             var leadTime = scaleGroupDefinition.MaxLeadTime(scaleEvent.RegionConfig.Select(r => r.Name));
             var scheduledScaleEvent = registeredEvent.ToScheduledScaleEvent(eventId, leadTime);
-            return (saveResult, scheduledScaleEvent);
+            return new SaveScaleEventReturnValue { Result = saveResult, ScheduledScaleEvent = scheduledScaleEvent };
         }
 
         async Task<ScaleEventState> IConfigurationManager.DeleteScaleEvent(string scaleGroup, Guid eventId)
@@ -334,15 +334,15 @@ namespace Bullfrog.Actors
             };
         }
 
-        async Task IConfigurationManager.ReportScaleEventState(string scaleGroup, string region, IEnumerable<(Guid eventId, ScaleChangeType scaleChangeType)> changes)
+        async Task IConfigurationManager.ReportScaleEventState(string scaleGroup, string region, List<ScaleEventStateChange> changes)
         {
             var scaleEvents = await GetScaleEventsStateItem(scaleGroup).Get();
-            foreach (var (eventId, scaleChangeType) in changes)
+            foreach (var change in changes)
             {
-                if (scaleEvents.TryGetValue(eventId, out var scaleEvent))
+                if (scaleEvents.TryGetValue(change.EventId, out var scaleEvent))
                 {
-                    scaleEvent.Regions[region].State = scaleChangeType;
-                    ReportEventStateChange(scaleGroup, eventId, scaleEvent);
+                    scaleEvent.Regions[region].State = change.State;
+                    ReportEventStateChange(scaleGroup, change.EventId, scaleEvent);
                 }
             }
         }

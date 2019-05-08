@@ -93,11 +93,11 @@ namespace Bullfrog.Api.Controllers
         {
             try
             {
-                var (result, scheduledScaleEvent) = await GetConfigurationManager().SaveScaleEvent(scaleGroup, eventId, scaleEvent);
-                switch (result)
+                var result = await GetConfigurationManager().SaveScaleEvent(scaleGroup, eventId, scaleEvent);
+                switch (result.Result)
                 {
                     case SaveScaleEventResult.Created:
-                        return CreatedAtAction(nameof(GetScheduledEvent), new { scaleGroup, eventId }, scheduledScaleEvent);
+                        return CreatedAtAction(nameof(GetScheduledEvent), new { scaleGroup, eventId }, result.ScheduledScaleEvent);
                     case SaveScaleEventResult.ReplacedExecuting:
                         return Accepted();
                     case SaveScaleEventResult.ReplacedWaiting:

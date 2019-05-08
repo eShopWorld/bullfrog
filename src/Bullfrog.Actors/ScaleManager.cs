@@ -327,7 +327,8 @@
 
             if (changes.Any())
             {
-                await GetConfigurationManager().ReportScaleEventState(_scaleGroupName, _regionName, changes);
+                var reportedChanges = changes.Select(c => new ScaleEventStateChange { EventId = c.id, State = c.type }).ToList();
+                await GetConfigurationManager().ReportScaleEventState(_scaleGroupName, _regionName, reportedChanges);
                 await _reportedEventStates.Set(reportedEventStates);
             }
         }
