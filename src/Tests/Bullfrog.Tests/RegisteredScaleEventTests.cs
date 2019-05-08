@@ -9,7 +9,7 @@ public class RegisteredScaleEventTests
 {
     [Theory, IsLayer0]
     [MemberData(nameof(StateData))]
-    public void CurrentState(ScaleChangeType?[] regionStates, ScaleChangeType? currentState)
+    public void CurrentState(ScaleChangeType[] regionStates, ScaleChangeType currentState)
     {
         var scaleEvent = new RegisteredScaleEvent
         {
@@ -26,16 +26,16 @@ public class RegisteredScaleEventTests
 
     public static IEnumerable<object[]> StateData()
     {
-        yield return new object[] { new ScaleChangeType?[] { null }, null };
-        yield return new object[] { new ScaleChangeType?[] { null, null }, null };
-        yield return new object[] { new ScaleChangeType?[] { ScaleChangeType.ScaleInStarted, null }, ScaleChangeType.ScaleInStarted };
-        yield return new object[] { new ScaleChangeType?[] { ScaleChangeType.ScaleInComplete, ScaleChangeType.ScaleInComplete }, ScaleChangeType.ScaleInComplete };
-        yield return new object[] { new ScaleChangeType?[] { ScaleChangeType.ScaleInComplete, ScaleChangeType.ScaleInStarted }, ScaleChangeType.ScaleInStarted };
-        yield return new object[] { new ScaleChangeType?[] { ScaleChangeType.ScaleInComplete, ScaleChangeType.ScaleIssue }, ScaleChangeType.ScaleInStarted };
-        yield return new object[] { new ScaleChangeType?[] { ScaleChangeType.ScaleIssue, ScaleChangeType.ScaleOutStarted }, ScaleChangeType.ScaleIssue };
-        yield return new object[] { new ScaleChangeType?[] { ScaleChangeType.ScaleIssue, ScaleChangeType.ScaleOutComplete }, ScaleChangeType.ScaleIssue };
-        yield return new object[] { new ScaleChangeType?[] { ScaleChangeType.ScaleOutStarted, null }, ScaleChangeType.ScaleOutStarted };
-        yield return new object[] { new ScaleChangeType?[] { ScaleChangeType.ScaleOutStarted, ScaleChangeType.ScaleOutComplete }, ScaleChangeType.ScaleOutStarted };
-        yield return new object[] { new ScaleChangeType?[] { ScaleChangeType.ScaleOutComplete, ScaleChangeType.ScaleOutComplete }, ScaleChangeType.ScaleOutComplete };
+        yield return new object[] { new ScaleChangeType[] { ScaleChangeType.Waiting }, ScaleChangeType.Waiting };
+        yield return new object[] { new ScaleChangeType[] { ScaleChangeType.Waiting, ScaleChangeType.Waiting }, ScaleChangeType.Waiting };
+        yield return new object[] { new ScaleChangeType[] { ScaleChangeType.ScaleInStarted, ScaleChangeType.Waiting }, ScaleChangeType.ScaleInStarted };
+        yield return new object[] { new ScaleChangeType[] { ScaleChangeType.ScaleInComplete, ScaleChangeType.ScaleInComplete }, ScaleChangeType.ScaleInComplete };
+        yield return new object[] { new ScaleChangeType[] { ScaleChangeType.ScaleInComplete, ScaleChangeType.ScaleInStarted }, ScaleChangeType.ScaleInStarted };
+        yield return new object[] { new ScaleChangeType[] { ScaleChangeType.ScaleInComplete, ScaleChangeType.ScaleIssue }, ScaleChangeType.ScaleInStarted };
+        yield return new object[] { new ScaleChangeType[] { ScaleChangeType.ScaleIssue, ScaleChangeType.ScaleOutStarted }, ScaleChangeType.ScaleIssue };
+        yield return new object[] { new ScaleChangeType[] { ScaleChangeType.ScaleIssue, ScaleChangeType.ScaleOutComplete }, ScaleChangeType.ScaleIssue };
+        yield return new object[] { new ScaleChangeType[] { ScaleChangeType.ScaleOutStarted, ScaleChangeType.Waiting }, ScaleChangeType.ScaleOutStarted };
+        yield return new object[] { new ScaleChangeType[] { ScaleChangeType.ScaleOutStarted, ScaleChangeType.ScaleOutComplete }, ScaleChangeType.ScaleOutStarted };
+        yield return new object[] { new ScaleChangeType[] { ScaleChangeType.ScaleOutComplete, ScaleChangeType.ScaleOutComplete }, ScaleChangeType.ScaleOutComplete };
     }
 }

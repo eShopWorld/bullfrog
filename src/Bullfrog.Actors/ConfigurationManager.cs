@@ -350,17 +350,19 @@ namespace Bullfrog.Actors
         private void ReportEventStateChange(string scaleGroup, Guid eventId, RegisteredScaleEvent scaleEvent)
         {
             var currentState = scaleEvent.CurrentState;
+            if (currentState == ScaleChangeType.Waiting)
+                return;
             if (currentState == scaleEvent.ReportedState)
                 return;
 
             if (currentState <= ScaleChangeType.ScaleOutStarted)
             {
-                Report(currentState.Value);
+                Report(currentState);
             }
             else
             {
                 var startFrom = scaleEvent.ReportedState ?? ScaleChangeType.ScaleIssue;
-                for (var state = startFrom + 1; state <= currentState.Value; state++)
+                for (var state = startFrom + 1; state <= currentState; state++)
                 {
                     Report(state);
                 }

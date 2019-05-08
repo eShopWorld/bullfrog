@@ -16,6 +16,6 @@ namespace Bullfrog.Actors.Models
         /// <summary>
         /// The state reported by the region.
         /// </summary>
-        public ScaleChangeType? State { get; set; }
+        public ScaleChangeType State { get; set; }
     }
 }

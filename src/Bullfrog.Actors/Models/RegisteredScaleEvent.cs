@@ -62,7 +62,7 @@ namespace Bullfrog.Actors.Models
         /// <summary>
         /// The current state of the event 
         /// </summary>
-        public ScaleChangeType? CurrentState
+        public ScaleChangeType CurrentState
         {
             get
             {
@@ -81,7 +81,7 @@ namespace Bullfrog.Actors.Models
                 else if (states.Contains(ScaleChangeType.ScaleOutComplete))
                     return states.Count == 1 ? ScaleChangeType.ScaleOutComplete : ScaleChangeType.ScaleOutStarted;
                 else
-                    return null;
+                    return ScaleChangeType.Waiting;
             }
         }
     }
