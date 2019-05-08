@@ -6,18 +6,42 @@ using Bullfrog.DomainEvents;
 
 namespace Bullfrog.Actors.Models
 {
+    /// <summary>
+    /// The scale event with states of all regions.
+    /// </summary>
     public class RegisteredScaleEvent
     {
+        /// <summary>
+        /// The user defined name.
+        /// </summary>
         public string Name { get; set; }
 
+        /// <summary>
+        /// The time when the event starts.
+        /// </summary>
         public DateTimeOffset RequiredScaleAt { get; set; }
 
+        /// <summary>
+        /// The time when the event ends.
+        /// </summary>
         public DateTimeOffset StartScaleDownAt { get; set; }
 
+        /// <summary>
+        /// The region specific details of the event.
+        /// </summary>
         public Dictionary<string, ScaleEventRegionState> Regions { get; set; }
 
+        /// <summary>
+        /// The lastest published state of the event.
+        /// </summary>
         public ScaleChangeType? ReportedState { get; set; }
 
+        /// <summary>
+        /// Creates an <see cref="ScheduledScaleEvent"/> instance based on this instance.
+        /// </summary>
+        /// <param name="eventId">The event id.</param>
+        /// <param name="leadTime">The lead time of the event.</param>
+        /// <returns></returns>
         public ScheduledScaleEvent ToScheduledScaleEvent(Guid eventId, TimeSpan leadTime)
         {
             return new ScheduledScaleEvent
@@ -35,6 +59,9 @@ namespace Bullfrog.Actors.Models
             };
         }
 
+        /// <summary>
+        /// The current state of the event 
+        /// </summary>
         public ScaleChangeType? CurrentState
         {
             get

@@ -8,7 +8,7 @@
         /// <summary>
         /// An error occurred during scale out phase. This event might be followed by other events when the operation can proceeed.
         /// </summary>
-        ScaleIssue,
+        ScaleIssue = 1,
 
         /// <summary>
         /// The scale out phase has been started.
