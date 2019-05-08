@@ -288,6 +288,13 @@
             {
                 reportedEventStates[id] = type;
                 changes.Add((id, type));
+                BigBrother.Publish(new EventRegionScaleChange
+                {
+                    Id = id,
+                    RegionName = _regionName,
+                    ScaleGroup = _scaleGroupName,
+                    Type = type,
+                });
             }
 
             foreach (var ev in activeEvents.Where(e => !reportedEventStates.ContainsKey(e.Id)))
