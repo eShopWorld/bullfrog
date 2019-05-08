@@ -52,8 +52,6 @@ namespace Bullfrog.Actors.Interfaces.Models
             ? ScaleSetPrescaleLeadTime
             : CosmosDbPrescaleLeadTime;
 
-#pragma warning disable IDE0052 // Remove unread private members (required by the validator of CosmosDbPrescaleLeadTime)
         private TimeSpan ZeroTimeSpan => TimeSpan.Zero;
-#pragma warning restore IDE0052 // Remove unread private members
     }
 }

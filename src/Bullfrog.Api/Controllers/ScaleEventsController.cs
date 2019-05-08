@@ -108,27 +108,12 @@ namespace Bullfrog.Api.Controllers
             }
             catch (AggregateException agEx) when (agEx.InnerException is ScaleEventSaveException ex)
             {
-                string code;
-                switch (ex.Reason)
-                {
-                    case ScaleEventSaveFailureReason.RegistrationInThePast:
-                        code = "-1";
-                        break;
-                    case ScaleEventSaveFailureReason.ScaleLimitExceeded:
-                        code = "-2";
-                        break;
-                    case ScaleEventSaveFailureReason.InvalidRegionName:
-                        code = "-3";
-                        break;
-                    default:
-                        throw new NotImplementedException($"The value {ex.Reason} is invalid.");
-                }
                 return BadRequest(new
                 {
                     Errors = new[]
                     {
                         new {
-                            Code = code,
+                            Code = ((int)ex.Reason).ToString(),
                             ex.Message,
                         }
                     }

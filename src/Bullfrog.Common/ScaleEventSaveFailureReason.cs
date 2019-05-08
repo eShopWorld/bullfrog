@@ -2,8 +2,8 @@
 {
     public enum ScaleEventSaveFailureReason
     {
-        RegistrationInThePast,
-        ScaleLimitExceeded,
-        InvalidRegionName,
+        RegistrationInThePast = -1,
+        ScaleLimitExceeded = -2,
+        InvalidRegionName = -3,
     }
 }
