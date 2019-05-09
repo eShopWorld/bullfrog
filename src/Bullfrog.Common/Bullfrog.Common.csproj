@@ -5,6 +5,7 @@
     <Platforms>x64</Platforms>
     <Platform>x64</Platform>
     <LangVersion>latest</LangVersion>
+    <DebugType>Full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>

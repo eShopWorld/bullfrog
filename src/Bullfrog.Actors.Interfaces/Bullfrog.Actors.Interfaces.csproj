@@ -6,6 +6,7 @@
     <Platforms>x64</Platforms>
     <LangVersion>latest</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DebugType>Full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
