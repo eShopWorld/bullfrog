@@ -34,6 +34,8 @@ public class SharedCosmosDbTests : BaseApiTests
         var created = ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), NewScaleEvent(10, 20, regions: new[] { ("eu1", 10), }));
 
         created.EstimatedScaleUpAt.Should().Be(UtcNow.AddHours(10).AddMinutes(-30));
+        created.RegionConfig.Should().HaveCount(1);
+        created.RegionConfig[0].Name.Should().Be("eu1");
     }
 
     [Fact, IsLayer0]

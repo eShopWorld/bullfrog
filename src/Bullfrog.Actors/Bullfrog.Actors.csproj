@@ -15,6 +15,7 @@
     <FabActUtilWorkingDir>$(BaseIntermediateOutputPath)\FabActUtilTemp</FabActUtilWorkingDir>
     <LangVersion>latest</LangVersion>
     <ServerGarbageCollection>false</ServerGarbageCollection>
+    <DebugType>Full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>

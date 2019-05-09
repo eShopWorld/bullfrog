@@ -51,11 +51,13 @@ namespace Bullfrog.Actors.Models
                 StartScaleDownAt = StartScaleDownAt,
                 Id = eventId,
                 Name = Name,
-                RegionConfig = Regions.Select(r => new RegionScaleValue
-                {
-                    Name = r.Key,
-                    Scale = r.Value.Scale,
-                }).ToList(),
+                RegionConfig = Regions
+                    .Where(r => r.Key != ScaleGroupDefinition.SharedCosmosRegion)
+                    .Select(r => new RegionScaleValue
+                    {
+                        Name = r.Key,
+                        Scale = r.Value.Scale,
+                    }).ToList(),
             };
         }
 

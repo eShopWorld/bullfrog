@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Bullfrog.Actors;
 using Bullfrog.Actors.EventModels;
 using Bullfrog.DomainEvents;
 using Client;
@@ -15,6 +13,8 @@ using Xunit;
 
 public class MultiRegionDomainEventTests : BaseApiTests
 {
+    private const string SharedCosmosRegion = Bullfrog.Actors.Interfaces.Models.ScaleGroupDefinition.SharedCosmosRegion;
+
     [Fact, IsLayer0]
     public async Task ScaleOutStartedIsReported()
     {
@@ -73,19 +73,19 @@ public class MultiRegionDomainEventTests : BaseApiTests
             (start.AddHours(9), eventId, ScaleChangeType.ScaleOutStarted, "eu1"),
             (start.AddHours(8), eventId, ScaleChangeType.ScaleOutStarted, "eu2"),
             (start.AddHours(7), eventId, ScaleChangeType.ScaleOutStarted, "eu3"),
-            (start.AddHours(9.5), eventId, ScaleChangeType.ScaleOutStarted, ConfigurationManager.SharedCosmosRegion),
+            (start.AddHours(9.5), eventId, ScaleChangeType.ScaleOutStarted,  SharedCosmosRegion),
             (start.AddHours(9), eventId, ScaleChangeType.ScaleOutComplete, "eu1"),
             (start.AddHours(8), eventId, ScaleChangeType.ScaleOutComplete, "eu2"),
             (start.AddHours(7), eventId, ScaleChangeType.ScaleOutComplete, "eu3"),
-            (start.AddHours(10), eventId, ScaleChangeType.ScaleOutComplete, ConfigurationManager.SharedCosmosRegion),
+            (start.AddHours(10), eventId, ScaleChangeType.ScaleOutComplete, SharedCosmosRegion),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted, "eu1"),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted, "eu2"),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted, "eu3"),
-            (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted, ConfigurationManager.SharedCosmosRegion),
+            (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted, SharedCosmosRegion),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInComplete, "eu1"),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInComplete, "eu2"),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInComplete, "eu3"),
-            (start.AddHours(20), eventId, ScaleChangeType.ScaleInComplete, ConfigurationManager.SharedCosmosRegion),
+            (start.AddHours(20), eventId, ScaleChangeType.ScaleInComplete, SharedCosmosRegion),
         };
         events.Should().BeEquivalentTo(expected);
     }
