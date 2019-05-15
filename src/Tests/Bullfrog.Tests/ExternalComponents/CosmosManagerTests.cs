@@ -86,6 +86,28 @@ namespace ExternalComponents
         }
 
         [Fact, IsLayer1]
+        public async Task MinThroughputIsObeyed()
+        {
+            await CreateWithThroughput(500);
+
+            var cosmosManager = _fixture.Container.Resolve<ICosmosManager>();
+            var cosmosConfiguration = new Bullfrog.Actors.Interfaces.Models.CosmosConfiguration
+            {
+                Name = "test",
+                AccountName = "bullfrog-cosmos-test",
+                DatabaseName = TestDbName,
+                MinimumRU = 300,    // pretend the db has been scaled out and it's new min throughput is 400
+                MaximumRU = 600,
+                RequestUnitsPerRequest = 20,
+            };
+            var rus = await cosmosManager.SetScale(10, cosmosConfiguration);
+
+            rus.Should().Be(400);
+            var newThoughput = await _fixture.GetCosmosClient().Databases[TestDbName].ReadProvisionedThroughputAsync();
+            newThoughput.Should().Be(400);
+        }
+
+        [Fact, IsLayer1]
         public async Task ResetCosmosDbScale()
         {
             await CreateWithThroughput(500);
