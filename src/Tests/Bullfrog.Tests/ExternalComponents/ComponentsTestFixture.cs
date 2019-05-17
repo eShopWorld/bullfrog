@@ -5,8 +5,10 @@ using Autofac;
 using Bullfrog.Actors.Helpers;
 using Bullfrog.Common;
 using Bullfrog.Common.DependencyInjection;
+using Eshopworld.Core;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Extensions.Configuration;
+using Moq;
 using Xunit;
 
 namespace ExternalComponents
@@ -19,6 +21,8 @@ namespace ExternalComponents
 
         public IContainer Container { get; private set; }
 
+        public Mock<IBigBrother> BigBrotherMock { get; private set; }
+
         public ComponentsTestFixture()
         {
             if (String.IsNullOrEmpty(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")))
@@ -30,6 +34,8 @@ namespace ExternalComponents
         {
             if (Container == null)
             {
+                BigBrotherMock = new Mock<IBigBrother>();
+
                 var builder = new ContainerBuilder();
                 builder.RegisterInstance(_configuration)
                       .As<IConfigurationRoot>()
@@ -37,6 +43,7 @@ namespace ExternalComponents
                 builder.RegisterModule<AzureManagementFluentModule>();
                 builder.RegisterType<ScaleSetManager>().As<IScaleSetManager>();
                 builder.RegisterType<CosmosManager>().As<ICosmosManager>();
+                builder.RegisterInstance<IBigBrother>(BigBrotherMock.Object);
                 Container = builder.Build();
             }
         }
