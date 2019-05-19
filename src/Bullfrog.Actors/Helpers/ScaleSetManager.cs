@@ -12,12 +12,12 @@ namespace Bullfrog.Actors.Helpers
 {
     internal class ScaleSetManager : IScaleSetManager
     {
-        private readonly IAzure _azure;
+        private readonly Azure.IAuthenticated _authenticated;
         private readonly IBigBrother _bigBrother;
 
-        public ScaleSetManager(IAzure azure, IBigBrother bigBrother)
+        public ScaleSetManager(Azure.IAuthenticated authenticated, IBigBrother bigBrother)
         {
-            _azure = azure;
+            _authenticated = authenticated;
             _bigBrother = bigBrother;
         }
 
@@ -53,7 +53,8 @@ namespace Bullfrog.Actors.Helpers
                 ResourceId = configuration.AutoscaleSettingsResourceId,
             };
 
-            await _azure.UpdateAutoscaleProfile(
+            var azure = _authenticated.WithSubscriptionFor(configuration.AutoscaleSettingsResourceId);
+            await azure.UpdateAutoscaleProfile(
                 configuration.AutoscaleSettingsResourceId,
                 configuration.ProfileName,
                 newInstanceCounts,

@@ -75,16 +75,18 @@ namespace Bullfrog.Actors.Interfaces.Models
 
         IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)
         {
-            var azure = (IAzure)validationContext.GetService(typeof(IAzure));
+            var authenticated = (Azure.IAuthenticated)validationContext.GetService(typeof(Azure.IAuthenticated));
 
-            yield return IsValidAsync(azure).GetAwaiter().GetResult();
+            yield return IsValidAsync(authenticated).GetAwaiter().GetResult();
         }
 
-        private async Task<ValidationResult> IsValidAsync(IAzure azure)
+        private async Task<ValidationResult> IsValidAsync(Azure.IAuthenticated authenticated)
         {
+            IAzure azure;
             IAutoscaleSetting autoscale;
             try
             {
+                azure = authenticated.WithSubscriptionFor(AutoscaleSettingsResourceId);
                 autoscale = await azure.AutoscaleSettings.ValidateAccessAsync(AutoscaleSettingsResourceId);
             }
             catch (Exception ex)

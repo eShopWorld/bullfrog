@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Bullfrog.Actors.EventModels;
+using Bullfrog.Common;
 using Eshopworld.Core;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.Monitor.Fluent;
@@ -10,13 +11,13 @@ namespace Bullfrog.Actors.Helpers
 {
     class ScaleSetMonitor : IScaleSetMonitor
     {
-        private readonly IAzure _azure;
+        private readonly Azure.IAuthenticated _authenticated;
         private readonly IBigBrother _bigBrother;
         private IMetricDefinition _metricDefinition;
 
-        public ScaleSetMonitor(IAzure azure, IBigBrother bigBrother)
+        public ScaleSetMonitor(Azure.IAuthenticated authenticated, IBigBrother bigBrother)
         {
-            _azure = azure;
+            _authenticated = authenticated;
             _bigBrother = bigBrother;
         }
 
@@ -31,7 +32,8 @@ namespace Bullfrog.Actors.Helpers
                         Operation = "ListMetrics",
                         ResourceId = loadBalancerResourceId,
                     };
-                    var metrics = await _azure.MetricDefinitions.ListByResourceAsync(loadBalancerResourceId);
+                    var azure = _authenticated.WithSubscriptionFor(loadBalancerResourceId);
+                    var metrics = await azure.MetricDefinitions.ListByResourceAsync(loadBalancerResourceId);
                     _bigBrother.Publish(listResourcesOperation);
 
                     _metricDefinition = metrics.First(x => x.Name.Value == "DipAvailability");

@@ -23,7 +23,7 @@ public class MultiRegionDomainEventTests : BaseApiTests
         var events = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>();
         BigBrotherMoq.Setup(x => x.Publish(It.IsAny<ScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
             .Callback<ScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, sc.Type)));
-        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("lb", 9999))
+        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("/subscriptions/00000000-0000-0000-0000-000000000001/lb", 9999))
             .ReturnsAsync(() => UtcNow >= start.AddMinutes(30) ? 1 : 0);
         var eventId = AddEvent(10, 20);
 
@@ -62,7 +62,7 @@ public class MultiRegionDomainEventTests : BaseApiTests
         var events = new List<(DateTimeOffset Time, Guid Id, ScaleChangeType Type, string Region)>();
         BigBrotherMoq.Setup(x => x.Publish(It.IsAny<EventRegionScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
             .Callback<EventRegionScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, sc.Type, sc.RegionName)));
-        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("lb", 9999))
+        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("/subscriptions/00000000-0000-0000-0000-000000000001/lb", 9999))
             .ReturnsAsync(() => UtcNow >= start.AddMinutes(30) ? 1 : 0);
         var eventId = AddEvent(10, 20);
 
@@ -142,9 +142,9 @@ public class MultiRegionDomainEventTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s1",
-                            AutoscaleSettingsResourceId = "ri",
+                            AutoscaleSettingsResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/ri",
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "lb",
+                            LoadBalancerResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/lb",
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,
@@ -161,9 +161,9 @@ public class MultiRegionDomainEventTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s2",
-                            AutoscaleSettingsResourceId = "ri",
+                            AutoscaleSettingsResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/ri",
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "lb",
+                            LoadBalancerResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/lb",
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,
@@ -180,9 +180,9 @@ public class MultiRegionDomainEventTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s3",
-                            AutoscaleSettingsResourceId = "ri",
+                            AutoscaleSettingsResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/ri",
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "lb",
+                            LoadBalancerResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/lb",
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,

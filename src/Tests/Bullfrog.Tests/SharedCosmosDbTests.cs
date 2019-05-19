@@ -142,9 +142,9 @@ public class SharedCosmosDbTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s1",
-                            AutoscaleSettingsResourceId = "ri",
+                            AutoscaleSettingsResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/ri",
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "lb",
+                            LoadBalancerResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/lb",
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,
@@ -163,9 +163,9 @@ public class SharedCosmosDbTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s2",
-                            AutoscaleSettingsResourceId = "ri",
+                            AutoscaleSettingsResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/ri",
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "lb",
+                            LoadBalancerResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/lb",
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,
@@ -184,9 +184,9 @@ public class SharedCosmosDbTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s3",
-                            AutoscaleSettingsResourceId = "ri",
+                            AutoscaleSettingsResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/ri",
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "lb",
+                            LoadBalancerResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/lb",
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,

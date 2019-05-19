@@ -88,7 +88,11 @@ public class BaseApiTests
             .ReturnsAsync(autoscaleSettingsMoq.Object);
         autoscaleSettingsMoq.Setup(x => x.Update().UpdateAutoscaleProfile(It.IsAny<string>()).WithMetricBasedScale(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()).Parent().ApplyAsync(It.IsAny<CancellationToken>(), true))
             .ReturnsAsync(autoscaleSettingsMoq.Object);
-        services.AddSingleton(azureMoq.Object);
+
+        var authenticatedMoq = new Mock<Azure.IAuthenticated>();
+        authenticatedMoq.Setup(x => x.WithSubscription("00000000-0000-0000-0000-000000000001"))
+            .Returns(azureMoq.Object);
+        services.AddSingleton(authenticatedMoq.Object);
 
         azureMoq.Setup(x => x.MetricDefinitions.ListByResourceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Mock<IReadOnlyList<IMetricDefinition>>().Object);

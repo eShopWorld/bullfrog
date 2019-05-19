@@ -271,7 +271,7 @@ public class ScaleManagerTests : BaseApiTests
         };
         ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
         await AdvanceTimeTo(start + TimeSpan.FromMinutes(30));
-        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("lb", 9999))
+        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("/subscriptions/00000000-0000-0000-0000-000000000001/lb", 9999))
             .ReturnsAsync(2);
 
         var state = ApiClient.GetCurrentState("sg");
@@ -323,7 +323,7 @@ public class ScaleManagerTests : BaseApiTests
             ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
         }
         await AdvanceTimeTo(start + TimeSpan.FromMinutes(24));
-        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("lb", 9999))
+        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("/subscriptions/00000000-0000-0000-0000-000000000001/lb", 9999))
             .ReturnsAsync(2);
 
         var state = ApiClient.GetCurrentState("sg");
@@ -399,9 +399,9 @@ public class ScaleManagerTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s",
-                            AutoscaleSettingsResourceId = "ri",
+                            AutoscaleSettingsResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/ri",
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "lb",
+                            LoadBalancerResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/lb",
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,

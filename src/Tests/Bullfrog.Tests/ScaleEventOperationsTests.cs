@@ -229,9 +229,9 @@ public class ScaleEventOperationsTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s",
-                            AutoscaleSettingsResourceId = "ri",
+                            AutoscaleSettingsResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/ri",
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "lb",
+                            LoadBalancerResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/lb",
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,
