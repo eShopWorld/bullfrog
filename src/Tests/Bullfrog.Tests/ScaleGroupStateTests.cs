@@ -110,9 +110,9 @@ public class ScaleGroupStateTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s",
-                            AutoscaleSettingsResourceId = "ri",
+                            AutoscaleSettingsResourceId = GetAutoscaleSettingResourceId(),
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "lb",
+                            LoadBalancerResourceId = GetLoadBalancerResourceId(),
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,

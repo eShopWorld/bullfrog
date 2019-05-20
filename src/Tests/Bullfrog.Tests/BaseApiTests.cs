@@ -53,6 +53,12 @@ public class BaseApiTests
     protected Mock<IScaleSetMonitor> ScaleSetMonitorMoq { get; private set; }
     protected Mock<IBigBrother> BigBrotherMoq { get; private set; }
 
+    protected static string GetLoadBalancerResourceId()
+        => "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg/providers/Microsoft.Network/loadBalancers/lb";
+
+    protected static string GetAutoscaleSettingResourceId()
+        => "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg/providers/microsoft.insights/autoscalesettings/as";
+
     private void ConfigureServices(IServiceCollection services)
     {
         BigBrotherMoq = new Mock<IBigBrother>();
@@ -88,7 +94,11 @@ public class BaseApiTests
             .ReturnsAsync(autoscaleSettingsMoq.Object);
         autoscaleSettingsMoq.Setup(x => x.Update().UpdateAutoscaleProfile(It.IsAny<string>()).WithMetricBasedScale(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()).Parent().ApplyAsync(It.IsAny<CancellationToken>(), true))
             .ReturnsAsync(autoscaleSettingsMoq.Object);
-        services.AddSingleton(azureMoq.Object);
+
+        var authenticatedMoq = new Mock<Azure.IAuthenticated>();
+        authenticatedMoq.Setup(x => x.WithSubscription("00000000-0000-0000-0000-000000000001"))
+            .Returns(azureMoq.Object);
+        services.AddSingleton(authenticatedMoq.Object);
 
         azureMoq.Setup(x => x.MetricDefinitions.ListByResourceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Mock<IReadOnlyList<IMetricDefinition>>().Object);

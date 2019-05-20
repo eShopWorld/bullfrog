@@ -28,7 +28,7 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         var events = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>();
         BigBrotherMoq.Setup(x => x.Publish(It.IsAny<ScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
             .Callback<ScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, sc.Type)));
-        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("lb", 9999))
+        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances(GetLoadBalancerResourceId(), 9999))
             .ReturnsAsync(() => UtcNow >= start.AddMinutes(30) ? 1 : 0);
         var eventId = AddEvent(start.AddMinutes(30), start.AddMinutes(40), 10);
 
@@ -58,7 +58,7 @@ public class ScaleChangedDomainEventTests : BaseApiTests
             (start.AddMinutes(18), 1),
             (start.AddMinutes(21), 2),
         };
-        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances("lb", 9999))
+        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances(GetLoadBalancerResourceId(), 9999))
             .ReturnsAsync(() => availableVMs.Last(x => x.When <= UtcNow).Number);
         var eventId1 = AddEvent(start.AddMinutes(20), start.AddMinutes(40), 80);
         var eventId2 = AddEvent(start.AddMinutes(22), start.AddMinutes(50), 30);
@@ -126,9 +126,9 @@ public class ScaleChangedDomainEventTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s",
-                            AutoscaleSettingsResourceId = "ri",
+                            AutoscaleSettingsResourceId = GetAutoscaleSettingResourceId(),
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "lb",
+                            LoadBalancerResourceId = GetLoadBalancerResourceId(),
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,
