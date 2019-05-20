@@ -53,6 +53,12 @@ public class BaseApiTests
     protected Mock<IScaleSetMonitor> ScaleSetMonitorMoq { get; private set; }
     protected Mock<IBigBrother> BigBrotherMoq { get; private set; }
 
+    protected static string GetLoadBalancerResourceId()
+        => "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg/providers/Microsoft.Network/loadBalancers/lb";
+
+    protected static string GetAutoscaleSettingResourceId()
+        => "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg/providers/microsoft.insights/autoscalesettings/as";
+
     private void ConfigureServices(IServiceCollection services)
     {
         BigBrotherMoq = new Mock<IBigBrother>();

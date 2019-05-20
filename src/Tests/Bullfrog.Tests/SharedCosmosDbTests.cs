@@ -142,9 +142,9 @@ public class SharedCosmosDbTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s1",
-                            AutoscaleSettingsResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/ri",
+                            AutoscaleSettingsResourceId = GetAutoscaleSettingResourceId(),
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/lb",
+                            LoadBalancerResourceId = GetLoadBalancerResourceId(),
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,
@@ -163,9 +163,9 @@ public class SharedCosmosDbTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s2",
-                            AutoscaleSettingsResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/ri",
+                            AutoscaleSettingsResourceId = GetAutoscaleSettingResourceId(),
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/lb",
+                            LoadBalancerResourceId = GetLoadBalancerResourceId(),
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,
@@ -184,9 +184,9 @@ public class SharedCosmosDbTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "s3",
-                            AutoscaleSettingsResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/ri",
+                            AutoscaleSettingsResourceId = GetAutoscaleSettingResourceId(),
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/lb",
+                            LoadBalancerResourceId = GetLoadBalancerResourceId(),
                             HealthPortPort = 9999,
                             DefaultInstanceCount = 1,
                             MinInstanceCount = 1,

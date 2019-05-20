@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Text.RegularExpressions;
 using Microsoft.Azure.Management.Fluent;
+using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 
 namespace Bullfrog.Common
 {
@@ -9,9 +9,6 @@ namespace Bullfrog.Common
     /// </summary>
     public static class IAuthenticatedExtensions
     {
-        private static readonly Regex ResourceSubscriptionPattern = new Regex(
-            "^/subscriptions/([a-f0-9-]+)/", RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
-
         /// <summary>
         /// Returns the <see cref="IAzure"/> interface with a subscription owning given resource.
         /// </summary>
@@ -20,13 +17,18 @@ namespace Bullfrog.Common
         /// <returns>Returns the subscription of the specified resource.</returns>
         public static IAzure WithSubscriptionFor(this Azure.IAuthenticated authenticated, string resourceId)
         {
-            var match = ResourceSubscriptionPattern.Match(resourceId);
-            if (!match.Success)
+            ResourceId rid;
+            try
+            {
+                rid = ResourceId.FromString(resourceId);
+                
+            }
+            catch (ArgumentException)
             {
                 throw new ArgumentException($"The resource id '{resourceId}' is invalid.");
             }
 
-            return authenticated.WithSubscription(match.Groups[1].Value);
+            return authenticated.WithSubscription(rid.SubscriptionId);
         }
     }
 }

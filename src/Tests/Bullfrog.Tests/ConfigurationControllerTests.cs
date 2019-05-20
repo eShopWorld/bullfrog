@@ -50,9 +50,9 @@ public class ConfigurationControllerTests : BaseApiTests
                         new ScaleSetConfiguration
                         {
                             Name = "aa",
-                            AutoscaleSettingsResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/ri",
+                            AutoscaleSettingsResourceId = GetAutoscaleSettingResourceId(),
                             ProfileName = "pr",
-                            LoadBalancerResourceId = "/subscriptions/00000000-0000-0000-0000-000000000001/lb",
+                            LoadBalancerResourceId = GetLoadBalancerResourceId(),
                             HealthPortPort = 9999,
                             MinInstanceCount = 1,
                             DefaultInstanceCount = 1,
