@@ -116,6 +116,28 @@ public class ScaleManagerTests : BaseApiTests
     }
 
     [Fact, IsLayer0]
+    public void AddingEventWithoutRegions()
+    {
+        CreateScaleGroup();
+        var scaleEvent = new ScaleEvent
+        {
+            Name = "aa",
+            RegionConfig = new List<RegionScaleValue>
+            {
+            },
+            RequiredScaleAt = UtcNow + TimeSpan.FromHours(1),
+            StartScaleDownAt = UtcNow + TimeSpan.FromHours(2),
+        };
+        var id = Guid.NewGuid();
+
+        //act
+        Action call = () => ApiClient.SaveScaleEvent("sg", id, scaleEvent);
+
+        call.Should().Throw<ProblemDetailsException>()
+            .Which.Body.AdditionalProperties.ContainsKey("regionConfig");
+    }
+
+    [Fact, IsLayer0]
     public async Task DeletingEvent()
     {
         CreateScaleGroup();

@@ -192,7 +192,7 @@ namespace Bullfrog.Actors
                     Name = scaleEvent.Name,
                     RequiredScaleAt = scaleEvent.RequiredScaleAt,
                     StartScaleDownAt = scaleEvent.StartScaleDownAt,
-                    Scale = scaleEvent.RegionConfig.Sum(r => r.Scale),
+                    Scale = scaleEvent.RegionConfig.Max(r => r.Scale),
                 };
                 var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, ScaleGroupDefinition.SharedCosmosRegion);
                 await scaleManagerActor.ScheduleScaleEvent(regionScaleEvent);
