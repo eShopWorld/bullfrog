@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
@@ -334,7 +333,8 @@ namespace Bullfrog.Actors
 
         async Task IConfigurationManager.ReportScaleEventState(string scaleGroup, string region, List<ScaleEventStateChange> changes)
         {
-            var scaleEvents = await GetScaleEventsStateItem(scaleGroup).Get();
+            var stateItem = GetScaleEventsStateItem(scaleGroup);
+            var scaleEvents = await stateItem.Get();
             foreach (var change in changes)
             {
                 if (scaleEvents.TryGetValue(change.EventId, out var scaleEvent))
@@ -343,6 +343,8 @@ namespace Bullfrog.Actors
                     ReportEventStateChange(scaleGroup, change.EventId, scaleEvent);
                 }
             }
+
+            await stateItem.Set(scaleEvents);
         }
 
         private void ReportEventStateChange(string scaleGroup, Guid eventId, RegisteredScaleEvent scaleEvent)
