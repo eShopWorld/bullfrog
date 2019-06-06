@@ -17,6 +17,11 @@ namespace Bullfrog.Common.DependencyInjection
 
         public async Task<ValidationResult> ValidateConfiguration(CosmosDbConfiguration configuration)
         {
+            return await ValidateDataPlane(configuration);
+        }
+
+        private async Task<ValidationResult> ValidateDataPlane(CosmosDbConfiguration configuration)
+        {
             var connectionString = _configuration.GetCosmosAccountConnectionString(configuration.AccountName);
             if (connectionString == null)
             {

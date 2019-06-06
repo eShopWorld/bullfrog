@@ -51,5 +51,27 @@ namespace Bullfrog.Common
                 await cnt.ReplaceProvisionedThroughputAsync(throughput.Value, cancellationToken);
             }
         }
+
+        /// <summary>
+        /// Reads the provisioned throughput
+        /// </summary>
+        /// <param name="client">The Cosmos DB client.</param>
+        /// <param name="database">The CosomosDB database name.</param>
+        /// <param name="container">The optional container name. The provisioned throuput set at the container level is returned if this name is provided.</param>
+        /// <param name="cancellationToken">The cancellation token.</param>
+        /// <returns></returns>
+        public static async Task<int?> GetProvisionedThroughputAsync(this CosmosClient client, string database, string container, CancellationToken cancellationToken = default)
+        {
+            var db = client.Databases[database];
+            if (container == null)
+            {
+                return await db.ReadProvisionedThroughputAsync(cancellationToken);
+            }
+            else
+            {
+                var cosmosContainer = db.Containers[container];
+                return await cosmosContainer.ReadProvisionedThroughputAsync(cancellationToken);
+            }
+        }
     }
 }

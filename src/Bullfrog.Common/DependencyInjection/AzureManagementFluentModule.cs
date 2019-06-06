@@ -37,15 +37,27 @@ namespace Bullfrog.Common.DependencyInjection
             builder.Register(c =>
             {
                 var tokenCredentials = c.Resolve<TokenCredentials>();
+                var credentials = new AzureCredentials(tokenCredentials, tokenCredentials, string.Empty,
+                        AzureEnvironment.AzureGlobalCloud);
+                return Azure.Authenticate(credentials);
+                //var client = RestClient.Configure()
+                //    .WithEnvironment(AzureEnvironment.AzureGlobalCloud)
+                //    .WithLogLevel(HttpLoggingDelegatingHandler.Level.Basic)
+                //    .WithCredentials(credentials)
+                //    .Build();
 
+                //return Azure.Authenticate(client, string.Empty);
+            });
+
+            builder.Register(c =>
+            {
+                var tokenCredentials = c.Resolve<TokenCredentials>();
                 var client = RestClient.Configure()
                     .WithEnvironment(AzureEnvironment.AzureGlobalCloud)
                     .WithLogLevel(HttpLoggingDelegatingHandler.Level.Basic)
-                    .WithCredentials(new AzureCredentials(tokenCredentials, tokenCredentials, string.Empty,
-                        AzureEnvironment.AzureGlobalCloud))
+                    .WithCredentials(credentials)
                     .Build();
 
-                return Azure.Authenticate(client, string.Empty);
             });
 
             builder.Register(c =>

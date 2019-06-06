@@ -21,6 +21,7 @@
     [StatePersistence(StatePersistence.Persisted)]
     public class ScaleManager : BullfrogActorBase, IScaleManager, IRemindable
     {
+        private const string ModuleReminderNamePrefix = "module:";
         private const string ReminderName = "wakeupReminder";
         private readonly StateItem<List<ManagedScaleEvent>> _events;
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
@@ -33,6 +34,8 @@
         private readonly IActorProxyFactory _proxyFactory;
         private readonly string _scaleGroupName;
         private readonly string _regionName;
+        private readonly Dictionary<string, Modules.ScalingModule> _modules
+            = new Dictionary<string, Modules.ScalingModule>();
 
         /// <summary>
         /// Initializes a new instance of ScaleManager
@@ -219,7 +222,23 @@
 
         async Task IRemindable.ReceiveReminderAsync(string reminderName, byte[] state, TimeSpan dueTime, TimeSpan period)
         {
-            await UpdateState();
+            if (reminderName.StartsWith(ModuleReminderNamePrefix, StringComparison.Ordinal))
+            {
+                try
+                {
+                    var module = GetScalingModule(reminderName.Substring(ModuleReminderNamePrefix.Length));
+                    await module.ReceiveReminderAsync();
+                }
+                catch (Exception ex)
+                {
+                    var outterEx = new BullfrogException($"Reminder {reminderName} failed.", ex);
+                    BigBrother.Publish(outterEx);
+                }
+            }
+            else
+            {
+                await UpdateState();
+            }
         }
 
         private Task ScheduleStateUpdate()
@@ -461,6 +480,24 @@
         private IConfigurationManager GetConfigurationManager()
         {
             return _proxyFactory.CreateActorProxy<IConfigurationManager>(new ActorId("configuration"));
+        }
+
+        private Modules.ScalingModule GetScalingModule(string name, ScaleManagerConfiguration configuration)
+        {
+            if (!_modules.TryGetValue(name, out var module))
+            {
+                if (configuration.CosmosConfigurations != null)
+                {
+                    var cosmosConfiguration = configuration.CosmosConfigurations.FirstOrDefault(x => x.Name == name);
+
+                    module = new Modules.CosmosScalingModule(null, null, cosmosConfiguration);
+                    _modules.Add(name, module);
+                }
+                else
+                    throw new NotImplementedException();
+            }
+
+            return module;
         }
     }
 }
