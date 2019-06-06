@@ -28,9 +28,11 @@ namespace Bullfrog.Actors.Helpers
 
             await UpdateProfile(configuration, profile =>
             {
-                if (instances > profile.MaxInstanceCount)
-                    instances = profile.MaxInstanceCount;
-                return (instances, instances);
+                instances = Math.Min(profile.MaxInstanceCount,
+                    Math.Max(instances, configuration.MinInstanceCount));
+                var defaultInstances = Math.Min(profile.MaxInstanceCount,
+                    Math.Max(instances, configuration.DefaultInstanceCount));
+                return (instances, defaultInstances);
             }, cancellationToken);
 
             return instances;
