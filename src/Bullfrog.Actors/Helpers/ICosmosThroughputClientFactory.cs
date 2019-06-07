@@ -18,7 +18,7 @@ namespace Bullfrog.Actors.Helpers
         Task<ValidationResult> Validate(CosmosConfiguration cosmosConfiguration);
     }
 
-    public interface ICosmosThroughputClient
+    public interface ICosmosThroughputClient7777
     {
         Task<CosmosThroughput> Get();
 

@@ -12,9 +12,14 @@ namespace Bullfrog.Actors.EventModels
         public Guid Id { get; set; }
 
         /// <summary>
-        /// The type of the schange.
+        /// The type of the change.
         /// </summary>
-        public ScaleChangeType Type { get; set; }
+        public string Type { get; set; }
+
+        /// <summary>
+        /// Additional information about current change.
+        /// </summary>
+        public string Details { get; set; }
 
         /// <summary>
         /// The name of the region.
