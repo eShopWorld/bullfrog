@@ -61,7 +61,7 @@ public class MultiRegionDomainEventTests : BaseApiTests
         CreateScaleGroup();
         var events = new List<(DateTimeOffset Time, Guid Id, ScaleChangeType Type, string Region)>();
         BigBrotherMoq.Setup(x => x.Publish(It.IsAny<EventRegionScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
-            .Callback<EventRegionScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, sc.Type, sc.RegionName)));
+            .Callback<EventRegionScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, Enum.Parse<ScaleChangeType>(sc.Type), sc.RegionName)));
         ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances(GetLoadBalancerResourceId(), 9999))
             .ReturnsAsync(() => UtcNow >= start.AddMinutes(30) ? 1 : 0);
         var eventId = AddEvent(10, 20);

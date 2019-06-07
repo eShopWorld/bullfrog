@@ -6,7 +6,7 @@ namespace Bullfrog.Actors.Modules
     /// <summary>
     /// Represents a module responsible for long running throughput change operations.
     /// </summary>
-    abstract class ScalingModule
+    public abstract class ScalingModule
     {
         /// <summary>
         /// Attempts to change throughput.

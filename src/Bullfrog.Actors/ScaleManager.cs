@@ -11,7 +11,9 @@
     using Bullfrog.Actors.Interfaces;
     using Bullfrog.Actors.Interfaces.Models;
     using Bullfrog.Actors.Models;
+    using Bullfrog.Actors.Modules;
     using Bullfrog.Common;
+    using Bullfrog.Common.Cosmos;
     using Bullfrog.DomainEvents;
     using Eshopworld.Core;
     using Microsoft.ServiceFabric.Actors;
@@ -27,8 +29,8 @@
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
         private readonly StateItem<DateTimeOffset> _scaleOutStarted;
         private readonly StateItem<Dictionary<Guid, ScaleChangeType>> _reportedEventStates;
-        private readonly IScaleSetManager _scaleSetManager;
-        private readonly ICosmosManager _cosmosManager;
+        private readonly ICosmosThroughputClientFactory _cosmosThroughputClientFactory;
+        private readonly IScaleSetScalingModuleFactory _scaleSetScalingModuleFactory;
         private readonly IScaleSetMonitor _scaleSetMonitor;
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IActorProxyFactory _proxyFactory;
@@ -42,16 +44,17 @@
         /// </summary>
         /// <param name="actorService">The Microsoft.ServiceFabric.Actors.Runtime.ActorService that will host this actor instance.</param>
         /// <param name="actorId">The Microsoft.ServiceFabric.Actors.ActorId for this actor instance.</param>
-        /// <param name="scaleSetManager">Updates the configuration of a VM scale set to handle a requested thoughput.</param>
-        /// <param name="cosmosManager">Updates configuration of the Cosmos DB to handle a requested thoughput.</param>
+        /// <param name="cosmosThroughputClientFactory">A factory of cosmos throughtput clients.</param>
+        /// <param name="scaleSetScalingModuleFactory">A factor of scale set scaling modules.</param>
         /// <param name="scaleSetMonitor">Reads performance details of a scale set.</param>
         /// <param name="dateTimeProvider">Gets the current time.</param>
+        /// <param name="proxyFactory">Actor proxy factory.</param>
         /// <param name="bigBrother">Performs the logging.</param>
         public ScaleManager(
             ActorService actorService,
             ActorId actorId,
-            IScaleSetManager scaleSetManager,
-            ICosmosManager cosmosManager,
+            ICosmosThroughputClientFactory cosmosThroughputClientFactory,
+            IScaleSetScalingModuleFactory scaleSetScalingModuleFactory,
             IScaleSetMonitor scaleSetMonitor,
             IDateTimeProvider dateTimeProvider,
             IActorProxyFactory proxyFactory,
@@ -62,8 +65,8 @@
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
             _scaleOutStarted = new StateItem<DateTimeOffset>(StateManager, "scaleOutStarted");
             _reportedEventStates = new StateItem<Dictionary<Guid, ScaleChangeType>>(StateManager, "reportedEventStates");
-            _scaleSetManager = scaleSetManager;
-            _cosmosManager = cosmosManager;
+            _cosmosThroughputClientFactory = cosmosThroughputClientFactory;
+            _scaleSetScalingModuleFactory = scaleSetScalingModuleFactory;
             _scaleSetMonitor = scaleSetMonitor;
             _dateTimeProvider = dateTimeProvider;
             _proxyFactory = proxyFactory;
@@ -515,12 +518,27 @@
                 if (configuration.CosmosConfigurations != null)
                 {
                     var cosmosConfiguration = configuration.CosmosConfigurations.FirstOrDefault(x => x.Name == name);
-
-                    module = new Modules.CosmosScalingModule(null, null, cosmosConfiguration);
-                    _modules.Add(name, module);
+                    if (cosmosConfiguration != null)
+                    {
+                        var client = _cosmosThroughputClientFactory.CreateClientClient(new CosmosDbConfiguration
+                        {
+                            AccountName = cosmosConfiguration.AccountName,
+                            ContainerName = cosmosConfiguration.ContainerName,
+                            DatabaseName = cosmosConfiguration.DatabaseName,
+                        });
+                        module = new Modules.CosmosModule(client, cosmosConfiguration);
+                        _modules.Add(name, module);
+                        return module;
+                    }
                 }
-                else
-                    throw new NotImplementedException();
+
+                var scaleSetConfiguration = configuration.ScaleSetConfigurations.FirstOrDefault(x => x.Name == name);
+                if(scaleSetConfiguration != null)
+                {
+                    return _scaleSetScalingModuleFactory.CreateModule(scaleSetConfiguration);
+                }
+
+                throw new BullfrogException($"Configuration for {name} not found.");
             }
 
             return module;

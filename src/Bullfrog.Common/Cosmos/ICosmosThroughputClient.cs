@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace Bullfrog.Common.Cosmos
 {
-    public interface ICosmosThroughputClient : IDisposable
+    public interface ICosmosThroughputClient
     {
         Task<CosmosThroughput> Get();
 

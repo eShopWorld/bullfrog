@@ -50,7 +50,8 @@ namespace Bullfrog.Actors.Helpers
 
         private async Task<int> SetThroughput(CosmosConfiguration configuration, int throughput)
         {
-            using (var client = new CosmosClient(GetConnectionString(configuration)))
+            var connectionString = _configuration.GetCosmosAccountConnectionString(configuration.AccountName);
+            using (var client = new CosmosClient(connectionString))
             {
                 try
                 {
@@ -82,22 +83,6 @@ namespace Bullfrog.Actors.Helpers
             }
 
             return throughput;
-        }
-
-        private string GetConnectionString(CosmosConfiguration configuration)
-        {
-            var connectionString = _configuration.GetCosmosAccountConnectionString(configuration.AccountName);
-            if (connectionString == null)
-            {
-                _configuration.Reload();
-                connectionString = _configuration.GetCosmosAccountConnectionString(configuration.AccountName);
-            }
-            if (connectionString == null)
-            {
-                throw new ArgumentException($"The connection string for the Cosmos account {configuration.AccountName} has not been found");
-            }
-
-            return connectionString;
         }
     }
 }

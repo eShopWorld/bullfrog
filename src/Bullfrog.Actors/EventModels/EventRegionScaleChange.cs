@@ -11,6 +11,7 @@ namespace Bullfrog.Actors.EventModels
         /// </summary>
         public Guid Id { get; set; }
 
+        // TODO: change the type of the Type property to ScaleChangeType as soon as names (instead of numeric values) are logged in AppInsights
         /// <summary>
         /// The type of the change.
         /// </summary>

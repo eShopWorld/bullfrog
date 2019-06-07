@@ -17,17 +17,13 @@ namespace Bullfrog.Common.Cosmos
 
         public ICosmosThroughputClient CreateClientClient(CosmosDbConfiguration cosmosConfiguration)
         {
-            return new DataPlaneCosmosClient(_configuration, )
+            var connectionString = _configuration.GetCosmosAccountConnectionString(cosmosConfiguration.AccountName);
+            return new DataPlaneCosmosThroughputClient(connectionString, cosmosConfiguration.DatabaseName, cosmosConfiguration.ContainerName);
         }
 
         public async Task<ValidationResult> Validate(CosmosDbConfiguration cosmosConfiguration)
         {
-            var connectionString = _configuration.GetCosmosAccountConnectionString(cosmosConfiguration.AccountName);
-            if (connectionString == null)
-            {
-                _configuration.Reload();
-                connectionString = _configuration.GetCosmosAccountConnectionString(cosmosConfiguration.AccountName);
-            }
+            var connectionString = _configuration.GetCosmosAccountConnectionString(cosmosConfiguration.AccountName, isOptional: true);
             if (connectionString == null)
             {
                 return new ValidationResult($"A connection string for the account {cosmosConfiguration.AccountName} has not found.", new[] { nameof(CosmosDbConfiguration.AccountName) });
@@ -67,7 +63,7 @@ namespace Bullfrog.Common.Cosmos
                         }
                         catch (Exception ex)
                         {
-                            return new ValidationResult($"Failed to access the container {cosmosConfiguration.ContainerName} in the database {CosmosDbConfiguration.DatabaseName}: {ex.Message}", new[] { nameof(CosmosDbConfiguration.ContainerName) });
+                            return new ValidationResult($"Failed to access the container {cosmosConfiguration.ContainerName} in the database {cosmosConfiguration.DatabaseName}: {ex.Message}", new[] { nameof(CosmosDbConfiguration.ContainerName) });
                         }
                     }
 
