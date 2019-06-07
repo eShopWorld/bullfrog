@@ -29,8 +29,7 @@
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
         private readonly StateItem<DateTimeOffset> _scaleOutStarted;
         private readonly StateItem<Dictionary<Guid, ScaleChangeType>> _reportedEventStates;
-        private readonly ICosmosThroughputClientFactory _cosmosThroughputClientFactory;
-        private readonly IScaleSetScalingModuleFactory _scaleSetScalingModuleFactory;
+        private readonly IScaleModuleFactory _scaleModuleFactory;
         private readonly IScaleSetMonitor _scaleSetMonitor;
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IActorProxyFactory _proxyFactory;
@@ -44,8 +43,7 @@
         /// </summary>
         /// <param name="actorService">The Microsoft.ServiceFabric.Actors.Runtime.ActorService that will host this actor instance.</param>
         /// <param name="actorId">The Microsoft.ServiceFabric.Actors.ActorId for this actor instance.</param>
-        /// <param name="cosmosThroughputClientFactory">A factory of cosmos throughtput clients.</param>
-        /// <param name="scaleSetScalingModuleFactory">A factor of scale set scaling modules.</param>
+        /// <param name="scaleModuleFactory">Scale module factory.</param>
         /// <param name="scaleSetMonitor">Reads performance details of a scale set.</param>
         /// <param name="dateTimeProvider">Gets the current time.</param>
         /// <param name="proxyFactory">Actor proxy factory.</param>
@@ -53,8 +51,7 @@
         public ScaleManager(
             ActorService actorService,
             ActorId actorId,
-            ICosmosThroughputClientFactory cosmosThroughputClientFactory,
-            IScaleSetScalingModuleFactory scaleSetScalingModuleFactory,
+            IScaleModuleFactory scaleModuleFactory,
             IScaleSetMonitor scaleSetMonitor,
             IDateTimeProvider dateTimeProvider,
             IActorProxyFactory proxyFactory,
@@ -65,8 +62,7 @@
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
             _scaleOutStarted = new StateItem<DateTimeOffset>(StateManager, "scaleOutStarted");
             _reportedEventStates = new StateItem<Dictionary<Guid, ScaleChangeType>>(StateManager, "reportedEventStates");
-            _cosmosThroughputClientFactory = cosmosThroughputClientFactory;
-            _scaleSetScalingModuleFactory = scaleSetScalingModuleFactory;
+            _scaleModuleFactory = scaleModuleFactory;
             _scaleSetMonitor = scaleSetMonitor;
             _dateTimeProvider = dateTimeProvider;
             _proxyFactory = proxyFactory;
@@ -515,30 +511,7 @@
         {
             if (!_modules.TryGetValue(name, out var module))
             {
-                if (configuration.CosmosConfigurations != null)
-                {
-                    var cosmosConfiguration = configuration.CosmosConfigurations.FirstOrDefault(x => x.Name == name);
-                    if (cosmosConfiguration != null)
-                    {
-                        var client = _cosmosThroughputClientFactory.CreateClientClient(new CosmosDbConfiguration
-                        {
-                            AccountName = cosmosConfiguration.AccountName,
-                            ContainerName = cosmosConfiguration.ContainerName,
-                            DatabaseName = cosmosConfiguration.DatabaseName,
-                        });
-                        module = new Modules.CosmosModule(client, cosmosConfiguration);
-                        _modules.Add(name, module);
-                        return module;
-                    }
-                }
-
-                var scaleSetConfiguration = configuration.ScaleSetConfigurations.FirstOrDefault(x => x.Name == name);
-                if(scaleSetConfiguration != null)
-                {
-                    return _scaleSetScalingModuleFactory.CreateModule(scaleSetConfiguration);
-                }
-
-                throw new BullfrogException($"Configuration for {name} not found.");
+                _modules.Add(name, _scaleModuleFactory.CreateModule(name, configuration));
             }
 
             return module;

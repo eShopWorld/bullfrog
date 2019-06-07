@@ -22,7 +22,7 @@ namespace Bullfrog.Common.DependencyInjection
 
         private async Task<ValidationResult> ValidateDataPlane(CosmosDbConfiguration configuration)
         {
-            var connectionString = _configuration.GetCosmosAccountConnectionString(configuration.AccountName, isOptional: true);
+            var connectionString = _configuration.GetCosmosAccountConnectionStringIfExists(configuration.AccountName);
             if (connectionString == null)
             {
                 return new ValidationResult($"A connection string for the account {configuration.AccountName} has not found.", new[] { nameof(configuration.AccountName) });

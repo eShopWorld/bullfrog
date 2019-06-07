@@ -23,7 +23,7 @@ namespace Bullfrog.Common.Cosmos
 
         public async Task<ValidationResult> Validate(CosmosDbConfiguration cosmosConfiguration)
         {
-            var connectionString = _configuration.GetCosmosAccountConnectionString(cosmosConfiguration.AccountName, isOptional: true);
+            var connectionString = _configuration.GetCosmosAccountConnectionStringIfExists(cosmosConfiguration.AccountName);
             if (connectionString == null)
             {
                 return new ValidationResult($"A connection string for the account {cosmosConfiguration.AccountName} has not found.", new[] { nameof(CosmosDbConfiguration.AccountName) });

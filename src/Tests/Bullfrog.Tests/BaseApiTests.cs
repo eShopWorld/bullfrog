@@ -7,7 +7,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors;
 using Bullfrog.Actors.Helpers;
+using Bullfrog.Actors.Modules;
 using Bullfrog.Common;
+using Bullfrog.Common.Cosmos;
 using Client;
 using Eshopworld.Core;
 using Helpers;
@@ -74,14 +76,15 @@ public class BaseApiTests
 
         RegisterConfigurationManagerActor(actorProxyFactory);
 
-        ScaleSetManagerMoq = new Mock<IScaleSetManager>();
-        CosmosManagerMoq = new Mock<ICosmosManager>();
+        ScaleSetManagerMoq = new Mock<IScaleSetManager>(); // TODO: delete
+        CosmosManagerMoq = new Mock<ICosmosManager>(); // TODO: delete
+        var scaleModuleFactoryMoq = new Mock<IScaleModuleFactory>();
         ScaleSetMonitorMoq = new Mock<IScaleSetMonitor>();
-        RegisterScaleManagerActor("sg", "eu", ScaleSetManagerMoq, CosmosManagerMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
-        RegisterScaleManagerActor("sg", "eu1", ScaleSetManagerMoq, CosmosManagerMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
-        RegisterScaleManagerActor("sg", "eu2", ScaleSetManagerMoq, CosmosManagerMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
-        RegisterScaleManagerActor("sg", "eu3", ScaleSetManagerMoq, CosmosManagerMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
-        RegisterScaleManagerActor("sg", "$cosmos", ScaleSetManagerMoq, CosmosManagerMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
+        RegisterScaleManagerActor("sg", "eu", scaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
+        RegisterScaleManagerActor("sg", "eu1", scaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
+        RegisterScaleManagerActor("sg", "eu2", scaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
+        RegisterScaleManagerActor("sg", "eu3", scaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
+        RegisterScaleManagerActor("sg", "$cosmos", scaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
 
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
         autoscaleProfile.SetupGet(p => p.MaxInstanceCount).Returns(10);
@@ -118,10 +121,10 @@ public class BaseApiTests
         services.AddSingleton(configuration);
     }
 
-    private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IScaleSetManager> scaleSetManagerMoq, Mock<ICosmosManager> cosmosManagerMoq, Mock<IScaleSetMonitor> scaleSetMonitor, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
+    private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IScaleModuleFactory> scaleModuleFactoryMoq, Mock<IScaleSetMonitor> scaleSetMonitor, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
     {
         ActorBase scaleManagerActorFactory(ActorService service, ActorId id)
-            => new ScaleManager(service, id, scaleSetManagerMoq.Object, cosmosManagerMoq.Object, scaleSetMonitor.Object, dateTimeProvider, actorProxyFactory, bigBrother);
+            => new ScaleManager(service, id, scaleModuleFactoryMoq.Object, scaleSetMonitor.Object, dateTimeProvider, actorProxyFactory, bigBrother);
         var stateProvider = new MyActorStateProvider(DateTimeProviderMoq.Object);
         var scaleManagerSvc = MockActorServiceFactory.CreateActorServiceForActor<ScaleManager>(scaleManagerActorFactory, stateProvider);
         var scaleManagerActor = scaleManagerSvc.Activate(new ActorId($"ScaleManager:{scaleGroup}/{region}"));
