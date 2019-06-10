@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors;
 using Bullfrog.Actors.Helpers;
+using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.Modules;
 using Bullfrog.Common;
 using Bullfrog.Common.Cosmos;
@@ -28,6 +29,9 @@ using ServiceFabric.Mocks;
 
 public class BaseApiTests
 {
+    protected readonly DateTimeOffset StartTime = new DateTimeOffset(2019, 2, 22, 0, 0, 0, 0,
+       System.Globalization.CultureInfo.InvariantCulture.Calendar, TimeSpan.Zero);
+
     public BaseApiTests()
     {
         var builder = new WebHostBuilder()
@@ -36,6 +40,7 @@ public class BaseApiTests
         var server = new TestServer(builder);
         HttpClient = server.CreateClient();
         ApiClient = new BullfrogApi(new TokenCredentials("aa"), HttpClient, false);
+        UtcNow = StartTime;
     }
 
     protected HttpClient HttpClient { get; }
@@ -47,13 +52,17 @@ public class BaseApiTests
     protected Dictionary<(string scaleGroup, string region), ScaleManager> ScaleManagerActors { get; }
         = new Dictionary<(string scaleGroup, string region), ScaleManager>();
 
-    protected DateTimeOffset UtcNow { get; set; } = new DateTimeOffset(2019, 2, 22, 0, 0, 0, 0,
-       System.Globalization.CultureInfo.InvariantCulture.Calendar, TimeSpan.Zero);
+    protected DateTimeOffset UtcNow { get; set; }
+    protected TimeSpan TimeSincStart => UtcNow - StartTime;
+
     private Mock<IDateTimeProvider> DateTimeProviderMoq;
-    protected Mock<IScaleSetManager> ScaleSetManagerMoq { get; private set; }
+    protected Mock<IScaleModuleFactory> ScaleModuleFactoryMoq { get; private set; }
     protected Mock<ICosmosManager> CosmosManagerMoq { get; private set; }
     protected Mock<IScaleSetMonitor> ScaleSetMonitorMoq { get; private set; }
     protected Mock<IBigBrother> BigBrotherMoq { get; private set; }
+
+    protected readonly Dictionary<string, List<(TimeSpan SinceStart, int? RequestedThroughput, int? ReachedThroughput)>> ScaleHistory =
+        new Dictionary<string, List<(TimeSpan SinceStart, int? RequestedThroughput, int? ReachedThroughput)>>();
 
     protected static string GetLoadBalancerResourceId()
         => "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg/providers/Microsoft.Network/loadBalancers/lb";
@@ -76,15 +85,14 @@ public class BaseApiTests
 
         RegisterConfigurationManagerActor(actorProxyFactory);
 
-        ScaleSetManagerMoq = new Mock<IScaleSetManager>(); // TODO: delete
         CosmosManagerMoq = new Mock<ICosmosManager>(); // TODO: delete
-        var scaleModuleFactoryMoq = new Mock<IScaleModuleFactory>();
+        ScaleModuleFactoryMoq = new Mock<IScaleModuleFactory>(MockBehavior.Strict);
         ScaleSetMonitorMoq = new Mock<IScaleSetMonitor>();
-        RegisterScaleManagerActor("sg", "eu", scaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
-        RegisterScaleManagerActor("sg", "eu1", scaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
-        RegisterScaleManagerActor("sg", "eu2", scaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
-        RegisterScaleManagerActor("sg", "eu3", scaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
-        RegisterScaleManagerActor("sg", "$cosmos", scaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
+        RegisterScaleManagerActor("sg", "eu", ScaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
+        RegisterScaleManagerActor("sg", "eu1", ScaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
+        RegisterScaleManagerActor("sg", "eu2", ScaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
+        RegisterScaleManagerActor("sg", "eu3", ScaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
+        RegisterScaleManagerActor("sg", "$cosmos", ScaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
 
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
         autoscaleProfile.SetupGet(p => p.MaxInstanceCount).Returns(10);
@@ -148,6 +156,42 @@ public class BaseApiTests
     private void ActoryProxyFactory_MissingActor(object sender, MissingActorEventArgs e)
     {
         throw new NotImplementedException(e.Id.ToString());
+    }
+
+    private static long Round(long value, long multiple, long offset = 0)
+    {
+        return (value - offset - 1 + multiple) / multiple * multiple + offset;
+    }
+
+    protected DateTimeOffset RoundToScan(DateTimeOffset dateTime)
+    {
+        return new DateTimeOffset(Round(dateTime.Ticks, ScaleManager.ScanPeriod.Ticks, StartTime.Ticks), dateTime.Offset);
+    }
+
+    protected void RegisterDefaultScalers()
+    {
+        var scaleModuleMoq = new Mock<ScalingModule>();
+        scaleModuleMoq.Setup(x => x.SetThroughput(It.IsAny<int?>()))
+            .Returns((int? n) => Task.FromResult((int?)null));
+        ScaleModuleFactoryMoq.Setup(x => x.CreateModule(It.IsAny<string>(), It.IsAny<ScaleManagerConfiguration>()))
+            .Returns(scaleModuleMoq.Object);
+    }
+
+    protected void RegisterResourceScaler(string name, Func<int?, int?> scaler)
+    {
+        int? CalculateAndSaveThroughput(int? requestedThroughput)
+        {
+            var reachedThroughput = scaler(requestedThroughput);
+            ScaleHistory[name].Add((TimeSincStart, requestedThroughput, reachedThroughput));
+            return reachedThroughput;
+        }
+
+        var scaleModuleMoq = new Mock<ScalingModule>();
+        scaleModuleMoq.Setup(x => x.SetThroughput(It.IsAny<int?>()))
+            .Returns((int? n) => Task.FromResult(CalculateAndSaveThroughput(n)));
+        ScaleModuleFactoryMoq.Setup(x => x.CreateModule(name, It.IsAny<ScaleManagerConfiguration>()))
+            .Returns(scaleModuleMoq.Object);
+        ScaleHistory[name] = new List<(TimeSpan SinceStart, int? RequestedThroughput, int? ReachedThroughput)>();
     }
 
     protected async Task AdvanceTimeTo(DateTimeOffset newTime)

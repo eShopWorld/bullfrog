@@ -23,16 +23,19 @@ public class MultiRegionDomainEventTests : BaseApiTests
         var events = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>();
         BigBrotherMoq.Setup(x => x.Publish(It.IsAny<ScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
             .Callback<ScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, sc.Type)));
-        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances(GetLoadBalancerResourceId(), 9999))
-            .ReturnsAsync(() => UtcNow >= start.AddMinutes(30) ? 1 : 0);
         var eventId = AddEvent(10, 20);
+        var eventStart = UtcNow.AddHours(10);
+        RegisterResourceScaler("c1", x => UtcNow >= eventStart.AddHours(-0.25) ? x : null);
+        RegisterResourceScaler("s1", x => UtcNow >= eventStart.AddHours(-0.5) ? x : null);
+        RegisterResourceScaler("s2", x => UtcNow >= eventStart.AddHours(-1) ? x : null);
+        RegisterResourceScaler("s3", x => UtcNow >= eventStart.AddHours(-1.5) ? x : null);
 
         await AdvanceTimeTo(start.AddHours(25));
 
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
             (start.AddHours(7), eventId, ScaleChangeType.ScaleOutStarted),
-            (start.AddHours(10), eventId, ScaleChangeType.ScaleOutComplete),
+            (RoundToScan(start.AddHours(9.75)), eventId, ScaleChangeType.ScaleOutComplete),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInComplete),
         };
@@ -57,14 +60,17 @@ public class MultiRegionDomainEventTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task EventRegionStateChangesAreReported()
     {
-        var start = UtcNow;
+        var start = StartTime;
         CreateScaleGroup();
         var events = new List<(DateTimeOffset Time, Guid Id, ScaleChangeType Type, string Region)>();
         BigBrotherMoq.Setup(x => x.Publish(It.IsAny<EventRegionScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
             .Callback<EventRegionScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, Enum.Parse<ScaleChangeType>(sc.Type), sc.RegionName)));
-        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances(GetLoadBalancerResourceId(), 9999))
-            .ReturnsAsync(() => UtcNow >= start.AddMinutes(30) ? 1 : 0);
         var eventId = AddEvent(10, 20);
+        var eventStart = UtcNow.AddHours(10);
+        RegisterResourceScaler("c1", x => UtcNow >= eventStart.AddHours(-0.25) ? x : null);
+        RegisterResourceScaler("s1", x => UtcNow >= eventStart.AddHours(-0.5) ? x : null);
+        RegisterResourceScaler("s2", x => UtcNow >= eventStart.AddHours(-1) ? x : null);
+        RegisterResourceScaler("s3", x => UtcNow >= eventStart.AddHours(-1.5) ? x : null);
 
         await AdvanceTimeTo(start.AddHours(25));
 
@@ -74,10 +80,10 @@ public class MultiRegionDomainEventTests : BaseApiTests
             (start.AddHours(8), eventId, ScaleChangeType.ScaleOutStarted, "eu2"),
             (start.AddHours(7), eventId, ScaleChangeType.ScaleOutStarted, "eu3"),
             (start.AddHours(9.5), eventId, ScaleChangeType.ScaleOutStarted,  SharedCosmosRegion),
-            (start.AddHours(9), eventId, ScaleChangeType.ScaleOutComplete, "eu1"),
-            (start.AddHours(8), eventId, ScaleChangeType.ScaleOutComplete, "eu2"),
-            (start.AddHours(7), eventId, ScaleChangeType.ScaleOutComplete, "eu3"),
-            (start.AddHours(10), eventId, ScaleChangeType.ScaleOutComplete, SharedCosmosRegion),
+            (start.AddHours(9.5), eventId, ScaleChangeType.ScaleOutComplete, "eu1"),
+            (start.AddHours(9), eventId, ScaleChangeType.ScaleOutComplete, "eu2"),
+            (start.AddHours(8.5), eventId, ScaleChangeType.ScaleOutComplete, "eu3"),
+            (RoundToScan(start.AddHours(9.75)), eventId, ScaleChangeType.ScaleOutComplete, SharedCosmosRegion),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted, "eu1"),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted, "eu2"),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted, "eu3"),

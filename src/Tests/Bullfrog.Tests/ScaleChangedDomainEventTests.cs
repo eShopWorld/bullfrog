@@ -14,8 +14,8 @@ using Xunit;
 
 public class ScaleChangedDomainEventTests : BaseApiTests
 {
-    private TimeSpan _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(5);
-    private TimeSpan _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(1);
+    private TimeSpan _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(6);
+    private TimeSpan _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(2);
     private TimeSpan MaxLeadTime => _cosmosDbPrescaleLeadTime < _scaleSetPrescaleLeadTime
         ? _scaleSetPrescaleLeadTime
         : _cosmosDbPrescaleLeadTime;
@@ -23,43 +23,49 @@ public class ScaleChangedDomainEventTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task ScaleOutStartedIsReported()
     {
-        var start = UtcNow;
         CreateScaleGroup();
         var events = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>();
         BigBrotherMoq.Setup(x => x.Publish(It.IsAny<ScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
             .Callback<ScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, sc.Type)));
-        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances(GetLoadBalancerResourceId(), 9999))
-            .ReturnsAsync(() => UtcNow >= start.AddMinutes(30) ? 1 : 0);
-        var eventId = AddEvent(start.AddMinutes(30), start.AddMinutes(40), 10);
+        RegisterResourceScaler("c", x => UtcNow >= StartTime.AddMinutes(30) ? 10 : (int?)null);
+        RegisterResourceScaler("s", x => UtcNow >= StartTime.AddMinutes(30) ? 10 : (int?)null);
+        var eventId = AddEvent(StartTime.AddMinutes(30), StartTime.AddMinutes(40), 10);
 
-        await AdvanceTimeTo(start + TimeSpan.FromHours(1));
+        await AdvanceTimeTo(StartTime + TimeSpan.FromHours(1));
 
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
-            (start.AddMinutes(30).Add(-MaxLeadTime), eventId, ScaleChangeType.ScaleOutStarted),
-            (start.AddMinutes(30), eventId, ScaleChangeType.ScaleOutComplete),
-            (start.AddMinutes(40), eventId, ScaleChangeType.ScaleInStarted),
-            (start.AddMinutes(40), eventId, ScaleChangeType.ScaleInComplete),
+            (StartTime.AddMinutes(30).Add(-MaxLeadTime), eventId, ScaleChangeType.ScaleOutStarted),
+            (StartTime.AddMinutes(30), eventId, ScaleChangeType.ScaleOutComplete),
+            (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleInStarted),
+            (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleInComplete),
         };
         events.Should().BeEquivalentTo(expected);
     }
 
     [Fact, IsLayer0]
-    public async Task MultipleEvent()
+    public async Task MultipleEvents()
     {
         var start = UtcNow;
         CreateScaleGroup();
         var events = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>();
         BigBrotherMoq.Setup(x => x.Publish(It.IsAny<ScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
             .Callback<ScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, sc.Type)));
-        var availableVMs = new (DateTimeOffset When, int Number)[]
+        var all = new List<object>();
+        BigBrotherMoq.Setup(x => x.Publish(It.IsAny<object>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
+            .Callback<object, string, string, int>((sc, o, _x, _y) => all.Add(o));
+        var availableVMs = new (DateTimeOffset When, int? Number)[]
         {
-            (start, 0),
-            (start.AddMinutes(18), 1),
-            (start.AddMinutes(21), 2),
+            (start.AddMinutes(18), 80),
+            (start.AddMinutes(21), 110),
         };
-        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances(GetLoadBalancerResourceId(), 9999))
-            .ReturnsAsync(() => availableVMs.Last(x => x.When <= UtcNow).Number);
+        int? GetThroughput(int? requested)
+        {
+            var dd = availableVMs.LastOrDefault(x => x.When <= UtcNow).Number;
+            return requested == null || requested <= dd ? dd : null;
+        }
+        RegisterResourceScaler("c", x => GetThroughput(x));
+        RegisterResourceScaler("s", x => GetThroughput(x));
         var eventId1 = AddEvent(start.AddMinutes(20), start.AddMinutes(40), 80);
         var eventId2 = AddEvent(start.AddMinutes(22), start.AddMinutes(50), 30);
 
@@ -68,11 +74,11 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
             (start.AddMinutes(20).Add(-MaxLeadTime), eventId1, ScaleChangeType.ScaleOutStarted),
-            (start.AddMinutes(20), eventId1, ScaleChangeType.ScaleOutComplete),
+            (start.AddMinutes(18), eventId1, ScaleChangeType.ScaleOutComplete),
             (start.AddMinutes(40), eventId1, ScaleChangeType.ScaleInStarted),
             (start.AddMinutes(40), eventId1, ScaleChangeType.ScaleInComplete),
             (start.AddMinutes(22).Add(-MaxLeadTime), eventId2, ScaleChangeType.ScaleOutStarted),
-            (start.AddMinutes(21), eventId2, ScaleChangeType.ScaleOutComplete),
+            (RoundToScan( start.AddMinutes(21)), eventId2, ScaleChangeType.ScaleOutComplete),
             (start.AddMinutes(50), eventId2, ScaleChangeType.ScaleInStarted),
             (start.AddMinutes(50), eventId2, ScaleChangeType.ScaleInComplete),
         };

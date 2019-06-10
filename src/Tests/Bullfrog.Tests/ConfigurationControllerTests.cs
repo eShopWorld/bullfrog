@@ -49,7 +49,7 @@ public class ConfigurationControllerTests : BaseApiTests
                     {
                         new ScaleSetConfiguration
                         {
-                            Name = "aa",
+                            Name = "ss",
                             AutoscaleSettingsResourceId = GetAutoscaleSettingResourceId(),
                             ProfileName = "pr",
                             LoadBalancerResourceId = GetLoadBalancerResourceId(),

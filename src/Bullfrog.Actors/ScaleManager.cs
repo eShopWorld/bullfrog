@@ -24,11 +24,11 @@
     public class ScaleManager : BullfrogActorBase, IScaleManager, IRemindable
     {
         private const string ReminderName = "wakeupReminder";
-        private readonly TimeSpan ScanPeriod = TimeSpan.FromMinutes(2);
+        internal static readonly TimeSpan ScanPeriod = TimeSpan.FromMinutes(2);
         private readonly StateItem<List<ManagedScaleEvent>> _events;
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
-        private readonly StateItem<DateTimeOffset> _scaleOutStarted;
         private readonly StateItem<Dictionary<Guid, ScaleChangeType>> _reportedEventStates;
+        private readonly StateItem<ScalingState> _scaleState;
         private readonly IScaleModuleFactory _scaleModuleFactory;
         private readonly IScaleSetMonitor _scaleSetMonitor;
         private readonly IDateTimeProvider _dateTimeProvider;
@@ -60,8 +60,8 @@
         {
             _events = new StateItem<List<ManagedScaleEvent>>(StateManager, "scaleEvents");
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
-            _scaleOutStarted = new StateItem<DateTimeOffset>(StateManager, "scaleOutStarted");
             _reportedEventStates = new StateItem<Dictionary<Guid, ScaleChangeType>>(StateManager, "reportedEventStates");
+            _scaleState = new StateItem<ScalingState>(StateManager, "scaleState");
             _scaleModuleFactory = scaleModuleFactory;
             _scaleSetMonitor = scaleSetMonitor;
             _dateTimeProvider = dateTimeProvider;
@@ -86,8 +86,9 @@
             // Any serializable object can be saved in the StateManager.
             // For more information, see https://aka.ms/servicefabricactorsstateserialization
 
-            // For simplicity store all events in one list. Consider creating Future and Completed set of scale events for performance improvements.
             await _events.TryAdd(new List<ManagedScaleEvent>());
+            await _scaleState.TryAdd(new ScalingState());
+            await StateManager.TryRemoveStateAsync("scaleOutStarted"); // no longer used
         }
 
         async Task IScaleManager.DeleteScaleEvent(Guid id)
@@ -108,8 +109,8 @@
             var events = await _events.Get();
             var now = _dateTimeProvider.UtcNow;
 
-            var scaleOutStarted = await _scaleOutStarted.TryGet();
-            if (!scaleOutStarted.HasValue)
+            var state = await _scaleState.Get();
+            if (!state.ScalingOutStartTime.HasValue)
                 return null;
 
             var configuration = await _configuration.TryGet();
@@ -131,7 +132,7 @@
             {
                 Scale = scaleSetStates.Values.Cast<decimal?>().Min() ?? 0,
                 RequestedScale = requestedScale,
-                WasScaleUpAt = scaleOutStarted.Value,
+                WasScaleUpAt = state.ScalingOutStartTime.Value,
                 WillScaleDownAt = combindedEnd,
                 ScaleSetState = scaleSetStates,
             };
@@ -231,8 +232,13 @@
 
         void CreateScaleRequests(Dictionary<string, ScaleRequest> scaleRequests, int? throughput, string resourceType, IEnumerable<string> names)
         {
+            bool replacing = false;
+
             foreach (var name in names)
             {
+                if (scaleRequests.TryGetValue(name, out var previous) && previous.IsExecuting)
+                    replacing = true;
+
                 scaleRequests[name]
                     = new ScaleRequest(throughput, _dateTimeProvider.UtcNow);
             }
@@ -241,7 +247,7 @@
             {
                 ResourceType = resourceType,
                 RequestedThroughput = throughput ?? -1,
-                PreviousChangeNotCompleted = scaleRequests.Any(),
+                PreviousChangeNotCompleted = replacing,
             });
         }
 
@@ -249,13 +255,10 @@
         {
             var configuration = await _configuration.Get(cancellationToken);
             var events = await _events.Get(cancellationToken);
+            var state = await _scaleState.Get();
             var now = _dateTimeProvider.UtcNow;
 
-            bool scaleEventInProgress = false;
-
-            int? lastScaleSetThroughputRequested = null;
-            int? lastCosmosDbThroughputRequested = null;
-            var scaleRequests = new Dictionary<string, ScaleRequest>();
+            var scaleEventInProgress = false;
 
             // TODO: replace two following ifs with one shared method
 
@@ -264,11 +267,11 @@
             {
                 var scaleSetThroughput = CalculateTotalThroughput(events, now, configuration.ScaleSetPrescaleLeadTime);
                 scaleEventInProgress |= scaleSetThroughput.HasValue;
-                if (scaleSetThroughput != lastScaleSetThroughputRequested)
+                if (scaleSetThroughput != state.LastScaleSetThroughputRequested)
                 {
                     // the requested throughput has been changes so scale requests for all resources must be created.
-                    lastScaleSetThroughputRequested = scaleSetThroughput;
-                    CreateScaleRequests(scaleRequests, scaleSetThroughput, "scalesets", configuration.ScaleSetConfigurations.Select(o => o.Name));
+                    state.LastScaleSetThroughputRequested = scaleSetThroughput;
+                    CreateScaleRequests(state.ScaleRequests, scaleSetThroughput, "scalesets", configuration.ScaleSetConfigurations.Select(o => o.Name));
                 }
             }
 
@@ -277,16 +280,16 @@
             {
                 var cosmosThroughput = CalculateTotalThroughput(events, now, configuration.CosmosDbPrescaleLeadTime);
                 scaleEventInProgress |= cosmosThroughput.HasValue;
-                if (cosmosThroughput != lastCosmosDbThroughputRequested)
+                if (cosmosThroughput != state.LastCosmosThroughputRequested)
                 {
                     // the requested throughput has been changes so scale requests for all resources must be created.
-                    lastCosmosDbThroughputRequested = cosmosThroughput;
-                    CreateScaleRequests(scaleRequests, cosmosThroughput, "cosmosdb", configuration.CosmosConfigurations.Select(o => o.Name));
+                    state.LastCosmosThroughputRequested = cosmosThroughput;
+                    CreateScaleRequests(state.ScaleRequests, cosmosThroughput, "cosmosdb", configuration.CosmosConfigurations.Select(o => o.Name));
                 }
             }
 
             // Process new or previously created scale change requests
-            foreach (var scaleRequest in scaleRequests)
+            foreach (var scaleRequest in state.ScaleRequests)
             {
                 // TODO: move most of this logic to ScaleRequest
 
@@ -325,16 +328,15 @@
                 }
             }
 
-            var scaleOutStarted = await _scaleOutStarted.TryGet();
             if (scaleEventInProgress)
             {
-                if (!scaleOutStarted.HasValue)
-                    await _scaleOutStarted.Set(_dateTimeProvider.UtcNow);
+                if (!state.ScalingOutStartTime.HasValue)
+                    state.ScalingOutStartTime = _dateTimeProvider.UtcNow;
             }
             else
             {
-                if (scaleOutStarted.HasValue)
-                    await _scaleOutStarted.TryRemove();
+                if (state.ScalingOutStartTime.HasValue)
+                    state.ScalingOutStartTime = null;
             }
 
             var maxLeadTime = configuration.ScaleSetPrescaleLeadTime < configuration.CosmosDbPrescaleLeadTime
@@ -342,10 +344,10 @@
                 : configuration.ScaleSetPrescaleLeadTime;
 
             await ReportEventState(events, now, maxLeadTime,
-                scaleRequests.Max(o => o.Value.FinalThroughput),
-                scaleRequests.Any(o => o.Value.Status == ScaleRequestStatus.Failing));
+                state.ScaleRequests.Max(o => o.Value.FinalThroughput),
+                state.ScaleRequests.Any(o => o.Value.Status == ScaleRequestStatus.Failing));
 
-            var nextWakeUpTime = scaleRequests.Any(o => o.Value.IsExecuting)
+            var nextWakeUpTime = state.ScaleRequests.Any(o => o.Value.IsExecuting)
                 ? _dateTimeProvider.UtcNow.Add(ScanPeriod)
                 : FindNextWakeUpTime(
                     events,
@@ -354,12 +356,16 @@
                     configuration.CosmosDbPrescaleLeadTime);
             await WakeMeAt(nextWakeUpTime);
 
-            var states = scaleRequests.Values.Select(o => o.Status).ToList();
+            if (!scaleEventInProgress && state.ScaleRequests.All(x => !x.Value.IsExecuting))
+                state.ScaleRequests.Clear();
+            await _scaleState.Set(state);
+
+            var states = state.ScaleRequests.Values.Select(o => o.Status).ToList();
             BigBrother.Publish(new ScaleAgentStatus
             {
                 ActorId = Id.ToString(),
-                RequestedScaleSetScale = lastScaleSetThroughputRequested,
-                RequestedCosmosDbScale = lastCosmosDbThroughputRequested,
+                RequestedScaleSetScale = state.LastScaleSetThroughputRequested,
+                RequestedCosmosDbScale = state.LastCosmosThroughputRequested,
                 NextWakeUpTime = nextWakeUpTime,
                 ScaleCompleted = states.Count(o => o == ScaleRequestStatus.Completed),
                 ScaleFailing = states.Count(o => o == ScaleRequestStatus.Failing),
@@ -411,7 +417,7 @@
 
             if (issuesReported)
             {
-                foreach (var ev in reportedEventStates.Where(e => e.Value == ScaleChangeType.ScaleOutStarted))
+                foreach (var ev in reportedEventStates.Where(e => e.Value == ScaleChangeType.ScaleOutStarted).ToList())
                     ChangeState(ev.Key, ScaleChangeType.ScaleIssue, temporaryIssue: true);
             }
             else if (finalScale.HasValue)
@@ -421,7 +427,7 @@
             }
             else
             {
-                foreach (var ev in reportedEventStates.Where(e => e.Value == ScaleChangeType.ScaleIssue))
+                foreach (var ev in reportedEventStates.Where(e => e.Value == ScaleChangeType.ScaleIssue).ToList())
                     ChangeState(ev.Key, ScaleChangeType.ScaleOutStarted);
             }
 
@@ -511,10 +517,24 @@
         {
             if (!_modules.TryGetValue(name, out var module))
             {
-                _modules.Add(name, _scaleModuleFactory.CreateModule(name, configuration));
+                module = _scaleModuleFactory.CreateModule(name, configuration);
+                System.Diagnostics.Debug.Assert(module != null);
+                _modules.Add(name, module);
             }
 
             return module;
+        }
+
+        private class ScalingState
+        {
+            public DateTimeOffset? ScalingOutStartTime { get; set; }
+
+            public Dictionary<string, ScaleRequest> ScaleRequests { get; set; }
+                = new Dictionary<string, ScaleRequest>();
+
+            public int? LastScaleSetThroughputRequested { get; set; }
+
+            public int? LastCosmosThroughputRequested { get; set; }
         }
 
         private enum ScaleRequestStatus
