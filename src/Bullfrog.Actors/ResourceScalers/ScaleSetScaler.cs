@@ -9,16 +9,16 @@ using Eshopworld.Core;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.Monitor.Fluent;
 
-namespace Bullfrog.Actors.Modules
+namespace Bullfrog.Actors.ResourceScalers
 {
-    internal class ScaleSetModule : ScalingModule
+    internal class ScaleSetScaler : ResourceScaler
     {
         private readonly Azure.IAuthenticated _authenticated;
         private readonly ScaleSetConfiguration _configuration;
         private readonly IScaleSetMonitor _scaleSetMonitor;
         private readonly IBigBrother _bigBrother;
 
-        public ScaleSetModule(Azure.IAuthenticated authenticated, ScaleSetConfiguration configuration, IScaleSetMonitor scaleSetMonitor, IBigBrother bigBrother)
+        public ScaleSetScaler(Azure.IAuthenticated authenticated, ScaleSetConfiguration configuration, IScaleSetMonitor scaleSetMonitor, IBigBrother bigBrother)
         {
             _authenticated = authenticated;
             _configuration = configuration;
@@ -60,9 +60,7 @@ namespace Bullfrog.Actors.Modules
                 return (int)(usableInstances * _configuration.RequestsPerInstance);
             }
             else
-            {
                 return null;
-            }
         }
 
         private async Task UpdateProfile(

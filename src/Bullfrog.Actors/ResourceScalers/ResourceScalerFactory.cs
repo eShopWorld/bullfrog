@@ -3,21 +3,21 @@ using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common;
 using Bullfrog.Common.Cosmos;
 
-namespace Bullfrog.Actors.Modules
+namespace Bullfrog.Actors.ResourceScalers
 {
-    public class ScaleModuleFactory : IScaleModuleFactory
+    public class ResourceScalerFactory : IResourceScalerFactory
     {
         private readonly ICosmosThroughputClientFactory _cosmosThroughputClientFactory;
-        private readonly IScaleSetScalingModuleFactory _scaleSetScalingModuleFactory;
+        private readonly IScaleSetScalerFactory _scaleSetScalerFactory;
 
-        public ScaleModuleFactory(ICosmosThroughputClientFactory cosmosThroughputClientFactory,
-            IScaleSetScalingModuleFactory scaleSetScalingModuleFactory)
+        public ResourceScalerFactory(ICosmosThroughputClientFactory cosmosThroughputClientFactory,
+            IScaleSetScalerFactory scaleSetScalerFactory)
         {
             _cosmosThroughputClientFactory = cosmosThroughputClientFactory;
-            _scaleSetScalingModuleFactory = scaleSetScalingModuleFactory;
+            _scaleSetScalerFactory = scaleSetScalerFactory;
         }
 
-        public ScalingModule CreateModule(string name, ScaleManagerConfiguration configuration)
+        public ResourceScaler CreateScaler(string name, ScaleManagerConfiguration configuration)
         {
             if (configuration.CosmosConfigurations != null)
             {
@@ -30,15 +30,13 @@ namespace Bullfrog.Actors.Modules
                         ContainerName = cosmosConfiguration.ContainerName,
                         DatabaseName = cosmosConfiguration.DatabaseName,
                     });
-                    return new CosmosModule(client, cosmosConfiguration);
+                    return new CosmosScaler(client, cosmosConfiguration);
                 }
             }
 
             var scaleSetConfiguration = configuration.ScaleSetConfigurations.FirstOrDefault(x => x.Name == name);
             if (scaleSetConfiguration != null)
-            {
-                return _scaleSetScalingModuleFactory.CreateModule(scaleSetConfiguration);
-            }
+                return _scaleSetScalerFactory.CreateScaler(scaleSetConfiguration);
 
             throw new BullfrogException($"Configuration for {name} not found.");
         }

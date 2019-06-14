@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Autofac;
 using Autofac.Integration.ServiceFabric;
 using Bullfrog.Actors.Helpers;
-using Bullfrog.Actors.Modules;
+using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common.DependencyInjection;
 using Castle.Core.Internal;
 using Eshopworld.Telemetry;
@@ -38,8 +38,8 @@ namespace Bullfrog.Actors
                 builder.RegisterType<ScaleSetManager>().As<IScaleSetManager>();
                 builder.RegisterType<CosmosManager>().As<ICosmosManager>();
                 builder.RegisterType<ScaleSetMonitor>().As<IScaleSetMonitor>();
-                builder.RegisterType<ScaleSetScalingModuleFactory>().As<IScaleSetScalingModuleFactory>();
-                builder.RegisterType<ScaleModuleFactory>().As<IScaleModuleFactory>();
+                builder.RegisterType<ScaleSetScalerFactory>().As<IScaleSetScalerFactory>();
+                builder.RegisterType<ResourceScalerFactory>().As<IResourceScalerFactory>();
 
                 builder.Register(c =>
                 {

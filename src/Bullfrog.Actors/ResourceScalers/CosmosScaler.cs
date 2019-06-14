@@ -3,14 +3,14 @@ using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common.Cosmos;
 
-namespace Bullfrog.Actors.Modules
+namespace Bullfrog.Actors.ResourceScalers
 {
-    internal class CosmosModule : ScalingModule
+    internal class CosmosScaler : ResourceScaler
     {
         private readonly ICosmosThroughputClient _throughputClient;
         private readonly CosmosConfiguration _cosmosConfiguration;
 
-        public CosmosModule(ICosmosThroughputClient throughputClient, CosmosConfiguration cosmosConfiguration)
+        public CosmosScaler(ICosmosThroughputClient throughputClient, CosmosConfiguration cosmosConfiguration)
         {
             _throughputClient = throughputClient;
             _cosmosConfiguration = cosmosConfiguration;
@@ -20,9 +20,7 @@ namespace Bullfrog.Actors.Modules
         {
             var currentThroughput = await _throughputClient.Get();
             if (currentThroughput.IsThroughputChangePending)
-            {
                 return null;
-            }
 
             var newRequestUnits = (int)((newThroughput ?? 0) * _cosmosConfiguration.RequestUnitsPerRequest);
             var roundedRequestUnits = (newRequestUnits + 99) / 100 * 100;
@@ -36,15 +34,11 @@ namespace Bullfrog.Actors.Modules
                 requestUnits = currentThroughput.MinimalRequestUnits;
 
             if (requestUnits == currentThroughput.RequestsUnits)
-            {
                 return requestUnits;
-            }
 
             currentThroughput = await _throughputClient.Set(requestUnits);
             if (currentThroughput.IsThroughputChangePending)
-            {
                 return null;
-            }
 
             if (requestUnits != currentThroughput.RequestsUnits)
             {

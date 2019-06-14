@@ -8,7 +8,7 @@ using Client;
 using Client.Models;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
-using TestScaleModules;
+using TestScalers;
 using Xunit;
 
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S3236:Caller information arguments should not be provided explicitly", Justification = "Moq requires all arguments.")]
@@ -123,8 +123,8 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(14);
         var start = UtcNow;
         CreateScaleGroup();
-        RegisterResourceScale("c", new DelayTestScalingModule(TimeSpan.FromMinutes(8), 10, () => UtcNow));
-        RegisterResourceScale("s", new DelayTestScalingModule(TimeSpan.FromMinutes(6), 10, () => UtcNow));
+        RegisterResourceScaler("c", new DelayTestScaler(TimeSpan.FromMinutes(8), 10, () => UtcNow));
+        RegisterResourceScaler("s", new DelayTestScaler(TimeSpan.FromMinutes(6), 10, () => UtcNow));
         var eventId1 = AddEvent(start.AddMinutes(40), start.AddMinutes(100), 80);
         var eventId2 = AddEvent(start.AddMinutes(50), start.AddMinutes(110), 30);
 

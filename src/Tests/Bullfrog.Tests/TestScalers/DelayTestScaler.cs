@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
-using Bullfrog.Actors.Modules;
+using Bullfrog.Actors.ResourceScalers;
 
-namespace TestScaleModules
+namespace TestScalers
 {
-    internal class DelayTestScalingModule : ScalingModule
+    internal class DelayTestScaler : ResourceScaler
     {
         private readonly TimeSpan _delay;
         private readonly int _minThroughput;
@@ -12,7 +12,7 @@ namespace TestScaleModules
         private int _currentThroughput;
         private DateTimeOffset? _scalingTill;
 
-        public DelayTestScalingModule(TimeSpan delay, int minThroughput, Func<DateTimeOffset> now)
+        public DelayTestScaler(TimeSpan delay, int minThroughput, Func<DateTimeOffset> now)
         {
             _delay = delay;
             _minThroughput = minThroughput;

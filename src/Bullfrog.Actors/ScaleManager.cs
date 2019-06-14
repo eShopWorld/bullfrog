@@ -10,7 +10,7 @@ using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.Models;
-using Bullfrog.Actors.Modules;
+using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common;
 using Bullfrog.DomainEvents;
 using Eshopworld.Core;
@@ -29,21 +29,21 @@ namespace Bullfrog.Actors
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
         private readonly StateItem<Dictionary<Guid, ScaleChangeType>> _reportedEventStates;
         private readonly StateItem<ScalingState> _scaleState;
-        private readonly IScaleModuleFactory _scaleModuleFactory;
+        private readonly IResourceScalerFactory _scalerFactory;
         private readonly IScaleSetMonitor _scaleSetMonitor;
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IActorProxyFactory _proxyFactory;
         private readonly string _scaleGroupName;
         private readonly string _regionName;
-        private readonly Dictionary<string, Modules.ScalingModule> _modules
-            = new Dictionary<string, Modules.ScalingModule>();
+        private readonly Dictionary<string, ResourceScaler> _scalers
+            = new Dictionary<string, ResourceScaler>();
 
         /// <summary>
         /// Initializes a new instance of ScaleManager
         /// </summary>
         /// <param name="actorService">The Microsoft.ServiceFabric.Actors.Runtime.ActorService that will host this actor instance.</param>
         /// <param name="actorId">The Microsoft.ServiceFabric.Actors.ActorId for this actor instance.</param>
-        /// <param name="scaleModuleFactory">Scale module factory.</param>
+        /// <param name="scalerFactory">Scaler factory.</param>
         /// <param name="scaleSetMonitor">Reads performance details of a scale set.</param>
         /// <param name="dateTimeProvider">Gets the current time.</param>
         /// <param name="proxyFactory">Actor proxy factory.</param>
@@ -51,7 +51,7 @@ namespace Bullfrog.Actors
         public ScaleManager(
             ActorService actorService,
             ActorId actorId,
-            IScaleModuleFactory scaleModuleFactory,
+            IResourceScalerFactory scalerFactory,
             IScaleSetMonitor scaleSetMonitor,
             IDateTimeProvider dateTimeProvider,
             IActorProxyFactory proxyFactory,
@@ -62,7 +62,7 @@ namespace Bullfrog.Actors
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
             _reportedEventStates = new StateItem<Dictionary<Guid, ScaleChangeType>>(StateManager, "reportedEventStates");
             _scaleState = new StateItem<ScalingState>(StateManager, "scaleState");
-            _scaleModuleFactory = scaleModuleFactory;
+            _scalerFactory = scalerFactory;
             _scaleSetMonitor = scaleSetMonitor;
             _dateTimeProvider = dateTimeProvider;
             _proxyFactory = proxyFactory;
@@ -305,10 +305,10 @@ namespace Bullfrog.Actors
                     continue;
 
                 var requestedThroughput = scaleRequestDetails.RequestedThroughput;
-                var module = GetScalingModule(name, configuration);
+                var scaler = GetScaler(name, configuration);
                 try
                 {
-                    scaleRequestDetails.FinalThroughput = await module.SetThroughput(requestedThroughput);
+                    scaleRequestDetails.FinalThroughput = await scaler.SetThroughput(requestedThroughput);
                     scaleRequestDetails.ResetError();
                     var status = scaleRequestDetails.Status;
                     if (status == ScaleRequestStatus.Completed || status == ScaleRequestStatus.Limited)
@@ -536,16 +536,16 @@ namespace Bullfrog.Actors
             return _proxyFactory.CreateActorProxy<IConfigurationManager>(new ActorId("configuration"));
         }
 
-        private Modules.ScalingModule GetScalingModule(string name, ScaleManagerConfiguration configuration)
+        private ResourceScaler GetScaler(string name, ScaleManagerConfiguration configuration)
         {
-            if (!_modules.TryGetValue(name, out var module))
+            if (!_scalers.TryGetValue(name, out var scaler))
             {
-                module = _scaleModuleFactory.CreateModule(name, configuration);
-                System.Diagnostics.Debug.Assert(module != null);
-                _modules.Add(name, module);
+                scaler = _scalerFactory.CreateScaler(name, configuration);
+                System.Diagnostics.Debug.Assert(scaler != null);
+                _scalers.Add(name, scaler);
             }
 
-            return module;
+            return scaler;
         }
 
         [DataContract]

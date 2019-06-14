@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using Bullfrog.Actors;
 using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.Interfaces.Models;
-using Bullfrog.Actors.Modules;
+using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common;
 using Client;
 using Eshopworld.Core;
@@ -45,7 +45,7 @@ public class BaseApiTests
     protected TimeSpan TimeSincStart => UtcNow - StartTime;
 
     private Mock<IDateTimeProvider> DateTimeProviderMoq;
-    protected Mock<IScaleModuleFactory> ScaleModuleFactoryMoq { get; private set; }
+    protected Mock<IResourceScalerFactory> ScalerFactoryMoq { get; private set; }
     protected Mock<IScaleSetMonitor> ScaleSetMonitorMoq { get; private set; }
 
     protected List<(DateTimeOffset Time, object Event)> NonTelemetryEvents { get; } = new List<(DateTimeOffset Time, object Event)>();
@@ -85,11 +85,11 @@ public class BaseApiTests
 
         RegisterConfigurationManagerActor(actorProxyFactory, bigBrother);
 
-        ScaleModuleFactoryMoq = new Mock<IScaleModuleFactory>(MockBehavior.Strict);
+        ScalerFactoryMoq = new Mock<IResourceScalerFactory>(MockBehavior.Strict);
         ScaleSetMonitorMoq = new Mock<IScaleSetMonitor>();
         foreach (var regionName in "eu,eu1,eu2,eu3,$cosmos".Split(','))
         {
-            RegisterScaleManagerActor("sg", regionName, ScaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, bigBrother, actorProxyFactory);
+            RegisterScaleManagerActor("sg", regionName, ScalerFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, bigBrother, actorProxyFactory);
         }
 
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
@@ -127,10 +127,10 @@ public class BaseApiTests
         services.AddSingleton(configuration);
     }
 
-    private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IScaleModuleFactory> scaleModuleFactoryMoq, Mock<IScaleSetMonitor> scaleSetMonitor, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
+    private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IResourceScalerFactory> scalerFactoryMoq, Mock<IScaleSetMonitor> scaleSetMonitor, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
     {
         ActorBase scaleManagerActorFactory(ActorService service, ActorId id)
-            => new ScaleManager(service, id, scaleModuleFactoryMoq.Object, scaleSetMonitor.Object, dateTimeProvider, actorProxyFactory, bigBrother);
+            => new ScaleManager(service, id, scalerFactoryMoq.Object, scaleSetMonitor.Object, dateTimeProvider, actorProxyFactory, bigBrother);
         var stateProvider = new MyActorStateProvider(DateTimeProviderMoq.Object);
         var scaleManagerSvc = MockActorServiceFactory.CreateActorServiceForActor<ScaleManager>(scaleManagerActorFactory, stateProvider);
         var scaleManagerActor = scaleManagerSvc.Activate(new ActorId($"ScaleManager:{scaleGroup}/{region}"));
@@ -174,11 +174,11 @@ public class BaseApiTests
 
     protected void RegisterDefaultScalers()
     {
-        var scaleModuleMoq = new Mock<ScalingModule>();
-        scaleModuleMoq.Setup(x => x.SetThroughput(It.IsAny<int?>()))
+        var scalerMoq = new Mock<ResourceScaler>();
+        scalerMoq.Setup(x => x.SetThroughput(It.IsAny<int?>()))
             .Returns((int? n) => Task.FromResult((int?)null));
-        ScaleModuleFactoryMoq.Setup(x => x.CreateModule(It.IsAny<string>(), It.IsAny<ScaleManagerConfiguration>()))
-            .Returns(scaleModuleMoq.Object);
+        ScalerFactoryMoq.Setup(x => x.CreateScaler(It.IsAny<string>(), It.IsAny<ScaleManagerConfiguration>()))
+            .Returns(scalerMoq.Object);
     }
 
     protected void RegisterResourceScaler(string name, Func<int?, int?> scaler)
@@ -190,19 +190,19 @@ public class BaseApiTests
             return reachedThroughput;
         }
 
-        var scaleModuleMoq = new Mock<ScalingModule>();
-        scaleModuleMoq.Setup(x => x.SetThroughput(It.IsAny<int?>()))
+        var scalerMoq = new Mock<ResourceScaler>();
+        scalerMoq.Setup(x => x.SetThroughput(It.IsAny<int?>()))
             .Returns((int? n) => Task.FromResult(CalculateAndSaveThroughput(n)));
-        ScaleModuleFactoryMoq.Setup(x => x.CreateModule(name, It.IsAny<ScaleManagerConfiguration>()))
-            .Returns(scaleModuleMoq.Object);
+        ScalerFactoryMoq.Setup(x => x.CreateScaler(name, It.IsAny<ScaleManagerConfiguration>()))
+            .Returns(scalerMoq.Object);
         ScaleHistory[name] = new List<(TimeSpan SinceStart, int? RequestedThroughput, int? ReachedThroughput)>();
     }
 
-    protected void RegisterResourceScale(string name, ScalingModule module)
+    protected void RegisterResourceScaler(string name, ResourceScaler scaler)
     {
-        var logger = new ScalingModuleLogger(module,
+        var logger = new ScalerLogger(scaler,
             (requestedThroughput, reachedThroughput) => ScaleHistory[name].Add((TimeSincStart, requestedThroughput, reachedThroughput)));
-        ScaleModuleFactoryMoq.Setup(x => x.CreateModule(name, It.IsAny<ScaleManagerConfiguration>()))
+        ScalerFactoryMoq.Setup(x => x.CreateScaler(name, It.IsAny<ScaleManagerConfiguration>()))
             .Returns(logger);
         ScaleHistory[name] = new List<(TimeSpan SinceStart, int? RequestedThroughput, int? ReachedThroughput)>();
     }
@@ -249,20 +249,20 @@ public class BaseApiTests
         }
     }
 
-    private sealed class ScalingModuleLogger : ScalingModule
+    private sealed class ScalerLogger : ResourceScaler
     {
-        private readonly ScalingModule _module;
+        private readonly ResourceScaler _scaler;
         private readonly Action<int?, int?> _logSetThroughputAction;
 
-        public ScalingModuleLogger(ScalingModule module, Action<int?, int?> logSetThroughputAction)
+        public ScalerLogger(ResourceScaler scaler, Action<int?, int?> logSetThroughputAction)
         {
-            _module = module;
+            _scaler = scaler;
             _logSetThroughputAction = logSetThroughputAction;
         }
 
         public override async Task<int?> SetThroughput(int? newThroughput)
         {
-            var result = await _module.SetThroughput(newThroughput);
+            var result = await _scaler.SetThroughput(newThroughput);
             _logSetThroughputAction(newThroughput, result);
             return result;
         }

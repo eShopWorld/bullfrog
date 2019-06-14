@@ -3,24 +3,24 @@ using Bullfrog.Actors.Interfaces.Models;
 using Eshopworld.Core;
 using Microsoft.Azure.Management.Fluent;
 
-namespace Bullfrog.Actors.Modules
+namespace Bullfrog.Actors.ResourceScalers
 {
-    internal class ScaleSetScalingModuleFactory : IScaleSetScalingModuleFactory
+    internal class ScaleSetScalerFactory : IScaleSetScalerFactory
     {
         private readonly Azure.IAuthenticated _authenticated;
         private readonly IScaleSetMonitor _scaleSetMonitor;
         private readonly IBigBrother _bigBrother;
 
-        public ScaleSetScalingModuleFactory(Azure.IAuthenticated authenticated, IScaleSetMonitor scaleSetMonitor, IBigBrother bigBrother)
+        public ScaleSetScalerFactory(Azure.IAuthenticated authenticated, IScaleSetMonitor scaleSetMonitor, IBigBrother bigBrother)
         {
             _authenticated = authenticated;
             _scaleSetMonitor = scaleSetMonitor;
             _bigBrother = bigBrother;
         }
 
-        public ScalingModule CreateModule(ScaleSetConfiguration configuration)
+        public ResourceScaler CreateScaler(ScaleSetConfiguration configuration)
         {
-            return new ScaleSetModule(_authenticated, configuration, _scaleSetMonitor, _bigBrother);
+            return new ScaleSetScaler(_authenticated, configuration, _scaleSetMonitor, _bigBrother);
         }
     }
 }

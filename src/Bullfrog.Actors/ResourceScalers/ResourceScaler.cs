@@ -1,11 +1,11 @@
 ﻿using System.Threading.Tasks;
 
-namespace Bullfrog.Actors.Modules
+namespace Bullfrog.Actors.ResourceScalers
 {
     /// <summary>
     /// Represents a module responsible for long running throughput change operations.
     /// </summary>
-    public abstract class ScalingModule
+    public abstract class ResourceScaler
     {
         /// <summary>
         /// Attempts to change throughput.
