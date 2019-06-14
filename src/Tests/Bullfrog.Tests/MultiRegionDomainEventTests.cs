@@ -8,7 +8,6 @@ using Client;
 using Client.Models;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
-using Moq;
 using Xunit;
 
 public class MultiRegionDomainEventTests : BaseApiTests
@@ -20,18 +19,16 @@ public class MultiRegionDomainEventTests : BaseApiTests
     {
         var start = UtcNow;
         CreateScaleGroup();
-        var events = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>();
-        BigBrotherMoq.Setup(x => x.Publish(It.IsAny<ScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
-            .Callback<ScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, sc.Type)));
         var eventId = AddEvent(10, 20);
         var eventStart = UtcNow.AddHours(10);
-        RegisterResourceScaler("c1", x => UtcNow >= eventStart.AddHours(-0.25) ? x : null);
-        RegisterResourceScaler("s1", x => UtcNow >= eventStart.AddHours(-0.5) ? x : null);
-        RegisterResourceScaler("s2", x => UtcNow >= eventStart.AddHours(-1) ? x : null);
-        RegisterResourceScaler("s3", x => UtcNow >= eventStart.AddHours(-1.5) ? x : null);
+        RegisterResourceScaler("c1", x => UtcNow >= eventStart.AddHours(-0.25) ? (x ?? 10) : (int?)null);
+        RegisterResourceScaler("s1", x => UtcNow >= eventStart.AddHours(-0.5) ? (x ?? 10) : (int?)null);
+        RegisterResourceScaler("s2", x => UtcNow >= eventStart.AddHours(-1) ? (x ?? 10) : (int?)null);
+        RegisterResourceScaler("s3", x => UtcNow >= eventStart.AddHours(-1.5) ? (x ?? 10) : (int?)null);
 
         await AdvanceTimeTo(start.AddHours(25));
 
+        var events = GetPublishedEvents<ScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type));
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
             (start.AddHours(7), eventId, ScaleChangeType.ScaleOutStarted),
@@ -62,18 +59,16 @@ public class MultiRegionDomainEventTests : BaseApiTests
     {
         var start = StartTime;
         CreateScaleGroup();
-        var events = new List<(DateTimeOffset Time, Guid Id, ScaleChangeType Type, string Region)>();
-        BigBrotherMoq.Setup(x => x.Publish(It.IsAny<EventRegionScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
-            .Callback<EventRegionScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, Enum.Parse<ScaleChangeType>(sc.Type), sc.RegionName)));
         var eventId = AddEvent(10, 20);
         var eventStart = UtcNow.AddHours(10);
-        RegisterResourceScaler("c1", x => UtcNow >= eventStart.AddHours(-0.25) ? x : null);
-        RegisterResourceScaler("s1", x => UtcNow >= eventStart.AddHours(-0.5) ? x : null);
-        RegisterResourceScaler("s2", x => UtcNow >= eventStart.AddHours(-1) ? x : null);
-        RegisterResourceScaler("s3", x => UtcNow >= eventStart.AddHours(-1.5) ? x : null);
+        RegisterResourceScaler("c1", x => UtcNow >= eventStart.AddHours(-0.25) ? (x ?? 10) : (int?)null);
+        RegisterResourceScaler("s1", x => UtcNow >= eventStart.AddHours(-0.5) ? (x ?? 10) : (int?)null);
+        RegisterResourceScaler("s2", x => UtcNow >= eventStart.AddHours(-1) ? (x ?? 10) : (int?)null);
+        RegisterResourceScaler("s3", x => UtcNow >= eventStart.AddHours(-1.5) ? (x ?? 10) : (int?)null);
 
         await AdvanceTimeTo(start.AddHours(25));
 
+        var events = GetPublishedEvents<EventRegionScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type, x.Event.RegionName));
         var expected = new List<(DateTimeOffset Time, Guid Id, ScaleChangeType Type, string Region)>
         {
             (start.AddHours(9), eventId, ScaleChangeType.ScaleOutStarted, "eu1"),

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Eshopworld.Core;
 
 namespace Bullfrog.Actors.EventModels
@@ -8,9 +7,11 @@ namespace Bullfrog.Actors.EventModels
     {
         public string ActorId { get; set; }
 
-        public int? RequestedScaleSetScale { get; set; }
+        public int RequestedScaleSetScale { get; set; }
 
-        public int? RequestedCosmosDbScale { get; set; }
+        public int RequestedCosmosDbScale { get; set; }
+
+        public int ScaleReqests { get; internal set; }
 
         public int ScaleCompleted { get; set; }
 

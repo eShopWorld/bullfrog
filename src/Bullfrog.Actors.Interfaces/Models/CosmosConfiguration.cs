@@ -22,12 +22,6 @@ namespace Bullfrog.Actors.Interfaces.Models
         public string AccountName { get; set; }
 
         /// <summary>
-        /// The Cosmos DB resource id when the control plane is used to control throughput. 
-        /// </summary>
-        [AzureResourceId]
-        public string CosmosDbResourceId { get; set; }
-
-        /// <summary>
         /// The Cosmos DB database name.
         /// </summary>
         [Required]
@@ -61,11 +55,6 @@ namespace Bullfrog.Actors.Interfaces.Models
 
         IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)
         {
-            if(string.IsNullOrWhiteSpace(AccountName) && string.IsNullOrWhiteSpace(CosmosDbResourceId))
-            {
-                yield return new ValidationResult($"Either {nameof(AccountName)} or {nameof(CosmosDbResourceId)} must be set.");
-            }
-
             var cosmosDbManager = (ICosmosDbHelper)validationContext.GetService(typeof(ICosmosDbHelper));
 
             yield return cosmosDbManager.ValidateConfiguration(new CosmosDbConfiguration

@@ -1,6 +1,6 @@
 ﻿using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.Interfaces.Models;
-using Eshopworld.Telemetry;
+using Eshopworld.Core;
 using Microsoft.Azure.Management.Fluent;
 
 namespace Bullfrog.Actors.Modules
@@ -9,9 +9,9 @@ namespace Bullfrog.Actors.Modules
     {
         private readonly Azure.IAuthenticated _authenticated;
         private readonly IScaleSetMonitor _scaleSetMonitor;
-        private readonly BigBrother _bigBrother;
+        private readonly IBigBrother _bigBrother;
 
-        public ScaleSetScalingModuleFactory(Azure.IAuthenticated authenticated, IScaleSetMonitor scaleSetMonitor, BigBrother bigBrother)
+        public ScaleSetScalingModuleFactory(Azure.IAuthenticated authenticated, IScaleSetMonitor scaleSetMonitor, IBigBrother bigBrother)
         {
             _authenticated = authenticated;
             _scaleSetMonitor = scaleSetMonitor;

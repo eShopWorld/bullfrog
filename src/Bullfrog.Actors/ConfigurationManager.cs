@@ -220,7 +220,7 @@ namespace Bullfrog.Actors
 
                 foreach (var region in scaleEvent.RegionConfig)
                 {
-                    if(!registeredEvent.Regions.TryGetValue(region.Name, out var regionState))
+                    if (!registeredEvent.Regions.TryGetValue(region.Name, out var regionState))
                     {
                         registeredEvent.Regions.Add(region.Name, new ScaleEventRegionState
                         {
@@ -355,30 +355,14 @@ namespace Bullfrog.Actors
             if (currentState == scaleEvent.ReportedState)
                 return;
 
-            if (currentState <= ScaleChangeType.ScaleOutStarted)
+            BigBrother.Publish(new ScaleChange
             {
-                Report(currentState);
-            }
-            else
-            {
-                var startFrom = scaleEvent.ReportedState ?? ScaleChangeType.ScaleIssue;
-                for (var state = startFrom + 1; state <= currentState; state++)
-                {
-                    Report(state);
-                }
-            }
+                Id = eventId,
+                Type = currentState,
+                ScaleGroup = scaleGroup,
+            });
 
             scaleEvent.ReportedState = currentState;
-
-            void Report(ScaleChangeType type)
-            {
-                BigBrother.Publish(new ScaleChange
-                {
-                    Id = eventId,
-                    Type = type,
-                    ScaleGroup = scaleGroup,
-                });
-            }
         }
 
         private StateItem<ScaleGroupDefinition> GetScaleGroupState(string name)

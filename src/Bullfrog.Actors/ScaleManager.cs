@@ -1,25 +1,25 @@
-﻿namespace Bullfrog.Actors
-{
-    using System;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Text.RegularExpressions;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Bullfrog.Actors.EventModels;
-    using Bullfrog.Actors.Helpers;
-    using Bullfrog.Actors.Interfaces;
-    using Bullfrog.Actors.Interfaces.Models;
-    using Bullfrog.Actors.Models;
-    using Bullfrog.Actors.Modules;
-    using Bullfrog.Common;
-    using Bullfrog.Common.Cosmos;
-    using Bullfrog.DomainEvents;
-    using Eshopworld.Core;
-    using Microsoft.ServiceFabric.Actors;
-    using Microsoft.ServiceFabric.Actors.Client;
-    using Microsoft.ServiceFabric.Actors.Runtime;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using Bullfrog.Actors.EventModels;
+using Bullfrog.Actors.Helpers;
+using Bullfrog.Actors.Interfaces;
+using Bullfrog.Actors.Interfaces.Models;
+using Bullfrog.Actors.Models;
+using Bullfrog.Actors.Modules;
+using Bullfrog.Common;
+using Bullfrog.DomainEvents;
+using Eshopworld.Core;
+using Microsoft.ServiceFabric.Actors;
+using Microsoft.ServiceFabric.Actors.Client;
+using Microsoft.ServiceFabric.Actors.Runtime;
 
+namespace Bullfrog.Actors
+{
     [StatePersistence(StatePersistence.Persisted)]
     public class ScaleManager : BullfrogActorBase, IScaleManager, IRemindable
     {
@@ -201,6 +201,7 @@
         {
             await _events.Set(new List<ManagedScaleEvent>());
             await _configuration.TryRemove();
+            await _scaleState.Set(new ScalingState());
             await WakeMeAt(null);
         }
 
@@ -245,6 +246,7 @@
 
             BigBrother.Publish(new ScaleChangeStarted
             {
+                ActorId = Id.ToString(),
                 ResourceType = resourceType,
                 RequestedThroughput = throughput ?? -1,
                 PreviousChangeNotCompleted = replacing,
@@ -267,10 +269,10 @@
             {
                 var scaleSetThroughput = CalculateTotalThroughput(events, now, configuration.ScaleSetPrescaleLeadTime);
                 scaleEventInProgress |= scaleSetThroughput.HasValue;
-                if (scaleSetThroughput != state.LastScaleSetThroughputRequested)
+                if (scaleSetThroughput != state.RequestedScaleSetThroughput)
                 {
                     // the requested throughput has been changes so scale requests for all resources must be created.
-                    state.LastScaleSetThroughputRequested = scaleSetThroughput;
+                    state.RequestedScaleSetThroughput = scaleSetThroughput;
                     CreateScaleRequests(state.ScaleRequests, scaleSetThroughput, "scalesets", configuration.ScaleSetConfigurations.Select(o => o.Name));
                 }
             }
@@ -280,10 +282,10 @@
             {
                 var cosmosThroughput = CalculateTotalThroughput(events, now, configuration.CosmosDbPrescaleLeadTime);
                 scaleEventInProgress |= cosmosThroughput.HasValue;
-                if (cosmosThroughput != state.LastCosmosThroughputRequested)
+                if (cosmosThroughput != state.RequestedCosmosThroughput)
                 {
                     // the requested throughput has been changes so scale requests for all resources must be created.
-                    state.LastCosmosThroughputRequested = cosmosThroughput;
+                    state.RequestedCosmosThroughput = cosmosThroughput;
                     CreateScaleRequests(state.ScaleRequests, cosmosThroughput, "cosmosdb", configuration.CosmosConfigurations.Select(o => o.Name));
                 }
             }
@@ -313,9 +315,10 @@
                     {
                         BigBrother.Publish(new ResourceScalingCompleted
                         {
+                            ActorId = Id.ToString(),
                             FinalThroughput = scaleRequestDetails.FinalThroughput.Value,
                             Duration = _dateTimeProvider.UtcNow - scaleRequestDetails.OperationStarted,
-                            RequiredThroughput = requestedThroughput,
+                            RequiredThroughput = requestedThroughput ?? -1,
                             ResourceName = name,
                         });
                     }
@@ -324,7 +327,7 @@
                 {
                     scaleRequestDetails.RegisterError(_dateTimeProvider.UtcNow);
                     var contextEx = new BullfrogException($"Failed to scale {name} to {requestedThroughput}", ex);
-                    BigBrother.Publish(contextEx);
+                    BigBrother.Publish(contextEx.ToExceptionEvent());
                 }
             }
 
@@ -339,14 +342,18 @@
                     state.ScalingOutStartTime = null;
             }
 
+            // Report state of each scaling event. 
             var maxLeadTime = configuration.ScaleSetPrescaleLeadTime < configuration.CosmosDbPrescaleLeadTime
                 ? configuration.CosmosDbPrescaleLeadTime
                 : configuration.ScaleSetPrescaleLeadTime;
-
+            var finalScale = state.ScaleRequests.Any(o => o.Value.IsExecuting)
+                ? null
+                : state.ScaleRequests.Min(o => o.Value.FinalThroughput);
             await ReportEventState(events, now, maxLeadTime,
-                state.ScaleRequests.Max(o => o.Value.FinalThroughput),
+                finalScale,
                 state.ScaleRequests.Any(o => o.Value.Status == ScaleRequestStatus.Failing));
 
+            // Find out when to wake up the next time.
             var nextWakeUpTime = state.ScaleRequests.Any(o => o.Value.IsExecuting)
                 ? _dateTimeProvider.UtcNow.Add(ScanPeriod)
                 : FindNextWakeUpTime(
@@ -364,9 +371,10 @@
             BigBrother.Publish(new ScaleAgentStatus
             {
                 ActorId = Id.ToString(),
-                RequestedScaleSetScale = state.LastScaleSetThroughputRequested,
-                RequestedCosmosDbScale = state.LastCosmosThroughputRequested,
+                RequestedScaleSetScale = state.RequestedScaleSetThroughput ?? -1,
+                RequestedCosmosDbScale = state.RequestedCosmosThroughput ?? -1,
                 NextWakeUpTime = nextWakeUpTime,
+                ScaleReqests = state.ScaleRequests.Count,
                 ScaleCompleted = states.Count(o => o == ScaleRequestStatus.Completed),
                 ScaleFailing = states.Count(o => o == ScaleRequestStatus.Failing),
                 ScaleInProgress = states.Count(o => o == ScaleRequestStatus.InProgress),
@@ -390,10 +398,11 @@
                     details = temporaryIssue ? "temporary" : "permanent";
                 BigBrother.Publish(new EventRegionScaleChange
                 {
+                    ActorId = Id.ToString(),
                     Id = id,
                     RegionName = _regionName,
                     ScaleGroup = _scaleGroupName,
-                    Type = type.ToString(),
+                    Type = type,
                     Details = details,
                 });
             }
@@ -404,9 +413,14 @@
                     ? ScaleChangeType.ScaleOutComplete
                     : ScaleChangeType.ScaleIssue;
 
-                foreach (var ev in eventsGroup.Where(e => reportedEventStates[e.Id] == ScaleChangeType.ScaleOutStarted))
+                var startingEvents = from e in eventsGroup
+                                     let state = reportedEventStates[e.Id]
+                                     where state == ScaleChangeType.ScaleOutStarted || state == ScaleChangeType.ScaleIssue
+                                     select e.Id;
+
+                foreach (var evId in startingEvents)
                 {
-                    ChangeState(ev.Id, scaleCompletedState, temporaryIssue: false);
+                    ChangeState(evId, scaleCompletedState, temporaryIssue: false);
                 }
             }
 
@@ -433,10 +447,19 @@
 
             foreach (var key in reportedEventStates.Keys.Except(activeEvents.Select(e => e.Id)).ToList())
             {
-                ChangeState(key, ScaleChangeType.ScaleInStarted);
-                ChangeState(key, ScaleChangeType.ScaleInComplete);
-                reportedEventStates.Remove(key);
+                if (reportedEventStates[key] != ScaleChangeType.ScaleInStarted)
+                    ChangeState(key, ScaleChangeType.ScaleInStarted);
             }
+
+            if (finalScale.HasValue)
+            {
+                foreach (var ev in reportedEventStates.Where(e => e.Value == ScaleChangeType.ScaleInStarted).ToList())
+                {
+                    ChangeState(ev.Key, ScaleChangeType.ScaleInComplete);
+                    reportedEventStates.Remove(ev.Key);
+                }
+            }
+
 
             if (changes.Any())
             {
@@ -525,16 +548,21 @@
             return module;
         }
 
+        [DataContract]
         private class ScalingState
         {
+            [DataMember]
             public DateTimeOffset? ScalingOutStartTime { get; set; }
 
+            [DataMember]
             public Dictionary<string, ScaleRequest> ScaleRequests { get; set; }
                 = new Dictionary<string, ScaleRequest>();
 
-            public int? LastScaleSetThroughputRequested { get; set; }
+            [DataMember]
+            public int? RequestedScaleSetThroughput { get; set; }
 
-            public int? LastCosmosThroughputRequested { get; set; }
+            [DataMember]
+            public int? RequestedCosmosThroughput { get; set; }
         }
 
         private enum ScaleRequestStatus
@@ -545,19 +573,25 @@
             Completed,
         }
 
+        [DataContract]
         private class ScaleRequest
         {
-            private readonly TimeSpan DefaultErrorDelay = TimeSpan.FromSeconds(30);
+            private readonly TimeSpan DefaultErrorDelay = TimeSpan.FromMinutes(1);
             private readonly TimeSpan MaxErrorDelay = TimeSpan.FromMinutes(5);
 
+            [DataMember]
             public int? RequestedThroughput { get; set; }
 
+            [DataMember]
             public int? FinalThroughput { get; set; }
 
+            [DataMember]
             public DateTimeOffset? TryAfter { get; set; }
 
+            [DataMember]
             public TimeSpan? ErrorDelay { get; set; }
 
+            [DataMember]
             public DateTimeOffset OperationStarted { get; set; }
 
             public bool IsExecuting => !FinalThroughput.HasValue;

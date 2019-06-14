@@ -5,7 +5,7 @@ using Bullfrog.Actors.EventModels;
 using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common;
-using Eshopworld.Telemetry;
+using Eshopworld.Core;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.Monitor.Fluent;
 
@@ -16,9 +16,9 @@ namespace Bullfrog.Actors.Modules
         private readonly Azure.IAuthenticated _authenticated;
         private readonly ScaleSetConfiguration _configuration;
         private readonly IScaleSetMonitor _scaleSetMonitor;
-        private readonly BigBrother _bigBrother;
+        private readonly IBigBrother _bigBrother;
 
-        public ScaleSetModule(Azure.IAuthenticated authenticated, ScaleSetConfiguration configuration, IScaleSetMonitor scaleSetMonitor, BigBrother bigBrother)
+        public ScaleSetModule(Azure.IAuthenticated authenticated, ScaleSetConfiguration configuration, IScaleSetMonitor scaleSetMonitor, IBigBrother bigBrother)
         {
             _authenticated = authenticated;
             _configuration = configuration;

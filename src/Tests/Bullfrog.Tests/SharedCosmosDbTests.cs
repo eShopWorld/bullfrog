@@ -43,8 +43,6 @@ public class SharedCosmosDbTests : BaseApiTests
     {
         CreateScaleGroup();
         ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), NewScaleEvent());
-        CosmosManagerMoq.Setup(m => m.SetScale(30, It.IsAny<InternalModels.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(80);
 
         await AdvanceTimeTo(UtcNow.AddHours(15));
 
@@ -58,12 +56,10 @@ public class SharedCosmosDbTests : BaseApiTests
         var eventId = Guid.NewGuid();
         ApiClient.SaveScaleEvent("sg", eventId, NewScaleEvent());
         ApiClient.DeleteScaleEvent("sg", eventId);
-        CosmosManagerMoq.Setup(m => m.SetScale(60, It.IsAny<InternalModels.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(80);
 
         await AdvanceTimeTo(UtcNow.AddHours(15));
 
-        ScaleHistory["c1"].Last().RequestedThroughput.Should().Be(60);
+        ScaleHistory["c1"].Should().BeEmpty();
     }
 
     [Fact, IsLayer0]

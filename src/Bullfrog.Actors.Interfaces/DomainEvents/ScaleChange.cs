@@ -1,5 +1,7 @@
 ﻿using System;
 using Eshopworld.Core;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Bullfrog.DomainEvents
 {
@@ -16,6 +18,7 @@ namespace Bullfrog.DomainEvents
         /// <summary>
         /// The type of the schange.
         /// </summary>
+        [JsonConverter(typeof(StringEnumConverter))]
         public ScaleChangeType Type { get; set; }
 
         /// <summary>

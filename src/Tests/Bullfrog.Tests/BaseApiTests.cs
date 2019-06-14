@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Net.Http;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors;
@@ -10,7 +11,6 @@ using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.Modules;
 using Bullfrog.Common;
-using Bullfrog.Common.Cosmos;
 using Client;
 using Eshopworld.Core;
 using Helpers;
@@ -32,17 +32,6 @@ public class BaseApiTests
     protected readonly DateTimeOffset StartTime = new DateTimeOffset(2019, 2, 22, 0, 0, 0, 0,
        System.Globalization.CultureInfo.InvariantCulture.Calendar, TimeSpan.Zero);
 
-    public BaseApiTests()
-    {
-        var builder = new WebHostBuilder()
-            .ConfigureServices(ConfigureServices)
-            .UseStartup<TestServerStartup>();
-        var server = new TestServer(builder);
-        HttpClient = server.CreateClient();
-        ApiClient = new BullfrogApi(new TokenCredentials("aa"), HttpClient, false);
-        UtcNow = StartTime;
-    }
-
     protected HttpClient HttpClient { get; }
 
     protected BullfrogApi ApiClient { get; }
@@ -57,9 +46,10 @@ public class BaseApiTests
 
     private Mock<IDateTimeProvider> DateTimeProviderMoq;
     protected Mock<IScaleModuleFactory> ScaleModuleFactoryMoq { get; private set; }
-    protected Mock<ICosmosManager> CosmosManagerMoq { get; private set; }
     protected Mock<IScaleSetMonitor> ScaleSetMonitorMoq { get; private set; }
-    protected Mock<IBigBrother> BigBrotherMoq { get; private set; }
+
+    protected List<(DateTimeOffset Time, object Event)> NonTelemetryEvents { get; } = new List<(DateTimeOffset Time, object Event)>();
+    protected List<(DateTimeOffset Time, TelemetryEvent Event)> BigBrotherEvents { get; } = new List<(DateTimeOffset Time, TelemetryEvent Event)>();
 
     protected readonly Dictionary<string, List<(TimeSpan SinceStart, int? RequestedThroughput, int? ReachedThroughput)>> ScaleHistory =
         new Dictionary<string, List<(TimeSpan SinceStart, int? RequestedThroughput, int? ReachedThroughput)>>();
@@ -69,11 +59,21 @@ public class BaseApiTests
 
     protected static string GetAutoscaleSettingResourceId()
         => "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg/providers/microsoft.insights/autoscalesettings/as";
+    public BaseApiTests()
+    {
+        var builder = new WebHostBuilder()
+            .ConfigureServices(ConfigureServices)
+            .UseStartup<TestServerStartup>();
+        var server = new TestServer(builder);
+        HttpClient = server.CreateClient();
+        ApiClient = new BullfrogApi(new TokenCredentials("aa"), HttpClient, false);
+        UtcNow = StartTime;
+    }
 
     private void ConfigureServices(IServiceCollection services)
     {
-        BigBrotherMoq = new Mock<IBigBrother>();
-        services.AddSingleton(BigBrotherMoq.Object);
+        var bigBrother = new BigBrotherLogger(e => BigBrotherEvents.Add((UtcNow, e)), n => NonTelemetryEvents.Add((UtcNow, n)));
+        services.AddSingleton<IBigBrother>(bigBrother);
 
         services.AddTransient(_ => MockStatelessServiceContextFactory.Default);
         var actorProxyFactory = new MockActorProxyFactory();
@@ -83,16 +83,14 @@ public class BaseApiTests
         DateTimeProviderMoq = new Mock<IDateTimeProvider>();
         DateTimeProviderMoq.SetupGet(o => o.UtcNow).Returns(() => UtcNow);
 
-        RegisterConfigurationManagerActor(actorProxyFactory);
+        RegisterConfigurationManagerActor(actorProxyFactory, bigBrother);
 
-        CosmosManagerMoq = new Mock<ICosmosManager>(); // TODO: delete
         ScaleModuleFactoryMoq = new Mock<IScaleModuleFactory>(MockBehavior.Strict);
         ScaleSetMonitorMoq = new Mock<IScaleSetMonitor>();
-        RegisterScaleManagerActor("sg", "eu", ScaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
-        RegisterScaleManagerActor("sg", "eu1", ScaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
-        RegisterScaleManagerActor("sg", "eu2", ScaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
-        RegisterScaleManagerActor("sg", "eu3", ScaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
-        RegisterScaleManagerActor("sg", "$cosmos", ScaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, BigBrotherMoq.Object, actorProxyFactory);
+        foreach (var regionName in "eu,eu1,eu2,eu3,$cosmos".Split(','))
+        {
+            RegisterScaleManagerActor("sg", regionName, ScaleModuleFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, bigBrother, actorProxyFactory);
+        }
 
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
         autoscaleProfile.SetupGet(p => p.MaxInstanceCount).Returns(10);
@@ -141,11 +139,11 @@ public class BaseApiTests
         ScaleManagerActors.Add((scaleGroup, region), scaleManagerActor);
     }
 
-    private void RegisterConfigurationManagerActor(MockActorProxyFactory actoryProxyFactory)
+    private void RegisterConfigurationManagerActor(MockActorProxyFactory actoryProxyFactory, IBigBrother bigBrother)
     {
         var id = new ActorId("configuration");
         ActorBase actorFactory(ActorService service, ActorId actorId)
-            => new ConfigurationManager(service, actorId, DateTimeProviderMoq.Object, actoryProxyFactory, BigBrotherMoq.Object);
+            => new ConfigurationManager(service, actorId, DateTimeProviderMoq.Object, actoryProxyFactory, bigBrother);
         var stateProvider = new MyActorStateProvider(DateTimeProviderMoq.Object);
         var svc = MockActorServiceFactory.CreateActorServiceForActor<ConfigurationManager>(actorFactory, stateProvider);
         ConfigurationManagerActor = svc.Activate(id);
@@ -162,6 +160,12 @@ public class BaseApiTests
     {
         return (value - offset - 1 + multiple) / multiple * multiple + offset;
     }
+
+    protected IEnumerable<(DateTimeOffset Time, T Event)> GetPublishedEvents<T>()
+        where T : TelemetryEvent
+        => from e in BigBrotherEvents
+           where e.Event is T
+           select (e.Time, (T)e.Event);
 
     protected DateTimeOffset RoundToScan(DateTimeOffset dateTime)
     {
@@ -191,6 +195,15 @@ public class BaseApiTests
             .Returns((int? n) => Task.FromResult(CalculateAndSaveThroughput(n)));
         ScaleModuleFactoryMoq.Setup(x => x.CreateModule(name, It.IsAny<ScaleManagerConfiguration>()))
             .Returns(scaleModuleMoq.Object);
+        ScaleHistory[name] = new List<(TimeSpan SinceStart, int? RequestedThroughput, int? ReachedThroughput)>();
+    }
+
+    protected void RegisterResourceScale(string name, ScalingModule module)
+    {
+        var logger = new ScalingModuleLogger(module,
+            (requestedThroughput, reachedThroughput) => ScaleHistory[name].Add((TimeSincStart, requestedThroughput, reachedThroughput)));
+        ScaleModuleFactoryMoq.Setup(x => x.CreateModule(name, It.IsAny<ScaleManagerConfiguration>()))
+            .Returns(logger);
         ScaleHistory[name] = new List<(TimeSpan SinceStart, int? RequestedThroughput, int? ReachedThroughput)>();
     }
 
@@ -235,4 +248,62 @@ public class BaseApiTests
             }
         }
     }
+
+    private sealed class ScalingModuleLogger : ScalingModule
+    {
+        private readonly ScalingModule _module;
+        private readonly Action<int?, int?> _logSetThroughputAction;
+
+        public ScalingModuleLogger(ScalingModule module, Action<int?, int?> logSetThroughputAction)
+        {
+            _module = module;
+            _logSetThroughputAction = logSetThroughputAction;
+        }
+
+        public override async Task<int?> SetThroughput(int? newThroughput)
+        {
+            var result = await _module.SetThroughput(newThroughput);
+            _logSetThroughputAction(newThroughput, result);
+            return result;
+        }
+    }
+
+    private class BigBrotherLogger : IBigBrother
+    {
+        private readonly Action<TelemetryEvent> _telemetryEventLogger;
+        private readonly Action<object> _nontelemetryEventLogger;
+
+        public BigBrotherLogger(Action<TelemetryEvent> telemetryEventLogger, Action<object> nontelemetryEventLogger)
+        {
+            _telemetryEventLogger = telemetryEventLogger;
+            _nontelemetryEventLogger = nontelemetryEventLogger;
+        }
+
+        public IBigBrother DeveloperMode()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Flush()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Publish<T>(T @event, [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = -1) where T : TelemetryEvent
+        {
+            _telemetryEventLogger(@event);
+        }
+
+        public void Publish(object @event, [CallerMemberName] string callerMemberName = "", [CallerFilePath] string callerFilePath = "", [CallerLineNumber] int callerLineNumber = -1)
+        {
+            _nontelemetryEventLogger(@event);
+        }
+
+        public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
+
+

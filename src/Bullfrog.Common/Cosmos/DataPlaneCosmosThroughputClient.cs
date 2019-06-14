@@ -66,7 +66,7 @@ namespace Bullfrog.Common.Cosmos
         private async Task<ResourceResponse<Offer>> ReadOffer(DocumentClient client)
         {
             Resource resource;
-            if (_connectionString != null)
+            if (_collectionName != null)
             {
                 var collectionUri = UriFactory.CreateDocumentCollectionUri(_databaseName, _collectionName);
                 resource = await client.ReadDocumentCollectionAsync(collectionUri);

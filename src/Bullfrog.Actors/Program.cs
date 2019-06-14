@@ -39,6 +39,7 @@ namespace Bullfrog.Actors
                 builder.RegisterType<CosmosManager>().As<ICosmosManager>();
                 builder.RegisterType<ScaleSetMonitor>().As<IScaleSetMonitor>();
                 builder.RegisterType<ScaleSetScalingModuleFactory>().As<IScaleSetScalingModuleFactory>();
+                builder.RegisterType<ScaleModuleFactory>().As<IScaleModuleFactory>();
 
                 builder.Register(c =>
                 {
