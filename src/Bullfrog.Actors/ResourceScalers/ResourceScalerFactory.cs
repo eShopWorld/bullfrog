@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common;
 using Bullfrog.Common.Cosmos;
@@ -8,10 +9,10 @@ namespace Bullfrog.Actors.ResourceScalers
     public class ResourceScalerFactory : IResourceScalerFactory
     {
         private readonly ICosmosThroughputClientFactory _cosmosThroughputClientFactory;
-        private readonly ScaleSetScalerFactory _scaleSetScalerFactory;
+        private readonly Func<ScaleSetConfiguration, ScaleSetScaler> _scaleSetScalerFactory;
 
         public ResourceScalerFactory(ICosmosThroughputClientFactory cosmosThroughputClientFactory,
-            ScaleSetScalerFactory scaleSetScalerFactory)
+            Func<ScaleSetConfiguration, ScaleSetScaler> scaleSetScalerFactory)
         {
             _cosmosThroughputClientFactory = cosmosThroughputClientFactory;
             _scaleSetScalerFactory = scaleSetScalerFactory;
@@ -36,7 +37,7 @@ namespace Bullfrog.Actors.ResourceScalers
 
             var scaleSetConfiguration = configuration.ScaleSetConfigurations.FirstOrDefault(x => x.Name == name);
             if (scaleSetConfiguration != null)
-                return _scaleSetScalerFactory.CreateScaler(scaleSetConfiguration);
+                return _scaleSetScalerFactory(scaleSetConfiguration);
 
             throw new BullfrogException($"Configuration for {name} not found.");
         }

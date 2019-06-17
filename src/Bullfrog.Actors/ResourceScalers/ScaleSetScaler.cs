@@ -11,7 +11,7 @@ using Microsoft.Azure.Management.Monitor.Fluent;
 
 namespace Bullfrog.Actors.ResourceScalers
 {
-    internal class ScaleSetScaler : ResourceScaler
+    public class ScaleSetScaler : ResourceScaler
     {
         private readonly Azure.IAuthenticated _authenticated;
         private readonly ScaleSetConfiguration _configuration;

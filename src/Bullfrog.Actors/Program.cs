@@ -36,7 +36,7 @@ namespace Bullfrog.Actors
                 builder.RegisterModule<ServiceFabricModule>();
                 builder.RegisterModule<ThroughputClientModule>();
                 builder.RegisterType<ScaleSetMonitor>().AsSelf();
-                builder.RegisterType<ScaleSetScalerFactory>().AsSelf();
+                builder.RegisterType<ScaleSetScaler>().AsSelf();
                 builder.RegisterType<ResourceScalerFactory>().As<IResourceScalerFactory>();
 
                 builder.Register(c =>

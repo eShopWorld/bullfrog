@@ -33,16 +33,16 @@ namespace Bullfrog.Actors.ResourceScalers
             if (requestUnits < currentThroughput.MinimalRequestUnits)
                 requestUnits = currentThroughput.MinimalRequestUnits;
 
-            if (requestUnits == currentThroughput.RequestsUnits)
-                return requestUnits;
-
-            currentThroughput = await _throughputClient.Set(requestUnits);
-            if (currentThroughput.IsThroughputChangePending)
-                return null;
-
             if (requestUnits != currentThroughput.RequestsUnits)
             {
-                // TODO: it should never happen. log it
+                currentThroughput = await _throughputClient.Set(requestUnits);
+                if (currentThroughput.IsThroughputChangePending)
+                    return null;
+
+                if (requestUnits != currentThroughput.RequestsUnits)
+                {
+                    // TODO: it should never happen. log it
+                }
             }
 
             return (int)(currentThroughput.RequestsUnits / _cosmosConfiguration.RequestUnitsPerRequest);
