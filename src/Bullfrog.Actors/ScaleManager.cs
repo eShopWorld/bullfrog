@@ -291,42 +291,28 @@ namespace Bullfrog.Actors
             }
 
             // Process new or previously created scale change requests
-            foreach (var scaleRequest in state.ScaleRequests)
+            foreach (var scaleRequestKV in state.ScaleRequests.Where(x => x.Value.IsExecuting))
             {
-                // TODO: move most of this logic to ScaleRequest
-
-                var name = scaleRequest.Key;
-                var scaleRequestDetails = scaleRequest.Value;
-
-                if (!scaleRequestDetails.IsExecuting)
-                    continue;
-
-                if (_dateTimeProvider.UtcNow < scaleRequestDetails.TryAfter)
-                    continue;
-
-                var requestedThroughput = scaleRequestDetails.RequestedThroughput;
-                var scaler = GetScaler(name, configuration);
+                var name = scaleRequestKV.Key;
+                var scaleRequest = scaleRequestKV.Value;
                 try
                 {
-                    scaleRequestDetails.FinalThroughput = await scaler.SetThroughput(requestedThroughput);
-                    scaleRequestDetails.ResetError();
-                    var status = scaleRequestDetails.Status;
+                    var status = await scaleRequest.Process(_dateTimeProvider.UtcNow, () => GetScaler(name, configuration));
                     if (status == ScaleRequestStatus.Completed || status == ScaleRequestStatus.Limited)
                     {
                         BigBrother.Publish(new ResourceScalingCompleted
                         {
                             ActorId = Id.ToString(),
-                            FinalThroughput = scaleRequestDetails.FinalThroughput.Value,
-                            Duration = _dateTimeProvider.UtcNow - scaleRequestDetails.OperationStarted,
-                            RequiredThroughput = requestedThroughput ?? -1,
+                            FinalThroughput = scaleRequest.FinalThroughput.Value,
+                            Duration = _dateTimeProvider.UtcNow - scaleRequest.OperationStarted,
+                            RequiredThroughput = scaleRequest.RequestedThroughput ?? -1,
                             ResourceName = name,
                         });
                     }
                 }
                 catch (Exception ex)
                 {
-                    scaleRequestDetails.RegisterError(_dateTimeProvider.UtcNow);
-                    var contextEx = new BullfrogException($"Failed to scale {name} to {requestedThroughput}", ex);
+                    var contextEx = new BullfrogException($"Failed to scale {name} to {scaleRequest.RequestedThroughput}", ex);
                     BigBrother.Publish(contextEx.ToExceptionEvent());
                 }
             }
@@ -615,7 +601,26 @@ namespace Bullfrog.Actors
                 OperationStarted = now;
             }
 
-            public void RegisterError(DateTimeOffset now)
+            public async Task<ScaleRequestStatus> Process(DateTimeOffset now, Func<ResourceScaler> getScaler)
+            {
+                if (now < TryAfter)
+                    return ScaleRequestStatus.Failing;
+
+                try
+                {
+                    var scaler = getScaler();
+                    FinalThroughput = await scaler.SetThroughput(RequestedThroughput);
+                    ResetError();
+                    return Status;
+                }
+                catch
+                {
+                    RegisterError(now);
+                    throw;
+                }
+            }
+
+            private void RegisterError(DateTimeOffset now)
             {
                 if (!ErrorDelay.HasValue)
                 {
@@ -628,7 +633,7 @@ namespace Bullfrog.Actors
                     ErrorDelay = MaxErrorDelay;
             }
 
-            public void ResetError()
+            private void ResetError()
             {
                 ErrorDelay = null;
                 TryAfter = null;
