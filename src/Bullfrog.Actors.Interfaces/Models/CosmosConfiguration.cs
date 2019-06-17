@@ -17,8 +17,9 @@ namespace Bullfrog.Actors.Interfaces.Models
         public string Name { get; set; }
 
         /// <summary>
-        /// The Cosmos DB account name when the data plane is used to control throughput.
+        /// The Cosmos DB account name.
         /// </summary>
+        [Required]
         public string AccountName { get; set; }
 
         /// <summary>

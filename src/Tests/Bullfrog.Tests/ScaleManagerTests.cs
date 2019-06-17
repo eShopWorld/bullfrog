@@ -202,63 +202,6 @@ public class ScaleManagerTests : BaseApiTests
         ScaleHistory["s"].Should().NotBeEmpty();
     }
 
-    [Theory, IsLayer0]
-    [InlineData(4, 5, 60, null, null, 55)]
-    [InlineData(5, 5, -30, 100, 100, 30)]
-    [InlineData(10, 6, 60, null, null, 50)]
-    [InlineData(20, 20, 10, 100, 100, 10)]
-    [InlineData(20, 8, 10, 100, null, 2)]
-    [InlineData(9, 20, 10, null, 100, 1)]
-    public async Task ReminderChecks(int scaleSetLeadTime, int cosmosDbLeadTime, int eventOffset, int? scaleSetScale, int? cosmosScale, int? reminder)
-    {
-        _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(scaleSetLeadTime);
-        _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(cosmosDbLeadTime);
-        CreateScaleGroup();
-        var scaleEvent = new Client.Models.ScaleEvent
-        {
-            Name = "aa",
-            RegionConfig = new List<RegionScaleValue>
-            {
-                new RegionScaleValue
-                {
-                    Name = "eu",
-                    Scale = 100,
-                }
-            },
-            RequiredScaleAt = UtcNow + TimeSpan.FromMinutes(eventOffset),
-            StartScaleDownAt = UtcNow + TimeSpan.FromMinutes(eventOffset + 60),
-        };
-        var id = Guid.NewGuid();
-        RegisterResourceScaler("c", n => n ?? 10);
-        RegisterResourceScaler("s", n => n ?? 10);
-
-        //if (cosmosScale.HasValue)
-        //    CosmosManagerMoq.Setup(x => x.SetScale(cosmosScale.Value, It.IsAny<Bullfrog.Actors.Interfaces.Models.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
-        //        .ReturnsAsync(10);
-        //else
-        //    CosmosManagerMoq.Setup(x => x.Reset(It.IsAny<Bullfrog.Actors.Interfaces.Models.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
-        //        .ReturnsAsync(10);
-        //if (scaleSetScale.HasValue)
-        //    ScaleSetManagerMoq.Setup(x => x.SetScale(scaleSetScale.Value, It.IsAny<Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration>(), It.IsAny<CancellationToken>()))
-        //        .ReturnsAsync(10);
-        //else
-        //    ScaleSetManagerMoq.Setup(x => x.Reset(It.IsAny<Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration>(), It.IsAny<CancellationToken>()))
-        //        .ReturnsAsync(10);
-
-        //act
-        ApiClient.SaveScaleEvent("sg", id, scaleEvent);
-        await AdvanceTimeTo(UtcNow);
-
-        //CosmosManagerMoq.VerifyAll();
-        //ScaleSetManagerMoq.VerifyAll();
-        var reminders = ScaleManagerActors[("sg", "eu")].GetActorReminders();
-        if (reminder.HasValue)
-            reminders.Should().ContainSingle()
-                .Which.Should().Match<Microsoft.ServiceFabric.Actors.Runtime.IActorReminder>(x => x.DueTime == TimeSpan.FromMinutes(reminder.Value));
-        else
-            reminders.Should().BeEmpty();
-    }
-
     [Fact, IsLayer0]
     public void CurrentStateWithoutActiveEvent()
     {
