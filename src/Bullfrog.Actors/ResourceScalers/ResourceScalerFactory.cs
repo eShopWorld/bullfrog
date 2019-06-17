@@ -8,10 +8,10 @@ namespace Bullfrog.Actors.ResourceScalers
     public class ResourceScalerFactory : IResourceScalerFactory
     {
         private readonly ICosmosThroughputClientFactory _cosmosThroughputClientFactory;
-        private readonly IScaleSetScalerFactory _scaleSetScalerFactory;
+        private readonly ScaleSetScalerFactory _scaleSetScalerFactory;
 
         public ResourceScalerFactory(ICosmosThroughputClientFactory cosmosThroughputClientFactory,
-            IScaleSetScalerFactory scaleSetScalerFactory)
+            ScaleSetScalerFactory scaleSetScalerFactory)
         {
             _cosmosThroughputClientFactory = cosmosThroughputClientFactory;
             _scaleSetScalerFactory = scaleSetScalerFactory;

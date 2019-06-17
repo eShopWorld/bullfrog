@@ -46,7 +46,7 @@ public class BaseApiTests
 
     private Mock<IDateTimeProvider> DateTimeProviderMoq;
     protected Mock<IResourceScalerFactory> ScalerFactoryMoq { get; private set; }
-    protected Mock<IScaleSetMonitor> ScaleSetMonitorMoq { get; private set; }
+    protected Mock<ScaleSetMonitor> ScaleSetMonitorMoq { get; private set; }
 
     protected List<(DateTimeOffset Time, object Event)> NonTelemetryEvents { get; } = new List<(DateTimeOffset Time, object Event)>();
     protected List<(DateTimeOffset Time, TelemetryEvent Event)> BigBrotherEvents { get; } = new List<(DateTimeOffset Time, TelemetryEvent Event)>();
@@ -85,8 +85,17 @@ public class BaseApiTests
 
         RegisterConfigurationManagerActor(actorProxyFactory, bigBrother);
 
+        var azureMoq = new Mock<IAzure>();
+        azureMoq.Setup(x => x.MetricDefinitions.ListByResourceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Mock<IReadOnlyList<IMetricDefinition>>().Object);
+
+        var authenticatedMoq = new Mock<Azure.IAuthenticated>();
+        authenticatedMoq.Setup(x => x.WithSubscription("00000000-0000-0000-0000-000000000001"))
+            .Returns(azureMoq.Object);
+        services.AddSingleton(authenticatedMoq.Object);
+
         ScalerFactoryMoq = new Mock<IResourceScalerFactory>(MockBehavior.Strict);
-        ScaleSetMonitorMoq = new Mock<IScaleSetMonitor>();
+        ScaleSetMonitorMoq = new Mock<ScaleSetMonitor>(new Mock<Azure.IAuthenticated>().Object, bigBrother);
         foreach (var regionName in "eu,eu1,eu2,eu3,$cosmos".Split(','))
         {
             RegisterScaleManagerActor("sg", regionName, ScalerFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, bigBrother, actorProxyFactory);
@@ -98,19 +107,10 @@ public class BaseApiTests
         var autoscaleSettingsMoq = new Mock<IAutoscaleSetting>();
         autoscaleSettingsMoq.SetupGet(x => x.Profiles)
             .Returns(profiles);
-        var azureMoq = new Mock<IAzure>();
-        azureMoq.Setup(x => x.AutoscaleSettings.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(autoscaleSettingsMoq.Object);
         autoscaleSettingsMoq.Setup(x => x.Update().UpdateAutoscaleProfile(It.IsAny<string>()).WithMetricBasedScale(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()).Parent().ApplyAsync(It.IsAny<CancellationToken>(), true))
             .ReturnsAsync(autoscaleSettingsMoq.Object);
-
-        var authenticatedMoq = new Mock<Azure.IAuthenticated>();
-        authenticatedMoq.Setup(x => x.WithSubscription("00000000-0000-0000-0000-000000000001"))
-            .Returns(azureMoq.Object);
-        services.AddSingleton(authenticatedMoq.Object);
-
-        azureMoq.Setup(x => x.MetricDefinitions.ListByResourceAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Mock<IReadOnlyList<IMetricDefinition>>().Object);
+        azureMoq.Setup(x => x.AutoscaleSettings.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(autoscaleSettingsMoq.Object);
 
         var cosmosDbManagerMoq = new Mock<ICosmosDbHelper>();
         cosmosDbManagerMoq.Setup(m => m.ValidateConfiguration(It.IsAny<CosmosDbConfiguration>()))
@@ -127,7 +127,7 @@ public class BaseApiTests
         services.AddSingleton(configuration);
     }
 
-    private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IResourceScalerFactory> scalerFactoryMoq, Mock<IScaleSetMonitor> scaleSetMonitor, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
+    private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IResourceScalerFactory> scalerFactoryMoq, Mock<ScaleSetMonitor> scaleSetMonitor, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
     {
         ActorBase scaleManagerActorFactory(ActorService service, ActorId id)
             => new ScaleManager(service, id, scalerFactoryMoq.Object, scaleSetMonitor.Object, dateTimeProvider, actorProxyFactory, bigBrother);

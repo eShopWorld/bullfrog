@@ -15,10 +15,10 @@ namespace Bullfrog.Actors.ResourceScalers
     {
         private readonly Azure.IAuthenticated _authenticated;
         private readonly ScaleSetConfiguration _configuration;
-        private readonly IScaleSetMonitor _scaleSetMonitor;
+        private readonly ScaleSetMonitor _scaleSetMonitor;
         private readonly IBigBrother _bigBrother;
 
-        public ScaleSetScaler(Azure.IAuthenticated authenticated, ScaleSetConfiguration configuration, IScaleSetMonitor scaleSetMonitor, IBigBrother bigBrother)
+        public ScaleSetScaler(Azure.IAuthenticated authenticated, ScaleSetConfiguration configuration, ScaleSetMonitor scaleSetMonitor, IBigBrother bigBrother)
         {
             _authenticated = authenticated;
             _configuration = configuration;

@@ -5,13 +5,13 @@ using Microsoft.Azure.Management.Fluent;
 
 namespace Bullfrog.Actors.ResourceScalers
 {
-    internal class ScaleSetScalerFactory : IScaleSetScalerFactory
+    public class ScaleSetScalerFactory
     {
         private readonly Azure.IAuthenticated _authenticated;
-        private readonly IScaleSetMonitor _scaleSetMonitor;
+        private readonly ScaleSetMonitor _scaleSetMonitor;
         private readonly IBigBrother _bigBrother;
 
-        public ScaleSetScalerFactory(Azure.IAuthenticated authenticated, IScaleSetMonitor scaleSetMonitor, IBigBrother bigBrother)
+        public ScaleSetScalerFactory(Azure.IAuthenticated authenticated, ScaleSetMonitor scaleSetMonitor, IBigBrother bigBrother)
         {
             _authenticated = authenticated;
             _scaleSetMonitor = scaleSetMonitor;

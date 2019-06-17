@@ -30,7 +30,7 @@ namespace Bullfrog.Actors
         private readonly StateItem<Dictionary<Guid, ScaleChangeType>> _reportedEventStates;
         private readonly StateItem<ScalingState> _scaleState;
         private readonly IResourceScalerFactory _scalerFactory;
-        private readonly IScaleSetMonitor _scaleSetMonitor;
+        private readonly ScaleSetMonitor _scaleSetMonitor;
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IActorProxyFactory _proxyFactory;
         private readonly string _scaleGroupName;
@@ -52,7 +52,7 @@ namespace Bullfrog.Actors
             ActorService actorService,
             ActorId actorId,
             IResourceScalerFactory scalerFactory,
-            IScaleSetMonitor scaleSetMonitor,
+            ScaleSetMonitor scaleSetMonitor,
             IDateTimeProvider dateTimeProvider,
             IActorProxyFactory proxyFactory,
             IBigBrother bigBrother)
