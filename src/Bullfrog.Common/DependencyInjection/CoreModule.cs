@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Autofac;
 using Eshopworld.Core;
 using Eshopworld.DevOps;
@@ -12,6 +13,7 @@ namespace Bullfrog.Common.DependencyInjection
     /// <summary>
     /// some key  - devops + runtime -  level services are registered here
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public class CoreModule : Module
     {
         protected override void Load(ContainerBuilder builder)
