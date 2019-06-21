@@ -11,6 +11,7 @@ using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common;
+using Bullfrog.Common.Models;
 using Client;
 using Eshopworld.Core;
 using Helpers;
@@ -112,8 +113,8 @@ public class BaseApiTests
         azureMoq.Setup(x => x.AutoscaleSettings.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(autoscaleSettingsMoq.Object);
 
-        var cosmosDbManagerMoq = new Mock<ICosmosDbHelper>();
-        cosmosDbManagerMoq.Setup(m => m.ValidateConfiguration(It.IsAny<CosmosDbConfiguration>()))
+        var cosmosDbManagerMoq = new Mock<ICosmosAccessValidator<CosmosDbDataPlaneConnection>>();
+        cosmosDbManagerMoq.Setup(m => m.ConfirmAccess(It.IsAny<CosmosDbDataPlaneConnection>()))
             .ReturnsAsync(ValidationResult.Success);
         services.AddTransient(_ => cosmosDbManagerMoq.Object);
 

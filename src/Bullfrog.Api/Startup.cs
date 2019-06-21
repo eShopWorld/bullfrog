@@ -150,6 +150,7 @@ namespace Bullfrog.Api
             builder.RegisterModule<CoreModule>();
             builder.RegisterModule<AzureManagementFluentModule>();
             builder.RegisterModule<ServiceFabricModule>();
+            builder.RegisterModule<ThroughputClientModule>();
         }
 
         /// <summary>

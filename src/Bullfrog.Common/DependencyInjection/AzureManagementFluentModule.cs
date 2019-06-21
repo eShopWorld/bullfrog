@@ -8,8 +8,8 @@ using Eshopworld.DevOps;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
+using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 using Microsoft.Azure.Services.AppAuthentication;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Rest;
 
 namespace Bullfrog.Common.DependencyInjection
@@ -21,15 +21,6 @@ namespace Bullfrog.Common.DependencyInjection
         {
             builder.Register(c =>
             {
-                // TODO: remove this workaround when SF is configured to provided this value
-                if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("AzureServicesAuthConnectionString")))
-                {
-                    var configurationRoot = c.Resolve<IConfigurationRoot>();
-                    var authConnectionString = configurationRoot.GetSection("Bullfrog").GetSection("Auth")["ConnectionString"];
-                    if (!string.IsNullOrWhiteSpace(authConnectionString))
-                        Environment.SetEnvironmentVariable("AzureServicesAuthConnectionString", authConnectionString);
-                }
-
                 var tokenProvider = new AzureServiceTokenProvider();
                 var tokenProviderAdapter = new AzureServiceTokenProviderAdapter(tokenProvider);
                 return new TokenCredentials(tokenProviderAdapter);
@@ -51,7 +42,22 @@ namespace Bullfrog.Common.DependencyInjection
                 return authenticated.WithSubscription(subscriptionId);
             });
 
-            builder.RegisterType<CosmosDbHelper>().As<ICosmosDbHelper>();
+            builder.Register(c =>
+            {
+                var tokenCredentials = c.Resolve<TokenCredentials>();
+                var azureCredentials = new AzureCredentials(
+                    tokenCredentials, tokenCredentials, string.Empty, AzureEnvironment.AzureGlobalCloud);
+                return RestClient.Configure()
+                    .WithEnvironment(AzureEnvironment.AzureGlobalCloud)
+                    .WithCredentials(azureCredentials)
+                    .Build();
+            });
+
+            builder.Register(c =>
+            {
+                var restClient = c.Resolve<RestClient>();
+                return new ResourceManagementClient(restClient);
+            });
         }
 
         private class AzureServiceTokenProviderAdapter : ITokenProvider

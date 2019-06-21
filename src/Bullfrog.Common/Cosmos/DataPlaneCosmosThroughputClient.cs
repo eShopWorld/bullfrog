@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Bullfrog.Common.Models;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using Microsoft.Extensions.Configuration;
@@ -12,15 +13,13 @@ namespace Bullfrog.Common.Cosmos
 {
     internal class DataPlaneCosmosThroughputClient : ICosmosThroughputClient
     {
-        private readonly string _connectionString;
-        private readonly string _databaseName;
-        private readonly string _collectionName;
+        private readonly CosmosDbDataPlaneConnection _connectionDetails;
+        private readonly IConfigurationRoot _configuration;
 
-        public DataPlaneCosmosThroughputClient(string connectionString, string databaseName, string collectionName)
+        public DataPlaneCosmosThroughputClient(CosmosDbDataPlaneConnection connectionDetails, IConfigurationRoot configuration)
         {
-            _connectionString = connectionString;
-            _databaseName = databaseName;
-            _collectionName = collectionName;
+            _connectionDetails = connectionDetails;
+            _configuration = configuration;
         }
 
         public async Task<CosmosThroughput> Get()
@@ -66,14 +65,14 @@ namespace Bullfrog.Common.Cosmos
         private async Task<ResourceResponse<Offer>> ReadOffer(DocumentClient client)
         {
             Resource resource;
-            if (_collectionName != null)
+            if (_connectionDetails.ContainerName != null)
             {
-                var collectionUri = UriFactory.CreateDocumentCollectionUri(_databaseName, _collectionName);
+                var collectionUri = UriFactory.CreateDocumentCollectionUri(_connectionDetails.DatabaseName, _connectionDetails.ContainerName);
                 resource = await client.ReadDocumentCollectionAsync(collectionUri);
             }
             else
             {
-                var databaseUri = UriFactory.CreateDatabaseUri(_databaseName);
+                var databaseUri = UriFactory.CreateDatabaseUri(_connectionDetails.DatabaseName);
                 resource = await client.ReadDatabaseAsync(databaseUri);
             }
 
@@ -85,7 +84,9 @@ namespace Bullfrog.Common.Cosmos
 
         private DocumentClient OpenDocumentClient()
         {
-            var (serviceEndpoint, authKey) = ParseConnectionString(_connectionString);
+            var connectionString = _configuration.GetCosmosAccountConnectionString(
+                _connectionDetails.AccountName);
+            var (serviceEndpoint, authKey) = ParseConnectionString(connectionString);
             return new DocumentClient(serviceEndpoint, authKey);
         }
 

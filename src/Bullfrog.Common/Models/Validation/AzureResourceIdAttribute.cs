@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 
-namespace Bullfrog.Actors.Interfaces.Models.Validation
+namespace Bullfrog.Common.Models.Validation
 {
     /// <summary>
     /// Azure ResourceId format validation attribute
