@@ -360,7 +360,7 @@ namespace Bullfrog.Actors
                 RequestedScaleSetScale = state.RequestedScaleSetThroughput ?? -1,
                 RequestedCosmosDbScale = state.RequestedCosmosThroughput ?? -1,
                 NextWakeUpTime = nextWakeUpTime,
-                ScaleReqests = state.ScaleRequests.Count,
+                ScaleRequests = state.ScaleRequests.Count,
                 ScaleCompleted = states.Count(o => o == ScaleRequestStatus.Completed),
                 ScaleFailing = states.Count(o => o == ScaleRequestStatus.Failing),
                 ScaleInProgress = states.Count(o => o == ScaleRequestStatus.InProgress),

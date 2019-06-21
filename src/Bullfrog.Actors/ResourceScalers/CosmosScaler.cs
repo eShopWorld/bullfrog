@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Bullfrog.Actors.EventModels;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common.Cosmos;
+using Eshopworld.Core;
 
 namespace Bullfrog.Actors.ResourceScalers
 {
@@ -9,11 +11,13 @@ namespace Bullfrog.Actors.ResourceScalers
     {
         private readonly ICosmosThroughputClient _throughputClient;
         private readonly CosmosConfiguration _cosmosConfiguration;
+        private readonly IBigBrother _bigBrother;
 
-        public CosmosScaler(ICosmosThroughputClient throughputClient, CosmosConfiguration cosmosConfiguration)
+        public CosmosScaler(ICosmosThroughputClient throughputClient, CosmosConfiguration cosmosConfiguration, IBigBrother bigBrother)
         {
             _throughputClient = throughputClient;
             _cosmosConfiguration = cosmosConfiguration;
+            _bigBrother = bigBrother;
         }
 
         public override async Task<int?> SetThroughput(int? newThroughput)
@@ -41,7 +45,11 @@ namespace Bullfrog.Actors.ResourceScalers
 
                 if (requestUnits != currentThroughput.RequestsUnits)
                 {
-                    // TODO: it should never happen. log it
+                    _bigBrother.Publish(new ResourceScalingIssue
+                    {
+                        Message = $"The throughput set operation returned unexpected value {currentThroughput.RequestsUnits} when throughput was set to {requestUnits}.",
+                        ResourceName = _cosmosConfiguration.Name,
+                    });
                 }
             }
 

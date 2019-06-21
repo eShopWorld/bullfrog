@@ -3,6 +3,7 @@ using System.Linq;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common;
 using Bullfrog.Common.Cosmos;
+using Eshopworld.Core;
 
 namespace Bullfrog.Actors.ResourceScalers
 {
@@ -10,12 +11,15 @@ namespace Bullfrog.Actors.ResourceScalers
     {
         private readonly ICosmosThroughputClientFactory _cosmosThroughputClientFactory;
         private readonly Func<ScaleSetConfiguration, ScaleSetScaler> _scaleSetScalerFactory;
+        private readonly IBigBrother _bigBrother;
 
         public ResourceScalerFactory(ICosmosThroughputClientFactory cosmosThroughputClientFactory,
-            Func<ScaleSetConfiguration, ScaleSetScaler> scaleSetScalerFactory)
+            Func<ScaleSetConfiguration, ScaleSetScaler> scaleSetScalerFactory,
+            IBigBrother bigBrother)
         {
             _cosmosThroughputClientFactory = cosmosThroughputClientFactory;
             _scaleSetScalerFactory = scaleSetScalerFactory;
+            _bigBrother = bigBrother;
         }
 
         public ResourceScaler CreateScaler(string name, ScaleManagerConfiguration configuration)
@@ -31,7 +35,7 @@ namespace Bullfrog.Actors.ResourceScalers
                         ContainerName = cosmosConfiguration.ContainerName,
                         DatabaseName = cosmosConfiguration.DatabaseName,
                     });
-                    return new CosmosScaler(client, cosmosConfiguration);
+                    return new CosmosScaler(client, cosmosConfiguration, _bigBrother);
                 }
             }
 

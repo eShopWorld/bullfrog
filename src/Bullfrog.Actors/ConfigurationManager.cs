@@ -220,13 +220,10 @@ namespace Bullfrog.Actors
 
                 foreach (var region in scaleEvent.RegionConfig)
                 {
-                    if (!registeredEvent.Regions.TryGetValue(region.Name, out var regionState))
+                    registeredEvent.Regions.TryAdd(region.Name, new ScaleEventRegionState
                     {
-                        registeredEvent.Regions.Add(region.Name, new ScaleEventRegionState
-                        {
-                            Scale = region.Scale,
-                        });
-                    }
+                        Scale = region.Scale,
+                    });
 
                     var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, region.Name);
                     await scaleManagerActor.ScheduleScaleEvent(new RegionScaleEvent
