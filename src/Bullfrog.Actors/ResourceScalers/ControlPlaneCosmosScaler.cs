@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Bullfrog.Actors.EventModels;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common.Cosmos;
+using Eshopworld.Core;
 
 namespace Bullfrog.Actors.ResourceScalers
 {
@@ -9,11 +11,13 @@ namespace Bullfrog.Actors.ResourceScalers
     {
         private readonly ControlPlaneCosmosThroughputClient _throughputClient;
         private readonly CosmosConfiguration _cosmosConfiguration;
+        private readonly IBigBrother _bigBrother;
 
-        public ControlPlaneCosmosScaler(ControlPlaneCosmosThroughputClient throughputClient, CosmosConfiguration cosmosConfiguration)
+        public ControlPlaneCosmosScaler(ControlPlaneCosmosThroughputClient throughputClient, CosmosConfiguration cosmosConfiguration, IBigBrother bigBrother)
         {
             _throughputClient = throughputClient;
             _cosmosConfiguration = cosmosConfiguration;
+            _bigBrother = bigBrother;
         }
 
         public override async Task<int?> SetThroughput(int? newThroughput)
@@ -29,13 +33,24 @@ namespace Bullfrog.Actors.ResourceScalers
             var currentThroughput = await _throughputClient.Get();
             if (currentThroughput != requestUnits)
             {
-                await _throughputClient.Set(requestUnits);
-                return null;
+                try
+                {
+                    requestUnits = await _throughputClient.Set(requestUnits);
+                }
+                catch (ThroughputOutOfRangeException ex) when (requestUnits < ex.MinimumThroughput)
+                {
+                    _bigBrother.Publish(new CosmosThroughputTooLow
+                    {
+                        CosmosAccunt = _cosmosConfiguration.Name,
+                        ErrorMessage = ex.Message,
+                        MinThroughput = ex.MinimumThroughput,
+                        ThroughputRequired = requestUnits,
+                    });
+                    requestUnits = await _throughputClient.Set(ex.MinimumThroughput);
+                }
             }
-            else
-            {
-                return (int)(requestUnits / _cosmosConfiguration.RequestUnitsPerRequest);
-            }
+
+            return (int)(requestUnits / _cosmosConfiguration.RequestUnitsPerRequest);
         }
     }
 }

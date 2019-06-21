@@ -1,7 +1,9 @@
-﻿using System.Threading.Tasks;
+﻿using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Bullfrog.Common.Models;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
+using Microsoft.Azure.Management.ResourceManager.Fluent.Models;
 using Newtonsoft.Json;
 
 namespace Bullfrog.Common.Cosmos
@@ -11,6 +13,10 @@ namespace Bullfrog.Common.Cosmos
     /// </summary>
     public class ControlPlaneCosmosThroughputClient
     {
+        static readonly Regex InvalidThroughputMessagePattern =
+               new Regex("The offer should have valid throughput values between (?<min>\\d+) and (?<max>\\d+) inclusive in increments of \\d+",
+                       RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
         private readonly string _resourceId;
         private readonly ResourceManagementClient _managementClient;
 
@@ -29,19 +35,33 @@ namespace Bullfrog.Common.Cosmos
         {
             using (var response = await _managementClient.Resources.GetByIdWithHttpMessagesAsync(_resourceId, "2015-04-08"))
             {
-                var throughput = ((Newtonsoft.Json.Linq.JObject)response.Body.Properties).Value<int>("throughput");
-                return throughput;
+                return ParseThroughput(response.Body);
             }
         }
 
-        public virtual async Task Set(int throughput)
+        public virtual async Task<int> Set(int throughput)
         {
-            var parameters = new Microsoft.Azure.Management.ResourceManager.Fluent.Models.GenericResourceInner();
+            var parameters = new GenericResourceInner();
             parameters.Properties = new ThroughputChange(throughput);
-            using (var response = await _managementClient.Resources.CreateOrUpdateByIdWithHttpMessagesAsync(_resourceId, "2015-04-08", parameters))
+            try
             {
+                using (var response = await _managementClient.Resources.CreateOrUpdateByIdWithHttpMessagesAsync(_resourceId, "2015-04-08", parameters))
+                {
+                    return ParseThroughput(response.Body);
+                }
+            }
+            catch (Microsoft.Rest.Azure.CloudException ex) when (InvalidThroughputMessagePattern.IsMatch(ex.Message))
+            {
+                // The control plane does not provide any other way to get minimal throughput.
+                var match = InvalidThroughputMessagePattern.Match(ex.Message);
+                var minThroughput = int.Parse(match.Groups["min"].Value, System.Globalization.CultureInfo.InvariantCulture);
+                var maxThroughput = int.Parse(match.Groups["max"].Value, System.Globalization.CultureInfo.InvariantCulture);
+                throw new ThroughputOutOfRangeException(minThroughput, maxThroughput, ex);
             }
         }
+
+        private int ParseThroughput(GenericResourceInner genericResource)
+            => ((Newtonsoft.Json.Linq.JObject)genericResource.Properties).Value<int>("throughput");
 
         private class ThroughputChange
         {
