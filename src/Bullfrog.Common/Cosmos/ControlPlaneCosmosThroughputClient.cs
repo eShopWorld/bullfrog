@@ -18,9 +18,9 @@ namespace Bullfrog.Common.Cosmos
                        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
         private readonly string _resourceId;
-        private readonly ResourceManagementClient _managementClient;
+        private readonly IResourceManagementClient _managementClient;
 
-        public ControlPlaneCosmosThroughputClient(CosmosDbControlPlaneConnection connection, ResourceManagementClient managementClient)
+        public ControlPlaneCosmosThroughputClient(CosmosDbControlPlaneConnection connection, IResourceManagementClient managementClient)
         {
             _resourceId = $"{connection.AccountResurceId}/apis/sql/databases/{connection.DatabaseName}";
             if (!string.IsNullOrEmpty(connection.ContainerName))
@@ -65,10 +65,6 @@ namespace Bullfrog.Common.Cosmos
 
         private class ThroughputChange
         {
-            public ThroughputChange()
-            {
-            }
-
             public ThroughputChange(int throughput)
             {
                 Resource = new ThroughputValue

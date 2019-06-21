@@ -11,16 +11,19 @@ namespace Bullfrog.Actors.ResourceScalers
     {
         private readonly Func<ScaleSetConfiguration, ScaleSetScaler> _scaleSetScalerFactory;
         private readonly Func<CosmosDbDataPlaneConnection, ICosmosThroughputClient> _cosmosDataPlaneClientFactory;
-        private readonly Func<CosmosDbControlPlaneConnection, ControlPlaneCosmosThroughputClient> _cosmosControlPlaneClient;
+        private readonly Func<CosmosDbControlPlaneConnection, ControlPlaneCosmosThroughputClient> _cosmosControlPlaneClientFactory;
+        private readonly Func<ControlPlaneCosmosThroughputClient, CosmosConfiguration, ControlPlaneCosmosScaler> _controlPlaneCosmosScalerFactory;
 
         public ResourceScalerFactory(
             Func<ScaleSetConfiguration, ScaleSetScaler> scaleSetScalerFactory,
             Func<CosmosDbDataPlaneConnection, ICosmosThroughputClient> cosmosDataPlaneClientFactory,
-             Func<CosmosDbControlPlaneConnection, ControlPlaneCosmosThroughputClient> cosmosControlPlaneClient)
+            Func<CosmosDbControlPlaneConnection, ControlPlaneCosmosThroughputClient> cosmosControlPlaneClientFactory,
+            Func<ControlPlaneCosmosThroughputClient, CosmosConfiguration, ControlPlaneCosmosScaler> controlPlaneCosmosScalerFactory)
         {
             _scaleSetScalerFactory = scaleSetScalerFactory;
             _cosmosDataPlaneClientFactory = cosmosDataPlaneClientFactory;
-            _cosmosControlPlaneClient = cosmosControlPlaneClient;
+            _cosmosControlPlaneClientFactory = cosmosControlPlaneClientFactory;
+            _controlPlaneCosmosScalerFactory = controlPlaneCosmosScalerFactory;
         }
 
         public ResourceScaler CreateScaler(string name, ScaleManagerConfiguration configuration)
@@ -30,10 +33,10 @@ namespace Bullfrog.Actors.ResourceScalers
                 var cosmosConfiguration = configuration.CosmosConfigurations.FirstOrDefault(x => x.Name == name);
                 if (cosmosConfiguration != null)
                 {
-                    if(cosmosConfiguration.ControlPlaneConnection != null)
+                    if (cosmosConfiguration.ControlPlaneConnection != null)
                     {
-                        var controlPlaneClient = _cosmosControlPlaneClient(cosmosConfiguration.ControlPlaneConnection);
-                        return new ControlPlaneCosmosScaler(controlPlaneClient, cosmosConfiguration);
+                        var controlPlaneClient = _cosmosControlPlaneClientFactory(cosmosConfiguration.ControlPlaneConnection);
+                        return _controlPlaneCosmosScalerFactory(controlPlaneClient, cosmosConfiguration);
                     }
 
                     var connectionDetails = cosmosConfiguration.DataPlaneConnection ?? new CosmosDbDataPlaneConnection

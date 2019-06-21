@@ -7,7 +7,7 @@ using Eshopworld.Core;
 
 namespace Bullfrog.Actors.ResourceScalers
 {
-    class ControlPlaneCosmosScaler : ResourceScaler
+    public class ControlPlaneCosmosScaler : ResourceScaler
     {
         private readonly ControlPlaneCosmosThroughputClient _throughputClient;
         private readonly CosmosConfiguration _cosmosConfiguration;

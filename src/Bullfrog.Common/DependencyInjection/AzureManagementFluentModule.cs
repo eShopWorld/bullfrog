@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,7 +13,6 @@ using Microsoft.Rest;
 
 namespace Bullfrog.Common.DependencyInjection
 {
-    [ExcludeFromCodeCoverage]
     public class AzureManagementFluentModule : Module
     {
         protected override void Load(ContainerBuilder builder)
@@ -57,7 +55,7 @@ namespace Bullfrog.Common.DependencyInjection
             {
                 var restClient = c.Resolve<RestClient>();
                 return new ResourceManagementClient(restClient);
-            });
+            }).As<IResourceManagementClient>();
         }
 
         private class AzureServiceTokenProviderAdapter : ITokenProvider
