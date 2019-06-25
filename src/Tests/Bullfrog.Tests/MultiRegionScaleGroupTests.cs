@@ -2,16 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Client;
 using Client.Models;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
-using Moq;
 using Xunit;
-using InternalScaleSetConfituration = Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration;
 
 public class MultiRegionScaleGroupTests : BaseApiTests
 {
@@ -81,14 +77,15 @@ public class MultiRegionScaleGroupTests : BaseApiTests
         var scaleEvent = NewScaleEvent(regions: new[] { ("eu1", 15), ("eu2", 45) });
         await ApiClient.SaveScaleEventAsync("sg", eventId, scaleEvent);
         await AdvanceTimeTo(UtcNow.AddHours(1));
-        ScaleSetManagerMoq.Setup(x => x.SetScale(It.IsAny<int>(), It.IsAny<InternalScaleSetConfituration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(10);
+        RegisterResourceScaler("c1", x => x ?? 15);
+        RegisterResourceScaler("s1", x => x ?? 15);
 
         scaleEvent.RegionConfig.RemoveAt(1);
         await ApiClient.SaveScaleEventAsync("sg", eventId, scaleEvent);
         await AdvanceTimeTo(UtcNow.AddHours(30));
 
-        ScaleSetManagerMoq.Verify(x => x.SetScale(45, It.IsAny<InternalScaleSetConfituration>(), It.IsAny<CancellationToken>()), Times.Never);
+        ScaleHistory["c1"].Should().NotBeEmpty();
+        ScaleHistory["s1"].Should().NotBeEmpty();
     }
 
     [Fact, IsLayer0]
@@ -99,14 +96,19 @@ public class MultiRegionScaleGroupTests : BaseApiTests
         var scaleEvent = NewScaleEvent(regions: new[] { ("eu1", 15) });
         await ApiClient.SaveScaleEventAsync("sg", eventId, scaleEvent);
         await AdvanceTimeTo(UtcNow.AddHours(1));
-        ScaleSetManagerMoq.Setup(x => x.SetScale(It.IsAny<int>(), It.IsAny<InternalScaleSetConfituration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(10);
+        RegisterResourceScaler("c1", x => x ?? 15);
+        RegisterResourceScaler("s1", x => x ?? 15);
+        RegisterResourceScaler("c2", x => x ?? 45);
+        RegisterResourceScaler("s2", x => x ?? 45);
 
         scaleEvent.RegionConfig.Add(new RegionScaleValue("eu2", 45));
         await ApiClient.SaveScaleEventAsync("sg", eventId, scaleEvent);
         await AdvanceTimeTo(UtcNow.AddHours(30));
 
-        ScaleSetManagerMoq.Verify(x => x.SetScale(15, It.IsAny<InternalScaleSetConfituration>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        ScaleHistory["c1"].Should().NotBeEmpty();
+        ScaleHistory["s1"].Should().NotBeEmpty();
+        ScaleHistory["c2"].Should().NotBeEmpty();
+        ScaleHistory["s2"].Should().NotBeEmpty();
     }
 
     private ScaleEvent NewScaleEvent(int scaleOut = 10, int scaleIn = 20, IEnumerable<(string regionName, int scale)> regions = null)

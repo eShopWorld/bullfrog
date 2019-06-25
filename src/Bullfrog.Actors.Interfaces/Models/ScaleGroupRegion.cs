@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Bullfrog.Actors.Interfaces.Models.Validation;
 using Newtonsoft.Json;
 
@@ -9,7 +10,7 @@ namespace Bullfrog.Actors.Interfaces.Models
     /// <summary>
     /// The scale group's region configuration.
     /// </summary>
-    public class ScaleGroupRegion
+    public class ScaleGroupRegion : IValidatableObject
     {
         /// <summary>
         /// The name of the region.
@@ -53,5 +54,16 @@ namespace Bullfrog.Actors.Interfaces.Models
             : CosmosDbPrescaleLeadTime;
 
         private TimeSpan ZeroTimeSpan => TimeSpan.Zero;
+
+        IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)
+        {
+            var scaleSetNames = ScaleSets?.Select(s => s.Name).ToList();
+            var cosmosNames = Cosmos?.Select(s => s.Name).ToList();
+
+            if (scaleSetNames != null && cosmosNames != null && scaleSetNames.Intersect(cosmosNames).Any())
+            {
+                yield return new ValidationResult("Names of scale sets and cosmos configurations must be different.", new[] { nameof(Cosmos) });
+            }
+        }
     }
 }

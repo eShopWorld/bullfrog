@@ -24,6 +24,7 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// The resource id of the autoscale settings which controls virtual machine scale set scaling.
         /// </summary>
         [Required]
+        [AzureResourceId]
         public string AutoscaleSettingsResourceId { get; set; }
 
         /// <summary>
@@ -36,6 +37,7 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// The resource id of a load balancer of virtual machine scale set.
         /// </summary>
         [Required]
+        [AzureResourceId]
         public string LoadBalancerResourceId { get; set; }
 
         /// <summary>

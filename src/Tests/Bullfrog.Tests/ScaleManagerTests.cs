@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Client;
 using Client.Models;
@@ -192,72 +191,15 @@ public class ScaleManagerTests : BaseApiTests
             RequiredScaleAt = UtcNow + TimeSpan.FromMinutes(1),
             StartScaleDownAt = UtcNow + TimeSpan.FromHours(2),
         };
-        var id = Guid.NewGuid();
-        CosmosManagerMoq.Setup(x => x.SetScale(10, It.IsAny<Bullfrog.Actors.Interfaces.Models.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(4);
-        ScaleSetManagerMoq.Setup(x => x.SetScale(10, It.IsAny<Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(4);
+        RegisterResourceScaler("c", x => x ?? 10);
+        RegisterResourceScaler("s", x => x ?? 10);
 
         //act
-        ApiClient.SaveScaleEvent("sg", id, scaleEvent);
+        ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
         await AdvanceTimeTo(UtcNow);
 
-        CosmosManagerMoq.Verify(x => x.SetScale(10, It.IsAny<Bullfrog.Actors.Interfaces.Models.CosmosConfiguration>(), It.IsAny<CancellationToken>()));
-        ScaleSetManagerMoq.Verify(x => x.SetScale(10, It.IsAny<Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration>(), It.IsAny<CancellationToken>()));
-    }
-
-    [Theory, IsLayer0]
-    [InlineData(4, 5, 60, null, null, 55)]
-    [InlineData(5, 5, -30, 100, 100, 30)]
-    [InlineData(10, 6, 60, null, null, 50)]
-    [InlineData(20, 20, 10, 100, 100, 10)]
-    [InlineData(20, 8, 10, 100, null, 2)]
-    [InlineData(9, 20, 10, null, 100, 1)]
-    public async Task ReminderChecks(int scaleSetLeadTime, int cosmosDbLeadTime, int eventOffset, int? scaleSetScale, int? cosmosScale, int? reminder)
-    {
-        _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(scaleSetLeadTime);
-        _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(cosmosDbLeadTime);
-        CreateScaleGroup();
-        var scaleEvent = new Client.Models.ScaleEvent
-        {
-            Name = "aa",
-            RegionConfig = new List<RegionScaleValue>
-            {
-                new RegionScaleValue
-                {
-                    Name = "eu",
-                    Scale = 100,
-                }
-            },
-            RequiredScaleAt = UtcNow + TimeSpan.FromMinutes(eventOffset),
-            StartScaleDownAt = UtcNow + TimeSpan.FromMinutes(eventOffset + 60),
-        };
-        var id = Guid.NewGuid();
-        if (cosmosScale.HasValue)
-            CosmosManagerMoq.Setup(x => x.SetScale(cosmosScale.Value, It.IsAny<Bullfrog.Actors.Interfaces.Models.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(10);
-        else
-            CosmosManagerMoq.Setup(x => x.Reset(It.IsAny<Bullfrog.Actors.Interfaces.Models.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(10);
-        if (scaleSetScale.HasValue)
-            ScaleSetManagerMoq.Setup(x => x.SetScale(scaleSetScale.Value, It.IsAny<Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(10);
-        else
-            ScaleSetManagerMoq.Setup(x => x.Reset(It.IsAny<Bullfrog.Actors.Interfaces.Models.ScaleSetConfiguration>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(10);
-
-        //act
-        ApiClient.SaveScaleEvent("sg", id, scaleEvent);
-        await AdvanceTimeTo(UtcNow);
-
-        CosmosManagerMoq.VerifyAll();
-        ScaleSetManagerMoq.VerifyAll();
-        var reminders = ScaleManagerActors[("sg", "eu")].GetActorReminders();
-        if (reminder.HasValue)
-            reminders.Should().ContainSingle()
-                .Which.Should().Match<Microsoft.ServiceFabric.Actors.Runtime.IActorReminder>(x => x.DueTime == TimeSpan.FromMinutes(reminder.Value));
-        else
-            reminders.Should().BeEmpty();
+        ScaleHistory["c"].Should().NotBeEmpty();
+        ScaleHistory["s"].Should().NotBeEmpty();
     }
 
     [Fact, IsLayer0]
@@ -274,6 +216,8 @@ public class ScaleManagerTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task CurrentStateWithActiveEvent()
     {
+        RegisterResourceScaler("s", x => x ?? 10);
+        RegisterResourceScaler("c", x => x ?? 10);
         var start = UtcNow;
         _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(10);
         CreateScaleGroup();
@@ -315,6 +259,8 @@ public class ScaleManagerTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task CurrentStateWithOverlappingEvents()
     {
+        RegisterResourceScaler("s", x => x ?? 10);
+        RegisterResourceScaler("c", x => x ?? 10);
         var start = UtcNow;
         _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(10);
         CreateScaleGroup();
@@ -367,6 +313,8 @@ public class ScaleManagerTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task CurrentStateAfterEventCompleted()
     {
+        RegisterResourceScaler("s", x => x ?? 10);
+        RegisterResourceScaler("c", x => x ?? 10);
         var start = UtcNow;
         _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(10);
         CreateScaleGroup();

@@ -39,6 +39,7 @@ public class ScaleGroupStateTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task StateWithActiveScaleEvent()
     {
+        RegisterDefaultScalers();
         CreateScaleGroup();
         ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), NewScaleEvent(1, 4));
         var now = UtcNow;

@@ -2,20 +2,21 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Bullfrog.Common;
 using Bullfrog.DomainEvents;
 using Client;
 using Client.Models;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
-using Moq;
+using TestScalers;
 using Xunit;
 
 [assembly: System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S3236:Caller information arguments should not be provided explicitly", Justification = "Moq requires all arguments.")]
 
 public class ScaleChangedDomainEventTests : BaseApiTests
 {
-    private TimeSpan _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(5);
-    private TimeSpan _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(1);
+    private TimeSpan _cosmosDbPrescaleLeadTime;
+    private TimeSpan _scaleSetPrescaleLeadTime;
     private TimeSpan MaxLeadTime => _cosmosDbPrescaleLeadTime < _scaleSetPrescaleLeadTime
         ? _scaleSetPrescaleLeadTime
         : _cosmosDbPrescaleLeadTime;
@@ -23,58 +24,123 @@ public class ScaleChangedDomainEventTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task ScaleOutStartedIsReported()
     {
-        var start = UtcNow;
+        _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(6);
+        _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(2);
         CreateScaleGroup();
-        var events = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>();
-        BigBrotherMoq.Setup(x => x.Publish(It.IsAny<ScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
-            .Callback<ScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, sc.Type)));
-        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances(GetLoadBalancerResourceId(), 9999))
-            .ReturnsAsync(() => UtcNow >= start.AddMinutes(30) ? 1 : 0);
-        var eventId = AddEvent(start.AddMinutes(30), start.AddMinutes(40), 10);
+        RegisterResourceScaler("c", x => UtcNow >= StartTime.AddMinutes(30) ? 10 : (int?)null);
+        RegisterResourceScaler("s", x => UtcNow >= StartTime.AddMinutes(30) ? 10 : (int?)null);
+        var eventId = AddEvent(StartTime.AddMinutes(30), StartTime.AddMinutes(40), 10);
 
-        await AdvanceTimeTo(start + TimeSpan.FromHours(1));
+        await AdvanceTimeTo(StartTime + TimeSpan.FromHours(1));
 
+        var events = GetPublishedEvents<ScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type));
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
-            (start.AddMinutes(30).Add(-MaxLeadTime), eventId, ScaleChangeType.ScaleOutStarted),
-            (start.AddMinutes(30), eventId, ScaleChangeType.ScaleOutComplete),
-            (start.AddMinutes(40), eventId, ScaleChangeType.ScaleInStarted),
-            (start.AddMinutes(40), eventId, ScaleChangeType.ScaleInComplete),
+            (StartTime.AddMinutes(30).Add(-MaxLeadTime), eventId, ScaleChangeType.ScaleOutStarted),
+            (StartTime.AddMinutes(30), eventId, ScaleChangeType.ScaleOutComplete),
+            (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleInStarted),
+            (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleInComplete),
         };
         events.Should().BeEquivalentTo(expected);
     }
 
     [Fact, IsLayer0]
-    public async Task MultipleEvent()
+    public async Task LimitedScaleOutIsReported()
     {
-        var start = UtcNow;
+        _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(6);
+        _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(2);
         CreateScaleGroup();
-        var events = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>();
-        BigBrotherMoq.Setup(x => x.Publish(It.IsAny<ScaleChange>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>()))
-            .Callback<ScaleChange, string, string, int>((sc, _, _x, _y) => events.Add((UtcNow, sc.Id, sc.Type)));
-        var availableVMs = new (DateTimeOffset When, int Number)[]
-        {
-            (start, 0),
-            (start.AddMinutes(18), 1),
-            (start.AddMinutes(21), 2),
-        };
-        ScaleSetMonitorMoq.Setup(x => x.GetNumberOfWorkingInstances(GetLoadBalancerResourceId(), 9999))
-            .ReturnsAsync(() => availableVMs.Last(x => x.When <= UtcNow).Number);
-        var eventId1 = AddEvent(start.AddMinutes(20), start.AddMinutes(40), 80);
-        var eventId2 = AddEvent(start.AddMinutes(22), start.AddMinutes(50), 30);
+        RegisterResourceScaler("c", x => UtcNow >= StartTime.AddMinutes(30) ? 10 : (int?)null);
+        RegisterResourceScaler("s", x => UtcNow >= StartTime.AddMinutes(30) ? 5 : (int?)null);
+        var eventId = AddEvent(StartTime.AddMinutes(30), StartTime.AddMinutes(40), 10);
 
-        await AdvanceTimeTo(start + TimeSpan.FromHours(1));
+        await AdvanceTimeTo(StartTime + TimeSpan.FromHours(1));
 
+        var events = GetPublishedEvents<ScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type));
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
-            (start.AddMinutes(20).Add(-MaxLeadTime), eventId1, ScaleChangeType.ScaleOutStarted),
-            (start.AddMinutes(20), eventId1, ScaleChangeType.ScaleOutComplete),
-            (start.AddMinutes(40), eventId1, ScaleChangeType.ScaleInStarted),
-            (start.AddMinutes(40), eventId1, ScaleChangeType.ScaleInComplete),
-            (start.AddMinutes(22).Add(-MaxLeadTime), eventId2, ScaleChangeType.ScaleOutStarted),
-            (start.AddMinutes(21), eventId2, ScaleChangeType.ScaleOutComplete),
-            (start.AddMinutes(50), eventId2, ScaleChangeType.ScaleInStarted),
-            (start.AddMinutes(50), eventId2, ScaleChangeType.ScaleInComplete),
+            (StartTime.AddMinutes(30).Add(-MaxLeadTime), eventId, ScaleChangeType.ScaleOutStarted),
+            (StartTime.AddMinutes(30), eventId, ScaleChangeType.ScaleIssue),
+            (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleInStarted),
+            (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleInComplete),
+        };
+        events.Should().BeEquivalentTo(expected);
+    }
+
+    [Fact, IsLayer0]
+    public async Task ScaleOutIssuesBeforeStartAreReported()
+    {
+        _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(16);
+        _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(12);
+        CreateScaleGroup();
+        RegisterResourceScaler("c", x => UtcNow >= StartTime.AddMinutes(30) ? 10 : (int?)null);
+        RegisterResourceScaler("s", x => UtcNow >= StartTime.AddMinutes(24) ? 10 : throw new BullfrogException());
+        var eventId = AddEvent(StartTime.AddMinutes(30), StartTime.AddMinutes(60), 10);
+
+        await AdvanceTimeTo(StartTime + TimeSpan.FromHours(1));
+
+        var events = GetPublishedEvents<ScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type));
+        var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
+        {
+            (StartTime.AddMinutes(30).Add(-MaxLeadTime), eventId, ScaleChangeType.ScaleOutStarted),
+            (StartTime.AddMinutes(18), eventId, ScaleChangeType.ScaleIssue),
+            (StartTime.AddMinutes(26), eventId, ScaleChangeType.ScaleOutStarted),
+            (StartTime.AddMinutes(30), eventId, ScaleChangeType.ScaleOutComplete),
+            (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInStarted),
+            (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInComplete),
+        };
+        events.Should().BeEquivalentTo(expected);
+    }
+
+    [Fact, IsLayer0]
+    public async Task ScaleOutIssuesDelayingStartAreReported()
+    {
+        _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(6);
+        _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(2);
+        CreateScaleGroup();
+        RegisterResourceScaler("c", x => UtcNow >= StartTime.AddMinutes(30) ? 10 : (int?)null);
+        RegisterResourceScaler("s", x => UtcNow >= StartTime.AddMinutes(34) ? 10 : throw new BullfrogException());
+        var eventId = AddEvent(StartTime.AddMinutes(30), StartTime.AddMinutes(60), 10);
+
+        await AdvanceTimeTo(StartTime + TimeSpan.FromHours(1));
+
+        var events = GetPublishedEvents<ScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type));
+        var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
+        {
+            (StartTime.AddMinutes(30).Add(-MaxLeadTime), eventId, ScaleChangeType.ScaleOutStarted),
+            (StartTime.AddMinutes(28), eventId, ScaleChangeType.ScaleIssue),
+            (StartTime.AddMinutes(36), eventId, ScaleChangeType.ScaleOutComplete),
+            (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInStarted),
+            (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInComplete),
+        };
+        events.Should().BeEquivalentTo(expected);
+    }
+
+    [Fact, IsLayer0]
+    public async Task MultipleEvents()
+    {
+        _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(20);
+        _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(14);
+        var start = UtcNow;
+        CreateScaleGroup();
+        RegisterResourceScaler("c", new DelayTestScaler(TimeSpan.FromMinutes(8), 10, () => UtcNow));
+        RegisterResourceScaler("s", new DelayTestScaler(TimeSpan.FromMinutes(6), 10, () => UtcNow));
+        var eventId1 = AddEvent(start.AddMinutes(40), start.AddMinutes(100), 80);
+        var eventId2 = AddEvent(start.AddMinutes(50), start.AddMinutes(110), 30);
+
+        await AdvanceTimeTo(start + TimeSpan.FromHours(2));
+
+        var events = GetPublishedEvents<ScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type));
+        var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
+        {
+            (start.AddMinutes(20), eventId1, ScaleChangeType.ScaleOutStarted),
+            (start.AddMinutes(42), eventId1, ScaleChangeType.ScaleOutComplete),
+            (start.AddMinutes(100), eventId1, ScaleChangeType.ScaleInStarted),
+            (start.AddMinutes(108), eventId1, ScaleChangeType.ScaleInComplete),
+            (start.AddMinutes(30), eventId2, ScaleChangeType.ScaleOutStarted),
+            (start.AddMinutes(42), eventId2, ScaleChangeType.ScaleOutComplete),
+            (start.AddMinutes(110), eventId2, ScaleChangeType.ScaleInStarted),
+            (start.AddMinutes(118), eventId2, ScaleChangeType.ScaleInComplete),
         };
         events.Should().BeEquivalentTo(expected);
     }

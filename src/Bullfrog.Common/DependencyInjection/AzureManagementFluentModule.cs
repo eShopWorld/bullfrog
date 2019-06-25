@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,13 +8,13 @@ using Eshopworld.DevOps;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Rest;
 
 namespace Bullfrog.Common.DependencyInjection
 {
+    [ExcludeFromCodeCoverage]
     public class AzureManagementFluentModule : Module
     {
         protected override void Load(ContainerBuilder builder)
@@ -37,15 +38,9 @@ namespace Bullfrog.Common.DependencyInjection
             builder.Register(c =>
             {
                 var tokenCredentials = c.Resolve<TokenCredentials>();
-
-                var client = RestClient.Configure()
-                    .WithEnvironment(AzureEnvironment.AzureGlobalCloud)
-                    .WithLogLevel(HttpLoggingDelegatingHandler.Level.Basic)
-                    .WithCredentials(new AzureCredentials(tokenCredentials, tokenCredentials, string.Empty,
-                        AzureEnvironment.AzureGlobalCloud))
-                    .Build();
-
-                return Azure.Authenticate(client, string.Empty);
+                var credentials = new AzureCredentials(tokenCredentials, tokenCredentials, string.Empty,
+                        AzureEnvironment.AzureGlobalCloud);
+                return Azure.Authenticate(credentials);
             });
 
             builder.Register(c =>

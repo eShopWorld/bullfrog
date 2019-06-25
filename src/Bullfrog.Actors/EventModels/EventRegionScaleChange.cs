@@ -1,20 +1,30 @@
 ﻿using System;
 using Bullfrog.DomainEvents;
 using Eshopworld.Core;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Bullfrog.Actors.EventModels
 {
     public class EventRegionScaleChange : TelemetryEvent
     {
+        public string ActorId { get; set; }
+
         /// <summary>
         /// The id of the scale event.
         /// </summary>
         public Guid Id { get; set; }
 
         /// <summary>
-        /// The type of the schange.
+        /// The type of the change.
         /// </summary>
+        [JsonConverter(typeof(StringEnumConverter))]
         public ScaleChangeType Type { get; set; }
+
+        /// <summary>
+        /// Additional information about current change.
+        /// </summary>
+        public string Details { get; set; }
 
         /// <summary>
         /// The name of the region.

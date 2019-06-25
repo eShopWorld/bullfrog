@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Bullfrog.Actors.EventModels
+﻿namespace Bullfrog.Actors.EventModels
 {
     public class AzureOperationDurationEvent : Eshopworld.Core.TimedTelemetryEvent
     {

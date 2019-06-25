@@ -40,6 +40,7 @@ public class ScaleEventOperationsTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task UpdateActiveEvent()
     {
+        RegisterDefaultScalers();
         CreateScaleGroup();
         var eventId = Guid.NewGuid();
         await ApiClient.SaveScaleEventAsync("sg", eventId, NewScaleEvent(1, 3));
@@ -119,6 +120,7 @@ public class ScaleEventOperationsTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task DeleteAlreadyStartedEvent()
     {
+        RegisterDefaultScalers();
         CreateScaleGroup();
         var eventId = Guid.NewGuid();
         ApiClient.SaveScaleEvent("sg", eventId, NewScaleEvent(1, 4));
@@ -132,6 +134,7 @@ public class ScaleEventOperationsTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task DeletePrescalingEvent()
     {
+        RegisterDefaultScalers();
         var scaleGroupDefinition = NewScaleGroupDefinition();
         scaleGroupDefinition.Regions[0].ScaleSetPrescaleLeadTime = TimeSpan.FromHours(2).ToString();
         CreateScaleGroup(scaleGroupDefinition);
@@ -147,6 +150,7 @@ public class ScaleEventOperationsTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task DeleteCompletedEvent()
     {
+        RegisterDefaultScalers();
         CreateScaleGroup();
         var eventId = Guid.NewGuid();
         ApiClient.SaveScaleEvent("sg", eventId, NewScaleEvent(1, 4));
@@ -160,6 +164,7 @@ public class ScaleEventOperationsTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task DeleteUnknownEvent()
     {
+        RegisterDefaultScalers();
         CreateScaleGroup();
         ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), NewScaleEvent(1, 4));
         await AdvanceTimeTo(UtcNow.AddHours(2));
@@ -174,6 +179,7 @@ public class ScaleEventOperationsTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task DeleteEventFromUnknownGroup()
     {
+        RegisterDefaultScalers();
         CreateScaleGroup();
         var eventId = Guid.NewGuid();
         ApiClient.SaveScaleEvent("sg", eventId, NewScaleEvent(1, 4));

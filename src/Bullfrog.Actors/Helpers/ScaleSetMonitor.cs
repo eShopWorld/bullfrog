@@ -9,7 +9,7 @@ using Microsoft.Azure.Management.Monitor.Fluent;
 
 namespace Bullfrog.Actors.Helpers
 {
-    class ScaleSetMonitor : IScaleSetMonitor
+    public class ScaleSetMonitor
     {
         private readonly Azure.IAuthenticated _authenticated;
         private readonly IBigBrother _bigBrother;
@@ -21,7 +21,7 @@ namespace Bullfrog.Actors.Helpers
             _bigBrother = bigBrother;
         }
 
-        public async Task<int> GetNumberOfWorkingInstances(string loadBalancerResourceId, int healthProbePort)
+        public virtual async Task<int> GetNumberOfWorkingInstances(string loadBalancerResourceId, int healthProbePort)
         {
             try
             {

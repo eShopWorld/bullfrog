@@ -43,12 +43,10 @@ public class SharedCosmosDbTests : BaseApiTests
     {
         CreateScaleGroup();
         ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), NewScaleEvent());
-        CosmosManagerMoq.Setup(m => m.SetScale(30, It.IsAny<InternalModels.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(80);
 
         await AdvanceTimeTo(UtcNow.AddHours(15));
 
-        CosmosManagerMoq.Verify(m => m.SetScale(30, It.IsAny<InternalModels.CosmosConfiguration>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        ScaleHistory["c1"].Last().RequestedThroughput.Should().Be(30);
     }
 
     [Fact, IsLayer0]
@@ -58,12 +56,10 @@ public class SharedCosmosDbTests : BaseApiTests
         var eventId = Guid.NewGuid();
         ApiClient.SaveScaleEvent("sg", eventId, NewScaleEvent());
         ApiClient.DeleteScaleEvent("sg", eventId);
-        CosmosManagerMoq.Setup(m => m.SetScale(60, It.IsAny<InternalModels.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(80);
 
         await AdvanceTimeTo(UtcNow.AddHours(15));
 
-        CosmosManagerMoq.Verify(m => m.SetScale(60, It.IsAny<InternalModels.CosmosConfiguration>(), It.IsAny<CancellationToken>()), Times.Never);
+        ScaleHistory["c1"].Should().BeEmpty();
     }
 
     [Fact, IsLayer0]
@@ -75,12 +71,10 @@ public class SharedCosmosDbTests : BaseApiTests
         var updatedConfiguration = NewScaleGroupDefinition();
         updatedConfiguration.Cosmos = null;
         ApiClient.SetDefinition("sg", updatedConfiguration);
-        CosmosManagerMoq.Setup(m => m.SetScale(60, It.IsAny<InternalModels.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(80);
 
         await AdvanceTimeTo(UtcNow.AddHours(15));
 
-        CosmosManagerMoq.Verify(m => m.SetScale(60, It.IsAny<InternalModels.CosmosConfiguration>(), It.IsAny<CancellationToken>()), Times.Never);
+        ScaleHistory["c1"].Should().BeEmpty();
     }
 
 
@@ -91,12 +85,10 @@ public class SharedCosmosDbTests : BaseApiTests
         var eventId = Guid.NewGuid();
         ApiClient.SaveScaleEvent("sg", eventId, NewScaleEvent());
         ApiClient.RemoveDefinition("sg");
-        CosmosManagerMoq.Setup(m => m.SetScale(60, It.IsAny<InternalModels.CosmosConfiguration>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(80);
 
         await AdvanceTimeTo(UtcNow.AddHours(15));
 
-        CosmosManagerMoq.Verify(m => m.SetScale(60, It.IsAny<InternalModels.CosmosConfiguration>(), It.IsAny<CancellationToken>()), Times.Never);
+        ScaleHistory["c1"].Should().BeEmpty();
     }
 
     private ScaleEvent NewScaleEvent(int scaleOut = 10, int scaleIn = 20, IEnumerable<(string regionName, int scale)> regions = null)
@@ -114,7 +106,15 @@ public class SharedCosmosDbTests : BaseApiTests
 
     private void CreateScaleGroup(ScaleGroupDefinition scaleGroupDefinition = null)
     {
-        ApiClient.SetDefinition("sg", scaleGroupDefinition ?? NewScaleGroupDefinition());
+        if (scaleGroupDefinition == null)
+            scaleGroupDefinition = NewScaleGroupDefinition();
+        ApiClient.SetDefinition("sg", scaleGroupDefinition);
+        var allResources = scaleGroupDefinition.Cosmos.Select(x => x.Name)
+            .Union(scaleGroupDefinition.Regions.SelectMany(r => r.ScaleSets).Select(x => x.Name));
+        foreach (var resources in allResources)
+        {
+            RegisterResourceScaler(resources, x => x ?? 10);
+        }
     }
 
     private static ScaleGroupDefinition NewScaleGroupDefinition() => new ScaleGroupDefinition
