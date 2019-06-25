@@ -45,21 +45,23 @@ namespace Bullfrog.Common.Cosmos
 
         private static CosmosThroughput ReadThroughputDetails(ResourceResponse<Offer> offerResponse)
         {
-            var memoryStream = new System.IO.MemoryStream();
-            offerResponse.Resource.SaveTo(memoryStream);
-            var buffer = memoryStream.GetBuffer();
-            string content = Encoding.UTF8.GetString(buffer, 0, (int)memoryStream.Length);
-            dynamic json = Newtonsoft.Json.JsonConvert.DeserializeObject(content);
-            var throughputDetails = new CosmosThroughput();
-            throughputDetails.RequestsUnits = (int)json.content.offerThroughput;
-            // The local CosmosDb emulator never returns max throughput ever provisioned.
-            throughputDetails.MaxRequestUnitsEverProvisioned = (int?)json.content.offerMinimumThroughputParameters?.maxThroughputEverProvisioned ?? 0;
-            // When setting an offer te local CosmosDb emulator does not return this value.
-            if (!int.TryParse(offerResponse.ResponseHeaders["x-ms-cosmos-min-throughput"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var minThroughput))
-                minThroughput = 400;
-            throughputDetails.MinimalRequestUnits = minThroughput;
-            throughputDetails.IsThroughputChangePending = (bool?)json.content.isOfferReplacePending ?? false;
-            return throughputDetails;
+            using (var memoryStream = new System.IO.MemoryStream())
+            {
+                offerResponse.Resource.SaveTo(memoryStream);
+                var buffer = memoryStream.GetBuffer();
+                string content = Encoding.UTF8.GetString(buffer, 0, (int)memoryStream.Length);
+                dynamic json = Newtonsoft.Json.JsonConvert.DeserializeObject(content);
+                var throughputDetails = new CosmosThroughput();
+                throughputDetails.RequestsUnits = (int)json.content.offerThroughput;
+                // The local CosmosDb emulator never returns max throughput ever provisioned.
+                throughputDetails.MaxRequestUnitsEverProvisioned = (int?)json.content.offerMinimumThroughputParameters?.maxThroughputEverProvisioned ?? 0;
+                // When setting an offer te local CosmosDb emulator does not return this value.
+                if (!int.TryParse(offerResponse.ResponseHeaders["x-ms-cosmos-min-throughput"], NumberStyles.Integer, CultureInfo.InvariantCulture, out var minThroughput))
+                    minThroughput = 400;
+                throughputDetails.MinimalRequestUnits = minThroughput;
+                throughputDetails.IsThroughputChangePending = (bool?)json.content.isOfferReplacePending ?? false;
+                return throughputDetails;
+            }
         }
 
         private async Task<ResourceResponse<Offer>> ReadOffer(DocumentClient client)

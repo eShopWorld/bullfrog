@@ -11,7 +11,7 @@ namespace Bullfrog.Actors.EventModels
 
         public int RequestedCosmosDbScale { get; set; }
 
-        public int ScaleReqests { get; internal set; }
+        public int ScaleRequests { get; internal set; }
 
         public int ScaleCompleted { get; set; }
 

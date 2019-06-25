@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common.Cosmos;
+using Eshopworld.Core;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
 using Moq;
@@ -12,6 +10,8 @@ using Xunit;
 
 public class CosmosScalerTests
 {
+    private readonly Mock<IBigBrother> BigBrotherMoq = new Mock<IBigBrother>();
+
     [Theory, IsLayer0]
     [InlineData(null)]
     [InlineData(20)]
@@ -29,7 +29,7 @@ public class CosmosScalerTests
             MaximumRU = 800,
             RequestUnitsPerRequest = 10,
         };
-        var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration);
+        var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
         var result = await scaler.SetThroughput(newThroughput);
 
@@ -53,7 +53,7 @@ public class CosmosScalerTests
             MaximumRU = 800,
             RequestUnitsPerRequest = 10,
         };
-        var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration);
+        var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
         var result = await scaler.SetThroughput(newThroughput);
 
@@ -77,7 +77,7 @@ public class CosmosScalerTests
             MaximumRU = 800,
             RequestUnitsPerRequest = 10,
         };
-        var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration);
+        var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
         var result = await scaler.SetThroughput(newThroughput);
 
@@ -106,7 +106,7 @@ public class CosmosScalerTests
             MaximumRU = 800,
             RequestUnitsPerRequest = 10,
         };
-        var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration);
+        var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
         var result = await scaler.SetThroughput(newThroughput);
 
@@ -128,7 +128,7 @@ public class CosmosScalerTests
             MaximumRU = 800,
             RequestUnitsPerRequest = 10,
         };
-        var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration);
+        var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
         var result = await scaler.SetThroughput(50);
 
@@ -148,7 +148,7 @@ public class CosmosScalerTests
             MaximumRU = 800,
             RequestUnitsPerRequest = 10,
         };
-        var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration);
+        var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
         var result = await scaler.SetThroughput(60);
 
