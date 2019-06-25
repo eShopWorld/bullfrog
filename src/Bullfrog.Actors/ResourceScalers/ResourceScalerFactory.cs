@@ -13,17 +13,20 @@ namespace Bullfrog.Actors.ResourceScalers
         private readonly Func<CosmosDbDataPlaneConnection, ICosmosThroughputClient> _cosmosDataPlaneClientFactory;
         private readonly Func<CosmosDbControlPlaneConnection, ControlPlaneCosmosThroughputClient> _cosmosControlPlaneClientFactory;
         private readonly Func<ControlPlaneCosmosThroughputClient, CosmosConfiguration, ControlPlaneCosmosScaler> _controlPlaneCosmosScalerFactory;
+        private readonly Func<ICosmosThroughputClient, CosmosConfiguration, CosmosScaler> _cosmosScalerFactory;
 
         public ResourceScalerFactory(
             Func<ScaleSetConfiguration, ScaleSetScaler> scaleSetScalerFactory,
             Func<CosmosDbDataPlaneConnection, ICosmosThroughputClient> cosmosDataPlaneClientFactory,
             Func<CosmosDbControlPlaneConnection, ControlPlaneCosmosThroughputClient> cosmosControlPlaneClientFactory,
-            Func<ControlPlaneCosmosThroughputClient, CosmosConfiguration, ControlPlaneCosmosScaler> controlPlaneCosmosScalerFactory)
+            Func<ControlPlaneCosmosThroughputClient, CosmosConfiguration, ControlPlaneCosmosScaler> controlPlaneCosmosScalerFactory,
+            Func<ICosmosThroughputClient, CosmosConfiguration, CosmosScaler> cosmosScalerFactory)
         {
             _scaleSetScalerFactory = scaleSetScalerFactory;
             _cosmosDataPlaneClientFactory = cosmosDataPlaneClientFactory;
             _cosmosControlPlaneClientFactory = cosmosControlPlaneClientFactory;
             _controlPlaneCosmosScalerFactory = controlPlaneCosmosScalerFactory;
+            _cosmosScalerFactory = cosmosScalerFactory;
         }
 
         public ResourceScaler CreateScaler(string name, ScaleManagerConfiguration configuration)
@@ -46,7 +49,7 @@ namespace Bullfrog.Actors.ResourceScalers
                         DatabaseName = cosmosConfiguration.DatabaseName,
                     };
                     var client = _cosmosDataPlaneClientFactory(connectionDetails);
-                    return new CosmosScaler(client, cosmosConfiguration);
+                    return _cosmosScalerFactory(client, cosmosConfiguration);
                 }
             }
 

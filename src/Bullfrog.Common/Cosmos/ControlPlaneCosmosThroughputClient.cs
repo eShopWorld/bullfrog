@@ -41,8 +41,10 @@ namespace Bullfrog.Common.Cosmos
 
         public virtual async Task<int> Set(int throughput)
         {
-            var parameters = new GenericResourceInner();
-            parameters.Properties = new ThroughputChange(throughput);
+            var parameters = new GenericResourceInner
+            {
+                Properties = new ThroughputChange(throughput)
+            };
             try
             {
                 using (var response = await _managementClient.Resources.CreateOrUpdateByIdWithHttpMessagesAsync(_resourceId, "2015-04-08", parameters))

@@ -67,9 +67,11 @@ public sealed class CosmosFixture : IDisposable
 
     public void Dispose()
     {
+        _container?.Dispose();
         if (_testCosmos != null)
         {
             _cosmosClient.Databases[_testCosmos.DatabaseName].DeleteAsync().GetAwaiter().GetResult();
+            _cosmosClient.Dispose();
         }
     }
 }

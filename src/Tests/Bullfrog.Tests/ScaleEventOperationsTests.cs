@@ -22,6 +22,7 @@ public class ScaleEventOperationsTests : BaseApiTests
 
         response.Response.StatusCode.Should().Be(HttpStatusCode.Created);
         response.Response.Headers.Location.Should().NotBeNull();
+        response.Dispose();
     }
 
     [Fact, IsLayer0]
@@ -35,6 +36,7 @@ public class ScaleEventOperationsTests : BaseApiTests
 
         response.Response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         response.Response.Headers.Location.Should().BeNull();
+        response.Dispose();
     }
 
     [Fact, IsLayer0]
@@ -51,6 +53,7 @@ public class ScaleEventOperationsTests : BaseApiTests
 
         response.Response.StatusCode.Should().Be(HttpStatusCode.Accepted);
         response.Response.Headers.Location.Should().BeNull();
+        response.Dispose();
     }
 
     [Fact, IsLayer0]
@@ -115,6 +118,7 @@ public class ScaleEventOperationsTests : BaseApiTests
         var msg = await ApiClient.DeleteScaleEventWithHttpMessagesAsync("sg", eventId);
 
         msg.Response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        msg.Dispose();
     }
 
     [Fact, IsLayer0]
@@ -129,6 +133,7 @@ public class ScaleEventOperationsTests : BaseApiTests
         var msg = await ApiClient.DeleteScaleEventWithHttpMessagesAsync("sg", eventId);
 
         msg.Response.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        msg.Dispose();
     }
 
     [Fact, IsLayer0]
@@ -145,6 +150,7 @@ public class ScaleEventOperationsTests : BaseApiTests
         var msg = await ApiClient.DeleteScaleEventWithHttpMessagesAsync("sg", eventId);
 
         msg.Response.StatusCode.Should().Be(HttpStatusCode.Accepted);
+        msg.Dispose();
     }
 
     [Fact, IsLayer0]
@@ -159,6 +165,7 @@ public class ScaleEventOperationsTests : BaseApiTests
         var msg = await ApiClient.DeleteScaleEventWithHttpMessagesAsync("sg", eventId);
 
         msg.Response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        msg.Dispose();
     }
 
     [Fact, IsLayer0]

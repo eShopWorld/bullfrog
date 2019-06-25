@@ -25,6 +25,7 @@ public class ConfigurationTests
         var groups = await client.ListScaleGroupsAsync();
 
         groups.Should().NotBeNull();
+        client.Dispose();
     }
 
     [Fact, IsLayer3]
@@ -39,6 +40,8 @@ public class ConfigurationTests
             var scaleGroupDefinition = await client.GetDefinitionAsync(group);
             scaleGroupDefinition.Should().NotBeNull();
         }
+
+        client.Dispose();
     }
 
     [Fact, IsLayer3]
@@ -50,6 +53,7 @@ public class ConfigurationTests
 
         func.Should().Throw<ProblemDetailsException>()
             .Which.Response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        client.Dispose();
     }
 
     [Fact, IsLayer3]
@@ -61,5 +65,6 @@ public class ConfigurationTests
 
         func.Should().Throw<ProblemDetailsException>()
             .Which.Response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        client.Dispose();
     }
 }

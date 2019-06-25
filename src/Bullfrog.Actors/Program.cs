@@ -31,6 +31,7 @@ namespace Bullfrog.Actors
                 builder.RegisterModule<ServiceFabricModule>();
                 builder.RegisterModule<ThroughputClientModule>();
                 builder.RegisterType<ControlPlaneCosmosScaler>().AsSelf();
+                builder.RegisterType<CosmosScaler>().AsSelf();
                 builder.RegisterType<ScaleSetMonitor>().AsSelf();
                 builder.RegisterType<ScaleSetScaler>().AsSelf();
                 builder.RegisterType<ResourceScalerFactory>().As<IResourceScalerFactory>();
