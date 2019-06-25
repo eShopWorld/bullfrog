@@ -171,13 +171,6 @@ namespace Bullfrog.Api
                 if (Debugger.IsAttached)
                     app.UseDeveloperExceptionPage();
                 app.UseBigBrotherExceptionHandler();
-                if (_configuration.GetValue<bool>("ActorDirectCallMiddlewareEnabled"))
-                {
-                    app.UseActorDirectCall(new ActorDirectCallOptions
-                    {
-                        StatelessServiceContext = statelessServiceContext,
-                    });
-                }
 
                 app.UseMvc();
 
