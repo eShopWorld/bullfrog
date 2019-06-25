@@ -41,7 +41,11 @@ namespace Bullfrog.Common.DependencyInjection
 
                     try
                     {
-                        await database.ReadProvisionedThroughputAsync();
+                        var throughput = await database.ReadProvisionedThroughputAsync();
+                        if(connection.ContainerName == null && !throughput.HasValue)
+                        {
+                            return new ValidationResult($"The database {connection.DatabaseName} does not have provisioned throughput set.", new[] { nameof(connection.DatabaseName) });
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -54,7 +58,9 @@ namespace Bullfrog.Common.DependencyInjection
 
                         try
                         {
-                            await container.ReadProvisionedThroughputAsync();
+                            var throughput =  await container.ReadProvisionedThroughputAsync();
+                            if(!throughput.HasValue)
+                                return new ValidationResult($"The container {connection.ContainerName} in the database {connection.DatabaseName} does not have provisioned throughput set.", new[] { nameof(connection.ContainerName) });
                         }
                         catch (Exception ex)
                         {

@@ -2,8 +2,12 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
-
     <IsPackable>false</IsPackable>
+    <SonarQubeTestProject>true</SonarQubeTestProject>
+    <DebugType>Full</DebugType>
+    <LangVersion>latest</LangVersion>
+    <Platforms>x64</Platforms>
+    <Platform>x64</Platform>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,6 +21,13 @@
     <ProjectReference Include="..\..\Bullfrog.Actors.Interfaces\Bullfrog.Actors.Interfaces.csproj" />
     <ProjectReference Include="..\..\Bullfrog.Actors\Bullfrog.Actors.csproj" />
     <ProjectReference Include="..\..\Bullfrog.Common\Bullfrog.Common.csproj" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <None Update="appsettings*.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

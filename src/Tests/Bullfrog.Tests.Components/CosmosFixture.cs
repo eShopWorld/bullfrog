@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data.Common;
 using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
@@ -31,7 +32,7 @@ public sealed class CosmosFixture : IDisposable
         if (_testCosmos != null)
             return _testCosmos;
 
-        var accountResourceId = "subscriptions/xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx/resourceGroups/xxxxxxxxxxx/providers/Microsoft.DocumentDb/databaseAccounts/xxxxxxxxxxxxxxxx";
+        var accountResourceId = _configuration.GetSection("Bullfrog").GetSection("Testing")["TestCosmosAccountResourceId"];
         var azure = _container.Resolve<IAzure>();
         var account = await azure.CosmosDBAccounts.GetByIdAsync(accountResourceId);
         var connectionStrings = await account.ListConnectionStringsAsync();
@@ -54,11 +55,21 @@ public sealed class CosmosFixture : IDisposable
         return _testCosmos;
     }
 
+    public static string ModifyConnectionString(string connectionString, string key, string newValue)
+    {
+        var builder = new DbConnectionStringBuilder
+        {
+            ConnectionString = connectionString,
+        };
+        builder[key] = newValue;
+        return builder.ToString();
+    }
+
     public void Dispose()
     {
         if (_testCosmos != null)
         {
-            //_cosmosClient.Databases[_testCosmos.DatabaseName].DeleteAsync().GetAwaiter().GetResult();
+            _cosmosClient.Databases[_testCosmos.DatabaseName].DeleteAsync().GetAwaiter().GetResult();
         }
     }
 }

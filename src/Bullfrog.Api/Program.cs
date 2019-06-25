@@ -2,10 +2,7 @@
 using Microsoft.ServiceFabric.Services.Runtime;
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 using System.Threading;
-
-[assembly: InternalsVisibleTo("Bullfrog.Tests")]
 
 namespace Bullfrog.Api
 {
