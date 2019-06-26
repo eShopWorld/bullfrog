@@ -103,7 +103,7 @@
           }
         ],
         "responses": {
-          "204": {
+          "200": {
             "description": "Success"
           },
           "default": {
@@ -458,10 +458,44 @@
         }
       }
     },
-    "CosmosConfiguration": {
+    "CosmosDbDataPlaneConnection": {
       "required": [
         "accountName",
-        "databaseName",
+        "databaseName"
+      ],
+      "type": "object",
+      "properties": {
+        "accountName": {
+          "type": "string"
+        },
+        "databaseName": {
+          "type": "string"
+        },
+        "containerName": {
+          "type": "string"
+        }
+      }
+    },
+    "CosmosDbControlPlaneConnection": {
+      "required": [
+        "accountResurceId",
+        "databaseName"
+      ],
+      "type": "object",
+      "properties": {
+        "accountResurceId": {
+          "type": "string"
+        },
+        "databaseName": {
+          "type": "string"
+        },
+        "containerName": {
+          "type": "string"
+        }
+      }
+    },
+    "CosmosConfiguration": {
+      "required": [
         "name"
       ],
       "type": "object",
@@ -477,6 +511,12 @@
         },
         "containerName": {
           "type": "string"
+        },
+        "dataPlaneConnection": {
+          "$ref": "#/definitions/CosmosDbDataPlaneConnection"
+        },
+        "controlPlaneConnection": {
+          "$ref": "#/definitions/CosmosDbControlPlaneConnection"
         },
         "requestUnitsPerRequest": {
           "format": "double",
@@ -520,6 +560,10 @@
         },
         "cosmosDbPrescaleLeadTime": {
           "type": "string"
+        },
+        "maxScale": {
+          "format": "int32",
+          "type": "integer"
         }
       }
     },

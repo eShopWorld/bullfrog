@@ -1,16 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Client;
 using Client.Models;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
-using Moq;
 using Xunit;
-using InternalModels = Bullfrog.Actors.Interfaces.Models;
 
 public class SharedCosmosDbTests : BaseApiTests
 {
@@ -124,11 +120,14 @@ public class SharedCosmosDbTests : BaseApiTests
             new CosmosConfiguration
             {
                 Name = "c1",
-                AccountName = "ac",
-                DatabaseName = "dn",
                 MaximumRU = 1000,
                 MinimumRU = 400,
                 RequestUnitsPerRequest = 10,
+                DataPlaneConnection = new CosmosDbDataPlaneConnection
+                {
+                    AccountName = "ac",
+                    DatabaseName = "dn",
+                }
             },
         },
         CosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(30).ToString(),

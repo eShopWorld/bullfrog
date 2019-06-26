@@ -169,6 +169,12 @@ namespace Bullfrog.Actors
             if (isTooLate)
                 throw new ScaleEventSaveException("Can't register scale event in the past.", ScaleEventSaveFailureReason.RegistrationInThePast);
 
+            foreach (var region in scaleEvent.RegionConfig)
+            {
+                var regionDefintion = scaleGroupDefinition.Regions.Find(x => x.RegionName == region.Name);
+                ValidateRegionMaxScale(scaleEvent, scaleEvents.Values, regionDefintion.MaxScale, region);
+            }
+
             foreach (var regionConfig in scaleEvent.RegionConfig)
             {
                 var regionScaleEvent = new RegionScaleEvent
@@ -260,6 +266,43 @@ namespace Bullfrog.Actors
             var leadTime = scaleGroupDefinition.MaxLeadTime(scaleEvent.RegionConfig.Select(r => r.Name));
             var scheduledScaleEvent = registeredEvent.ToScheduledScaleEvent(eventId, leadTime);
             return new SaveScaleEventReturnValue { Result = saveResult, ScheduledScaleEvent = scheduledScaleEvent };
+        }
+
+        private void ValidateRegionMaxScale(ScaleEvent scaleEvent, IEnumerable<RegisteredScaleEvent> scaleEvents, int? maxScale, RegionScaleValue regionScale)
+        {
+            if (!maxScale.HasValue)
+                return;
+
+            if (maxScale.Value < regionScale.Scale)
+            {
+                throw new ScaleEventSaveException($"The scale for region {regionScale.Name} exceeds region's maximum scale.",
+                    ScaleEventSaveFailureReason.ScaleLimitExceeded);
+            }
+
+            var overlappingEvents = scaleEvents
+                .Where(x => x.Regions.ContainsKey(regionScale.Name)
+                    && x.StartScaleDownAt > scaleEvent.RequiredScaleAt && scaleEvent.StartScaleDownAt > x.RequiredScaleAt)
+                .Select(x => new { x.RequiredScaleAt, x.StartScaleDownAt, x.Regions[regionScale.Name].Scale })
+                .ToList();
+            if (overlappingEvents.Count == 0)
+                return;
+
+            var scaleChanges = overlappingEvents.Select(x => (time: x.StartScaleDownAt, scale: -x.Scale))
+                .Union(overlappingEvents.Select(x => (time: x.RequiredScaleAt, scale: x.Scale)))
+                .GroupBy(x => x.time)
+                .Select(x => (time: x.Key, scale: x.Sum(y => y.scale)))
+                .OrderBy(x => x.time)
+                .Select(x => x.scale);
+
+            var maxAllowedScale = maxScale.Value - regionScale.Scale;
+            var accumulatedScale = 0;
+            foreach (var scale in scaleChanges)
+            {
+                accumulatedScale += scale;
+                if (accumulatedScale > maxAllowedScale)
+                    throw new ScaleEventSaveException($"The scale for region {regionScale.Name} exceeds region's maximum scale.",
+                        ScaleEventSaveFailureReason.ScaleLimitExceeded);
+            }
         }
 
         async Task<ScaleEventState> IConfigurationManager.DeleteScaleEvent(string scaleGroup, Guid eventId)

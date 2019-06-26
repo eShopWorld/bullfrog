@@ -46,6 +46,12 @@ namespace Bullfrog.Actors.Interfaces.Models
         public TimeSpan CosmosDbPrescaleLeadTime { get; set; }
 
         /// <summary>
+        /// The maximum scale supported for this region.
+        /// </summary>
+        [ValueIs(ValueComparison.GreaterThen, Value = 0)]
+        public int? MaxScale { get; set; }
+
+        /// <summary>
         /// The maximal lead time for this region
         /// </summary>
         [JsonIgnore]

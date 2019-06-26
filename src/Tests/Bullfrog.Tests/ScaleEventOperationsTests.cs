@@ -8,7 +8,6 @@ using Client.Models;
 using Eshopworld.Tests.Core;
 using FluentAssertions;
 using Microsoft.Rest;
-using Newtonsoft.Json;
 using Xunit;
 
 public class ScaleEventOperationsTests : BaseApiTests
@@ -66,20 +65,7 @@ public class ScaleEventOperationsTests : BaseApiTests
         Func<Task<HttpOperationResponse<ScheduledScaleEvent>>> call =
             () => ApiClient.SaveScaleEventWithHttpMessagesAsync("sg", eventId, NewScaleEvent(-2, -1));
 
-        var response = call.Should().Throw<ProblemDetailsException>()
-            .Which.Response;
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var json = JsonConvert.DeserializeObject<BullfrogErrorResponse>(response.Content);
-        json.Should().BeEquivalentTo(new BullfrogErrorResponse
-        {
-            Errors = new[]
-            {
-                new BullfrogErrorDescription
-                {
-                    Code = "-1",
-                }
-            }
-        }, o => o.Excluding(r => r.Errors[0].Message));
+        ShouldThrowBullfrogError(call, -1);
     }
 
     [Fact, IsLayer0]
@@ -92,20 +78,7 @@ public class ScaleEventOperationsTests : BaseApiTests
         Func<Task<HttpOperationResponse<ScheduledScaleEvent>>> call =
             () => ApiClient.SaveScaleEventWithHttpMessagesAsync("sg", eventId, NewScaleEvent(-2, -1, new[] { ("r1", 30) }));
 
-        var response = call.Should().Throw<ProblemDetailsException>()
-            .Which.Response;
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        var json = JsonConvert.DeserializeObject<BullfrogErrorResponse>(response.Content);
-        json.Should().BeEquivalentTo(new BullfrogErrorResponse
-        {
-            Errors = new[]
-            {
-                new BullfrogErrorDescription
-                {
-                    Code = "-3",
-                }
-            }
-        }, o => o.Excluding(r => r.Errors[0].Message));
+        ShouldThrowBullfrogError(call, -3);
     }
 
     [Fact, IsLayer0]
@@ -178,10 +151,9 @@ public class ScaleEventOperationsTests : BaseApiTests
 
         Func<Task> func = () => ApiClient.DeleteScaleEventWithHttpMessagesAsync("sg", Guid.NewGuid());
 
-        func.Should().Throw< ProblemDetailsException> ()
+        func.Should().Throw<ProblemDetailsException>()
             .Which.Response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
-
 
     [Fact, IsLayer0]
     public async Task DeleteEventFromUnknownGroup()
@@ -255,17 +227,4 @@ public class ScaleEventOperationsTests : BaseApiTests
             },
         };
     }
-}
-
-
-public class BullfrogErrorResponse
-{
-    public IList<BullfrogErrorDescription> Errors { get; set; }
-}
-
-public class BullfrogErrorDescription
-{
-    public string Code { get; set; }
-
-    public string Message { get; set; }
 }
