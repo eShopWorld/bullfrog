@@ -8,46 +8,32 @@ using Newtonsoft.Json;
 
 namespace Bullfrog.Common.Cosmos
 {
-    /// <summary>
-    /// The client which uses the Azure control plane to read or change Cosmos DB throughput.
-    /// </summary>
-    public class ControlPlaneCosmosThroughputClient
+    public static class ControlPlaneCosmosThroughputExtensionMethods
     {
         static readonly Regex InvalidThroughputMessagePattern =
-               new Regex("The offer should have valid throughput values between (?<min>\\d+) and (?<max>\\d+) inclusive in increments of \\d+",
-                       RegexOptions.Compiled | RegexOptions.CultureInvariant);
+                new Regex("The offer should have valid throughput values between (?<min>\\d+) and (?<max>\\d+) inclusive in increments of \\d+",
+                        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
-        private readonly string _resourceId;
-        private readonly IResourceManagementClient _managementClient;
 
-        public ControlPlaneCosmosThroughputClient(CosmosDbControlPlaneConnection connection, IResourceManagementClient managementClient)
+        public static async Task<int> GetThroughput(this IResourceManagementClient managementClient, CosmosDbControlPlaneConnection connection)
         {
-            _resourceId = $"{connection.AccountResurceId}/apis/sql/databases/{connection.DatabaseName}";
-            if (!string.IsNullOrEmpty(connection.ContainerName))
-                _resourceId += $"/containers/{connection.ContainerName}";
-            _resourceId += "/settings/throughput";
-            _managementClient = managementClient;
-            var id = ResourceId.FromString(_resourceId);
-            _managementClient.SubscriptionId = id.SubscriptionId;
-        }
-
-        public virtual async Task<int> Get()
-        {
-            using (var response = await _managementClient.Resources.GetByIdWithHttpMessagesAsync(_resourceId, "2015-04-08"))
+            var resourceId = ConfigureManagementClient(managementClient, connection);
+            using (var response = await managementClient.Resources.GetByIdWithHttpMessagesAsync(resourceId, "2015-04-08"))
             {
                 return ParseThroughput(response.Body);
             }
         }
 
-        public virtual async Task<int> Set(int throughput)
+        public static async Task<int> SetThroughput(this IResourceManagementClient managementClient, int newThroughput, CosmosDbControlPlaneConnection connection)
         {
+            var resourceId = ConfigureManagementClient(managementClient, connection);
             var parameters = new GenericResourceInner
             {
-                Properties = new ThroughputChange(throughput)
+                Properties = new ThroughputChange(newThroughput)
             };
             try
             {
-                using (var response = await _managementClient.Resources.CreateOrUpdateByIdWithHttpMessagesAsync(_resourceId, "2015-04-08", parameters))
+                using (var response = await managementClient.Resources.CreateOrUpdateByIdWithHttpMessagesAsync(resourceId, "2015-04-08", parameters))
                 {
                     return ParseThroughput(response.Body);
                 }
@@ -62,8 +48,19 @@ namespace Bullfrog.Common.Cosmos
             }
         }
 
-        private int ParseThroughput(GenericResourceInner genericResource)
-            => ((Newtonsoft.Json.Linq.JObject)genericResource.Properties).Value<int>("throughput");
+        private static string ConfigureManagementClient(IResourceManagementClient managementClient, CosmosDbControlPlaneConnection connection)
+        {
+            var resourceId = $"{connection.AccountResurceId}/apis/sql/databases/{connection.DatabaseName}";
+            if (!string.IsNullOrEmpty(connection.ContainerName))
+                resourceId += $"/containers/{connection.ContainerName}";
+            resourceId += "/settings/throughput";
+            var id = ResourceId.FromString(resourceId);
+            managementClient.SubscriptionId = id.SubscriptionId;
+            return resourceId;
+        }
+
+        private static int ParseThroughput(GenericResourceInner genericResource)
+                => ((Newtonsoft.Json.Linq.JObject)genericResource.Properties).Value<int>("throughput");
 
         private class ThroughputChange
         {
