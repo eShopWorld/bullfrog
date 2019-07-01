@@ -12,18 +12,18 @@ using Xunit;
 public class ControlPlaneCosmosThroughputClientTests
 {
     private readonly CosmosFixture _cosmosFixture;
+    private readonly IResourceManagementClient _client;
 
     public ControlPlaneCosmosThroughputClientTests(CosmosFixture cosmosFixture)
     {
         _cosmosFixture = cosmosFixture;
+        _client = _cosmosFixture.ComponentContext.Resolve<IResourceManagementClient>();
     }
 
     [Fact, IsLayer2]
     public async Task GetThroughputTest()
     {
-        var client = await CreateClient();
-
-        var throughput = await client.Get();
+        var throughput = await _client.GetThroughput(await GetConnection());
 
         throughput.Should().BeGreaterOrEqualTo(400);
     }
@@ -31,9 +31,9 @@ public class ControlPlaneCosmosThroughputClientTests
     [Fact, IsLayer2]
     public async Task SetTooLowThroughputTest()
     {
-        var client = await CreateClient();
+        var connection = await GetConnection();
 
-        Func<Task> action = () => client.Set(300);
+        Func<Task> action = () => _client.SetThroughput(300, connection);
 
         action.Should().Throw<ThroughputOutOfRangeException>()
             .Which.MinimumThroughput.Should().BeGreaterOrEqualTo(400);
@@ -42,25 +42,24 @@ public class ControlPlaneCosmosThroughputClientTests
     [Fact, IsLayer2]
     public async Task SetThroughputTest()
     {
-        var client = await CreateClient();
-        var throughput = await client.Get();
+        var connection = await GetConnection();
+        var throughput = await _client.GetThroughput(connection);
 
-        var newThroughput = await client.Set(throughput + 100);
+        var newThroughput = await _client.SetThroughput(throughput + 100, connection);
 
         newThroughput.Should().Be(throughput + 100);
-        var finalThroughput = await client.Get();
+        var finalThroughput = await _client.GetThroughput(connection);
         finalThroughput.Should().Be(newThroughput);
     }
 
     [Fact, IsLayer2]
     public async Task ResetThroughputTest()
     {
-        var client = await CreateClient();
-
-        var newThroughput1 = await client.Set(800);
-        var changedThroughput1 = await client.Get();
-        var newThroughput2 = await client.Set(400);
-        var changedThroughput2 = await client.Get();
+        var connection = await GetConnection();
+        var newThroughput1 = await _client.SetThroughput(800, connection);
+        var changedThroughput1 = await _client.GetThroughput(connection);
+        var newThroughput2 = await _client.SetThroughput(400, connection);
+        var changedThroughput2 = await _client.GetThroughput(connection);
 
         newThroughput1.Should().Be(800);
         changedThroughput1.Should().Be(800);
@@ -68,15 +67,13 @@ public class ControlPlaneCosmosThroughputClientTests
         changedThroughput2.Should().Be(400);
     }
 
-    private async Task<ControlPlaneCosmosThroughputClient> CreateClient()
+    private async Task<CosmosDbControlPlaneConnection> GetConnection()
     {
         var cosmos = await _cosmosFixture.GetTestCosmos();
-        var connection = new CosmosDbControlPlaneConnection
+        return new CosmosDbControlPlaneConnection
         {
             AccountResurceId = cosmos.AccountResourceId,
             DatabaseName = cosmos.DatabaseName,
         };
-        var resourceManagementClient = _cosmosFixture.ComponentContext.Resolve<IResourceManagementClient>();
-        return new ControlPlaneCosmosThroughputClient(connection, resourceManagementClient);
     }
 }

@@ -14,7 +14,6 @@ namespace Bullfrog.Common.DependencyInjection
         protected override void Load(ContainerBuilder builder)
         {
             builder.RegisterType<DataPlaneCosmosThroughputClient>().As<ICosmosThroughputClient>();
-            builder.RegisterType<ControlPlaneCosmosThroughputClient>().AsSelf();
 
             builder.RegisterType<CosmosDataPlaneAccessValidator>()
                 .As<ICosmosAccessValidator<CosmosDbDataPlaneConnection>>();
