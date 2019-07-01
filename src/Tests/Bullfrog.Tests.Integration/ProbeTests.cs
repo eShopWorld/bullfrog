@@ -18,6 +18,9 @@ public class ProbeTests
     public async Task ProbeGetTest()
     {
         var client = _apiClientFixture.GetBullfrogApiUnauthenticated();
+
         await client.GetAsync();
+
+        client.Dispose();
     }
 }

@@ -2,6 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using Bullfrog.Actors.Interfaces.Models.Validation;
 using Bullfrog.Common;
+using Bullfrog.Common.Models;
 
 namespace Bullfrog.Actors.Interfaces.Models
 {
@@ -19,19 +20,27 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// <summary>
         /// The Cosmos DB account name.
         /// </summary>
-        [Required]
         public string AccountName { get; set; }
 
         /// <summary>
         /// The Cosmos DB database name.
         /// </summary>
-        [Required]
         public string DatabaseName { get; set; }
 
         /// <summary>
         /// The optional name of the container in the Cosmos DB database.
         /// </summary>
         public string ContainerName { get; set; }
+
+        /// <summary>
+        /// The data plane connection details.
+        /// </summary>
+        public CosmosDbDataPlaneConnection DataPlaneConnection { get; set; }
+
+        /// <summary>
+        /// The control plane connection details.
+        /// </summary>
+        public CosmosDbControlPlaneConnection ControlPlaneConnection { get; set; }
 
         /// <summary>
         /// The number of Request Units used on average by each request.
@@ -56,14 +65,45 @@ namespace Bullfrog.Actors.Interfaces.Models
 
         IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)
         {
-            var cosmosDbManager = (ICosmosDbHelper)validationContext.GetService(typeof(ICosmosDbHelper));
-
-            yield return cosmosDbManager.ValidateConfiguration(new CosmosDbConfiguration
+            if(DataPlaneConnection == null &&  ControlPlaneConnection == null)
             {
-                AccountName = AccountName,
-                ContainerName = ContainerName,
-                DatabaseName = DatabaseName,
-            }).GetAwaiter().GetResult();
+                // TODO: remove this after updating tests
+                DataPlaneConnection = new CosmosDbDataPlaneConnection
+                {
+                    AccountName = AccountName,
+                    ContainerName = ContainerName,
+                    DatabaseName = DatabaseName,
+                };
+            }
+
+            if (DataPlaneConnection != null)
+            {
+                if (ControlPlaneConnection != null)
+                {
+                    yield return new ValidationResult("Both data plane and control plane connection types must not be specified",
+                        new[] { nameof(ControlPlaneConnection) });
+                }
+
+                yield return Validate(DataPlaneConnection, validationContext);
+            }
+            else if (ControlPlaneConnection != null)
+            {
+
+                yield return Validate(ControlPlaneConnection, validationContext);
+            }
+            else
+            {
+                yield return new ValidationResult("Either data plane or control plane connection type may be specified",
+                    new[] { nameof(ControlPlaneConnection) });
+            }
+        }
+
+        private static ValidationResult Validate<T>(T connection, ValidationContext validationContext)
+        {
+            var cosmosDbManager = (ICosmosAccessValidator<T>)
+                  validationContext.GetService(typeof(ICosmosAccessValidator<T>));
+
+            return cosmosDbManager.ConfirmAccess(connection).GetAwaiter().GetResult();
         }
 
         #endregion

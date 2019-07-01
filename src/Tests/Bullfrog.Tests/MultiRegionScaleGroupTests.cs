@@ -20,6 +20,7 @@ public class MultiRegionScaleGroupTests : BaseApiTests
 
         response.Response.StatusCode.Should().Be(HttpStatusCode.Created);
         response.Response.Headers.Location.Should().NotBeNull();
+        response.Dispose();
     }
 
     [Fact, IsLayer0]
@@ -67,6 +68,7 @@ public class MultiRegionScaleGroupTests : BaseApiTests
         var response = await ApiClient.DeleteScaleEventWithHttpMessagesAsync("sg", eventId);
 
         response.Response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+        response.Dispose();
     }
 
     [Fact, IsLayer0]

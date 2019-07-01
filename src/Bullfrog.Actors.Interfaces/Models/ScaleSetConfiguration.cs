@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models.Validation;
 using Bullfrog.Common;
+using Bullfrog.Common.Models.Validation;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.Monitor.Fluent;
 

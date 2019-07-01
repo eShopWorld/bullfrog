@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using Autofac;
 using Bullfrog.Common.Cosmos;
+using Bullfrog.Common.Models;
 
 namespace Bullfrog.Common.DependencyInjection
 {
@@ -12,7 +13,12 @@ namespace Bullfrog.Common.DependencyInjection
     {
         protected override void Load(ContainerBuilder builder)
         {
-            builder.RegisterType<DataPlaneCosmosThroughputClientFactory>().As<ICosmosThroughputClientFactory>();
+            builder.RegisterType<DataPlaneCosmosThroughputClient>().As<ICosmosThroughputClient>();
+
+            builder.RegisterType<CosmosDataPlaneAccessValidator>()
+                .As<ICosmosAccessValidator<CosmosDbDataPlaneConnection>>();
+            builder.RegisterType<CosmosControlPlaneAccessValidator>()
+                .As<ICosmosAccessValidator<CosmosDbControlPlaneConnection>>();
         }
     }
 }

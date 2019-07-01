@@ -150,6 +150,7 @@ namespace Bullfrog.Api
             builder.RegisterModule<CoreModule>();
             builder.RegisterModule<AzureManagementFluentModule>();
             builder.RegisterModule<ServiceFabricModule>();
+            builder.RegisterModule<ThroughputClientModule>();
         }
 
         /// <summary>
@@ -170,13 +171,6 @@ namespace Bullfrog.Api
                 if (Debugger.IsAttached)
                     app.UseDeveloperExceptionPage();
                 app.UseBigBrotherExceptionHandler();
-                if (_configuration.GetValue<bool>("ActorDirectCallMiddlewareEnabled"))
-                {
-                    app.UseActorDirectCall(new ActorDirectCallOptions
-                    {
-                        StatelessServiceContext = statelessServiceContext,
-                    });
-                }
 
                 app.UseMvc();
 

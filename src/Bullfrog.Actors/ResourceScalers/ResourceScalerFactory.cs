@@ -3,23 +3,27 @@ using System.Linq;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common;
 using Bullfrog.Common.Cosmos;
-using Eshopworld.Core;
+using Bullfrog.Common.Models;
 
 namespace Bullfrog.Actors.ResourceScalers
 {
     public class ResourceScalerFactory : IResourceScalerFactory
     {
-        private readonly ICosmosThroughputClientFactory _cosmosThroughputClientFactory;
         private readonly Func<ScaleSetConfiguration, ScaleSetScaler> _scaleSetScalerFactory;
-        private readonly IBigBrother _bigBrother;
+        private readonly Func<CosmosDbDataPlaneConnection, ICosmosThroughputClient> _cosmosDataPlaneClientFactory;
+        private readonly Func<CosmosConfiguration, ControlPlaneCosmosScaler> _controlPlaneCosmosScalerFactory;
+        private readonly Func<ICosmosThroughputClient, CosmosConfiguration, CosmosScaler> _cosmosScalerFactory;
 
-        public ResourceScalerFactory(ICosmosThroughputClientFactory cosmosThroughputClientFactory,
+        public ResourceScalerFactory(
             Func<ScaleSetConfiguration, ScaleSetScaler> scaleSetScalerFactory,
-            IBigBrother bigBrother)
+            Func<CosmosDbDataPlaneConnection, ICosmosThroughputClient> cosmosDataPlaneClientFactory,
+            Func<CosmosConfiguration, ControlPlaneCosmosScaler> controlPlaneCosmosScalerFactory,
+            Func<ICosmosThroughputClient, CosmosConfiguration, CosmosScaler> cosmosScalerFactory)
         {
-            _cosmosThroughputClientFactory = cosmosThroughputClientFactory;
             _scaleSetScalerFactory = scaleSetScalerFactory;
-            _bigBrother = bigBrother;
+            _cosmosDataPlaneClientFactory = cosmosDataPlaneClientFactory;
+            _controlPlaneCosmosScalerFactory = controlPlaneCosmosScalerFactory;
+            _cosmosScalerFactory = cosmosScalerFactory;
         }
 
         public ResourceScaler CreateScaler(string name, ScaleManagerConfiguration configuration)
@@ -29,13 +33,19 @@ namespace Bullfrog.Actors.ResourceScalers
                 var cosmosConfiguration = configuration.CosmosConfigurations.FirstOrDefault(x => x.Name == name);
                 if (cosmosConfiguration != null)
                 {
-                    var client = _cosmosThroughputClientFactory.CreateClientClient(new CosmosDbConfiguration
+                    if (cosmosConfiguration.ControlPlaneConnection != null)
+                    {
+                        return _controlPlaneCosmosScalerFactory(cosmosConfiguration);
+                    }
+
+                    var connectionDetails = cosmosConfiguration.DataPlaneConnection ?? new CosmosDbDataPlaneConnection
                     {
                         AccountName = cosmosConfiguration.AccountName,
                         ContainerName = cosmosConfiguration.ContainerName,
                         DatabaseName = cosmosConfiguration.DatabaseName,
-                    });
-                    return new CosmosScaler(client, cosmosConfiguration, _bigBrother);
+                    };
+                    var client = _cosmosDataPlaneClientFactory(connectionDetails);
+                    return _cosmosScalerFactory(client, cosmosConfiguration);
                 }
             }
 

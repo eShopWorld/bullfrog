@@ -8,29 +8,24 @@
     <LangVersion>latest</LangVersion>
     <Platforms>x64</Platforms>
     <Platform>x64</Platform>
-    <RootNamespace />
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Castle.Core" Version="4.4.0" />
     <PackageReference Include="Eshopworld.Tests.Core" Version="1.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.App" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" Version="1.2.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.1.1" />
-    <PackageReference Include="Moq" Version="4.12.0" />
-    <PackageReference Include="ServiceFabric.Mocks" Version="3.4.14" />
-    <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
       <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Bullfrog.Actors.Interfaces\Bullfrog.Actors.Interfaces.csproj" />
     <ProjectReference Include="..\..\Bullfrog.Actors\Bullfrog.Actors.csproj" />
-    <ProjectReference Include="..\..\Bullfrog.Api\Bullfrog.Api.csproj" />
-    <ProjectReference Include="..\Bullfrog.Client\Bullfrog.Client.csproj" />
+    <ProjectReference Include="..\..\Bullfrog.Common\Bullfrog.Common.csproj" />
   </ItemGroup>
+
 
   <ItemGroup>
     <None Update="appsettings*.json">

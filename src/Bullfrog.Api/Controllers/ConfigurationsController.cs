@@ -59,7 +59,7 @@ namespace Bullfrog.Api.Controllers
         {
             var configuration = await GetConfigurationManager().GetScaleGroupConfiguration(scaleGroup);
             if (configuration != null)
-                return configuration;
+                return UpdateDefintion(configuration);
             else
                 return NotFound();
         }
@@ -107,6 +107,46 @@ namespace Bullfrog.Api.Controllers
                 ScaleGroup = scaleGroup,
             });
             return NoContent();
+        }
+
+        private ScaleGroupDefinition UpdateDefintion(ScaleGroupDefinition definition)
+        {
+            void UpdateCosmosConfiguration(CosmosConfiguration configuration)
+            {
+                if (configuration.ControlPlaneConnection == null && configuration.DataPlaneConnection == null)
+                {
+                    configuration.DataPlaneConnection = new Common.Models.CosmosDbDataPlaneConnection
+                    {
+                        AccountName = configuration.AccountName,
+                        ContainerName = configuration.ContainerName,
+                        DatabaseName = configuration.DatabaseName,
+                    };
+                    configuration.AccountName = null;
+                    configuration.ContainerName = null;
+                    configuration.DatabaseName = null;
+                }
+            }
+
+            if (definition.Cosmos != null)
+            {
+                foreach (var cosmos in definition.Cosmos)
+                {
+                    UpdateCosmosConfiguration(cosmos);
+                }
+            }
+
+            foreach (var region in definition.Regions)
+            {
+                if (region.Cosmos != null)
+                {
+                    foreach (var cosmos in region.Cosmos)
+                    {
+                        UpdateCosmosConfiguration(cosmos);
+                    }
+                }
+            }
+
+            return definition;
         }
     }
 }

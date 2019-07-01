@@ -11,6 +11,7 @@ using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common;
+using Bullfrog.Common.Models;
 using Client;
 using Eshopworld.Core;
 using Helpers;
@@ -27,10 +28,11 @@ using Microsoft.ServiceFabric.Actors.Runtime;
 using Moq;
 using ServiceFabric.Mocks;
 
-public class BaseApiTests
+public class BaseApiTests : IDisposable
 {
     protected readonly DateTimeOffset StartTime = new DateTimeOffset(2019, 2, 22, 0, 0, 0, 0,
        System.Globalization.CultureInfo.InvariantCulture.Calendar, TimeSpan.Zero);
+    private readonly TestServer _server;
 
     protected HttpClient HttpClient { get; }
 
@@ -64,8 +66,8 @@ public class BaseApiTests
         var builder = new WebHostBuilder()
             .ConfigureServices(ConfigureServices)
             .UseStartup<TestServerStartup>();
-        var server = new TestServer(builder);
-        HttpClient = server.CreateClient();
+         _server = new TestServer(builder);
+        HttpClient = _server.CreateClient();
         ApiClient = new BullfrogApi(new TokenCredentials("aa"), HttpClient, false);
         UtcNow = StartTime;
     }
@@ -112,8 +114,8 @@ public class BaseApiTests
         azureMoq.Setup(x => x.AutoscaleSettings.GetByIdAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(autoscaleSettingsMoq.Object);
 
-        var cosmosDbManagerMoq = new Mock<ICosmosDbHelper>();
-        cosmosDbManagerMoq.Setup(m => m.ValidateConfiguration(It.IsAny<CosmosDbConfiguration>()))
+        var cosmosDbManagerMoq = new Mock<ICosmosAccessValidator<CosmosDbDataPlaneConnection>>();
+        cosmosDbManagerMoq.Setup(m => m.ConfirmAccess(It.IsAny<CosmosDbDataPlaneConnection>()))
             .ReturnsAsync(ValidationResult.Success);
         services.AddTransient(_ => cosmosDbManagerMoq.Object);
 
@@ -304,6 +306,28 @@ public class BaseApiTests
             throw new NotImplementedException();
         }
     }
+
+    #region IDisposable Support
+    private bool _disposedValue = false; // To detect redundant calls
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposedValue)
+        {
+            if (disposing)
+            {
+                _server.Dispose();
+            }
+
+            _disposedValue = true;
+        }
+    }
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+        Dispose(true);
+    }
+    #endregion
 }
 
 
