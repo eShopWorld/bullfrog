@@ -99,11 +99,14 @@ public class ScaleGroupStateTests : BaseApiTests
                         new CosmosConfiguration
                         {
                             Name = "c",
-                            AccountName = "ac",
-                            DatabaseName = "dn",
                             MaximumRU = 1000,
                             MinimumRU = 400,
                             RequestUnitsPerRequest = 10,
+                            DataPlaneConnection = new CosmosDbDataPlaneConnection
+                            {
+                                AccountName = "ac",
+                                DatabaseName = "dn",
+                            }
                         },
                     },
                     ScaleSets = new List<ScaleSetConfiguration>

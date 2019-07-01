@@ -18,6 +18,7 @@ namespace Bullfrog.Actors.ResourceScalers
         {
             if (cosmosConfiguration.ControlPlaneConnection == null)
                 throw new ArgumentException("CosmosConfiguration must use ControlPlaneConnection.", nameof(cosmosConfiguration));
+
             _resourceManagementClient = resourceManagementClient;
             _cosmosConfiguration = cosmosConfiguration;
             _bigBrother = bigBrother;

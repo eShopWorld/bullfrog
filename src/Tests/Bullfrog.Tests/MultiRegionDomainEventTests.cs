@@ -125,11 +125,14 @@ public class MultiRegionDomainEventTests : BaseApiTests
                     new CosmosConfiguration
                     {
                         Name = "c1",
-                        AccountName = "ac",
-                        DatabaseName = "dn",
                         MaximumRU = 1000,
                         MinimumRU = 400,
                         RequestUnitsPerRequest = 10,
+                        DataPlaneConnection = new CosmosDbDataPlaneConnection
+                        {
+                            AccountName = "ac",
+                            DatabaseName = "dn",
+                        }
                     },
                 },
             CosmosDbPrescaleLeadTime = TimeSpan.FromHours(0.5).ToString(),
