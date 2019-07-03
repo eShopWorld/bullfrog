@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace Bullfrog.Actors.ResourceScalers
 {
@@ -8,12 +9,17 @@ namespace Bullfrog.Actors.ResourceScalers
     public abstract class ResourceScaler
     {
         /// <summary>
-        /// Attempts to change throughput.
+        /// Starts the scale out operation.
         /// </summary>
-        /// <param name="newThroughput">The new throughput.</param>
-        /// <returns>The throughput available if the operation completed,
-        /// null if scaling is in progress (in which case the method should
-        /// be called again after some delay)</returns>
-        public abstract Task<int?> SetThroughput(int? newThroughput);
+        /// <param name="throughput">The requested throughput.</param>
+        /// <param name="endsAt">The end scale out period hint.</param>
+        /// <returns>The final throughput value or null if the operation has not completed yet.</returns>
+        public abstract Task<int?> ScaleOut(int throughput, DateTimeOffset endsAt);
+
+        /// <summary>
+        /// Starts the scale in operation.
+        /// </summary>
+        /// <returns>The final throughput value or null if the operation has not completed yet.</returns>
+        public abstract Task<int?> ScaleIn();
     }
 }

@@ -69,7 +69,7 @@ public class BaseApiTests : IDisposable
         var builder = new WebHostBuilder()
             .ConfigureServices(ConfigureServices)
             .UseStartup<TestServerStartup>();
-         _server = new TestServer(builder);
+        _server = new TestServer(builder);
         HttpClient = _server.CreateClient();
         ApiClient = new BullfrogApi(new TokenCredentials("aa"), HttpClient, false);
         UtcNow = StartTime;
@@ -108,6 +108,8 @@ public class BaseApiTests : IDisposable
 
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
         autoscaleProfile.SetupGet(p => p.MaxInstanceCount).Returns(10);
+        autoscaleProfile.SetupGet(p => p.MinInstanceCount).Returns(2);
+        autoscaleProfile.SetupGet(p => p.Rules).Returns(new[] { new Mock<IScaleRule>().Object });
         var profiles = new Dictionary<string, IAutoscaleProfile> { ["pr"] = autoscaleProfile.Object };
         var autoscaleSettingsMoq = new Mock<IAutoscaleSetting>();
         autoscaleSettingsMoq.SetupGet(x => x.Profiles)
@@ -180,8 +182,10 @@ public class BaseApiTests : IDisposable
     protected void RegisterDefaultScalers()
     {
         var scalerMoq = new Mock<ResourceScaler>();
-        scalerMoq.Setup(x => x.SetThroughput(It.IsAny<int?>()))
-            .Returns((int? n) => Task.FromResult((int?)null));
+        scalerMoq.Setup(x => x.ScaleOut(It.IsAny<int>(), It.IsAny<DateTimeOffset>()))
+            .ReturnsAsync((int?)null);
+        scalerMoq.Setup(x => x.ScaleIn())
+            .ReturnsAsync((int?)null);
         ScalerFactoryMoq.Setup(x => x.CreateScaler(It.IsAny<string>(), It.IsAny<ScaleManagerConfiguration>()))
             .Returns(scalerMoq.Object);
     }
@@ -196,8 +200,10 @@ public class BaseApiTests : IDisposable
         }
 
         var scalerMoq = new Mock<ResourceScaler>();
-        scalerMoq.Setup(x => x.SetThroughput(It.IsAny<int?>()))
-            .Returns((int? n) => Task.FromResult(CalculateAndSaveThroughput(n)));
+        scalerMoq.Setup(x => x.ScaleOut(It.IsAny<int>(), It.IsAny<DateTimeOffset>()))
+            .Returns((int n, DateTimeOffset dt) => Task.FromResult(CalculateAndSaveThroughput(n)));
+        scalerMoq.Setup(x => x.ScaleIn())
+            .Returns(() => Task.FromResult(CalculateAndSaveThroughput(null)));
         ScalerFactoryMoq.Setup(x => x.CreateScaler(name, It.IsAny<ScaleManagerConfiguration>()))
             .Returns(scalerMoq.Object);
         ScaleHistory[name] = new List<(TimeSpan SinceStart, int? RequestedThroughput, int? ReachedThroughput)>();
@@ -283,10 +289,17 @@ public class BaseApiTests : IDisposable
             _logSetThroughputAction = logSetThroughputAction;
         }
 
-        public override async Task<int?> SetThroughput(int? newThroughput)
+        public override async Task<int?> ScaleIn()
         {
-            var result = await _scaler.SetThroughput(newThroughput);
-            _logSetThroughputAction(newThroughput, result);
+            var result = await _scaler.ScaleIn();
+            _logSetThroughputAction(null, result);
+            return result;
+        }
+
+        public override async Task<int?> ScaleOut(int throughput, DateTimeOffset endsAt)
+        {
+            var result = await _scaler.ScaleOut(throughput, endsAt);
+            _logSetThroughputAction(throughput, result);
             return result;
         }
     }

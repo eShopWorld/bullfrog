@@ -20,7 +20,17 @@ namespace TestScalers
             _currentThroughput = minThroughput;
         }
 
-        public override Task<int?> SetThroughput(int? newThroughput)
+        public override Task<int?> ScaleIn()
+        {
+            return SetThroughput(null);
+        }
+
+        public override Task<int?> ScaleOut(int throughput, DateTimeOffset validTill)
+        {
+            return SetThroughput(throughput);
+        }
+
+        private Task<int?> SetThroughput(int? newThroughput)
         {
             if (_currentThroughput != (newThroughput ?? _minThroughput))
             {

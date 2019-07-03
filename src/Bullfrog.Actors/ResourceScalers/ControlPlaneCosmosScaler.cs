@@ -20,9 +20,19 @@ namespace Bullfrog.Actors.ResourceScalers
             _bigBrother = bigBrother;
         }
 
-        public override async Task<int?> SetThroughput(int? newThroughput)
+        public override async Task<int?> ScaleIn()
         {
-            var newRequestUnits = (int)((newThroughput ?? 0) * _cosmosConfiguration.RequestUnitsPerRequest);
+            return await SetThroughput(null);
+        }
+
+        public override async Task<int?> ScaleOut(int throughput, DateTimeOffset endsAt)
+        {
+            return await SetThroughput(throughput);
+        }
+
+        private async Task<int?> SetThroughput(int? throughput)
+        {
+            var newRequestUnits = (int)((throughput ?? 0) * _cosmosConfiguration.RequestUnitsPerRequest);
             var roundedRequestUnits = (newRequestUnits + 99) / 100 * 100;
 
             var requestUnits = Math.Max(roundedRequestUnits, _cosmosConfiguration.MinimumRU);

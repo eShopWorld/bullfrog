@@ -99,17 +99,19 @@ namespace Bullfrog.Actors.Interfaces.Models
 
             if (!autoscale.Profiles.TryGetValue(ProfileName, out var profile))
             {
-                var message = $"The autoscale settings {AutoscaleSettingsResourceId} had no \"{ProfileName}\" profile";
+                var message = $"The autoscale setting {AutoscaleSettingsResourceId} had no \"{ProfileName}\" profile.";
+                return new ValidationResult(message, new[] { nameof(ProfileName) });
+            }
+
+            if(profile.Rules.Count == 0)
+            {
+                var message = $"The profile {ProfileName} in the autoscale setting {AutoscaleSettingsResourceId} is not based on a metric.";
                 return new ValidationResult(message, new[] { nameof(ProfileName) });
             }
 
             try
             {
-                await azure.UpdateAutoscaleProfile(
-                    AutoscaleSettingsResourceId,
-                    ProfileName,
-                    pr => (pr.MinInstanceCount, pr.DefaultInstanceCount), // keep values the same
-                    forceUpdate: true);
+                await autoscale.Update().ApplyAsync();
             }
             catch (Exception ex)
             {

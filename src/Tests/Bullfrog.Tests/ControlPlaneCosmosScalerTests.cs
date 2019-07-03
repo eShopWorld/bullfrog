@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.ResourceScalers;
@@ -30,7 +28,7 @@ public class ControlPlaneCosmosScalerTests
         var bigBrother = new Mock<IBigBrother>();
         var scaler = new ControlPlaneCosmosScaler(throughputClientMoq.Object, cosmosConfiguration, bigBrother.Object);
 
-        var result = await scaler.SetThroughput(21);
+        var result = await scaler.ScaleOut(21, DateTimeOffset.MaxValue);
 
         result.Should().Be(50);
     }
@@ -50,7 +48,7 @@ public class ControlPlaneCosmosScalerTests
         var bigBrother = new Mock<IBigBrother>();
         var scaler = new ControlPlaneCosmosScaler(throughputClientMoq.Object, cosmosConfiguration, bigBrother.Object);
 
-        var result = await scaler.SetThroughput(72);
+        var result = await scaler.ScaleOut(72, DateTimeOffset.MaxValue);
 
         result.Should().Be(70);
     }
@@ -70,7 +68,7 @@ public class ControlPlaneCosmosScalerTests
         var bigBrother = new Mock<IBigBrother>();
         var scaler = new ControlPlaneCosmosScaler(throughputClientMoq.Object, cosmosConfiguration, bigBrother.Object);
 
-        var result = await scaler.SetThroughput(55);
+        var result = await scaler.ScaleOut(55, DateTimeOffset.MaxValue);
 
         result.Should().Be(60);
     }
@@ -92,7 +90,7 @@ public class ControlPlaneCosmosScalerTests
         var bigBrother = new Mock<IBigBrother>();
         var scaler = new ControlPlaneCosmosScaler(throughputClientMoq.Object, cosmosConfiguration, bigBrother.Object);
 
-        var result = await scaler.SetThroughput(30);
+        var result = await scaler.ScaleOut(30, DateTimeOffset.MaxValue);
 
         result.Should().Be(60);
     }
@@ -111,7 +109,7 @@ public class ControlPlaneCosmosScalerTests
         var bigBrother = new Mock<IBigBrother>();
         var scaler = new ControlPlaneCosmosScaler(throughputClientMoq.Object, cosmosConfiguration, bigBrother.Object);
 
-        var result = await scaler.SetThroughput(45);
+        var result = await scaler.ScaleOut(45, DateTimeOffset.MaxValue);
 
         result.Should().Be(50);
     }

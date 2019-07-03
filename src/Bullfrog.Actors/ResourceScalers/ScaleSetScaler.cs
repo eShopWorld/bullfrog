@@ -26,35 +26,39 @@ namespace Bullfrog.Actors.ResourceScalers
             _bigBrother = bigBrother;
         }
 
-        public override async Task<int?> SetThroughput(int? newThroughput)
+        public override async Task<int?> ScaleIn()
         {
-            int expectedInstances;
-            if (newThroughput.HasValue)
+            await LogAzureCallDuration(_bigBrother, "RemoveBullfrogProfile", _configuration.AutoscaleSettingsResourceId, async () =>
             {
-                var instances = (int)(newThroughput.Value + (_configuration.ReservedInstances + 1) * _configuration.RequestsPerInstance - 1)
-                    / _configuration.RequestsPerInstance;
+                var azure = _authenticated.WithSubscriptionFor(_configuration.AutoscaleSettingsResourceId);
+                await azure.RemoveBullfrogProfile(_configuration.AutoscaleSettingsResourceId);
+            });
 
-                await UpdateProfile(_configuration, profile =>
-                {
-                    instances = Math.Min(profile.MaxInstanceCount,
-                        Math.Max(instances, _configuration.MinInstanceCount));
-                    var defaultInstances = Math.Min(profile.MaxInstanceCount,
-                        Math.Max(instances, _configuration.DefaultInstanceCount));
-                    return (instances, defaultInstances);
-                });
+            return 0;
+        }
 
-                expectedInstances = instances;
-            }
-            else
+        public override async Task<int?> ScaleOut(int throughput, DateTimeOffset endsAt)
+        {
+            var instances = (int)(throughput + (_configuration.ReservedInstances + 1) * _configuration.RequestsPerInstance - 1)
+                 / _configuration.RequestsPerInstance;
+
+            await LogAzureCallDuration(_bigBrother, "SaveBullfrogProfile", _configuration.AutoscaleSettingsResourceId, async () =>
             {
-                await UpdateProfile(_configuration,
-                    profile => (_configuration.MinInstanceCount, _configuration.DefaultInstanceCount));
-                expectedInstances = _configuration.MinInstanceCount;
-            }
+                var azure = _authenticated.WithSubscriptionFor(_configuration.AutoscaleSettingsResourceId);
+                await azure.SaveBullfrogProfile(_configuration.AutoscaleSettingsResourceId, _configuration.ProfileName,
+                    profile =>
+                    {
+                        instances = Math.Min(profile.MaxInstanceCount,
+                            Math.Max(instances, _configuration.MinInstanceCount));
+                        var defaultInstances = Math.Min(profile.MaxInstanceCount,
+                            Math.Max(instances, _configuration.DefaultInstanceCount));
+                        return (instances, defaultInstances);
+                    });
+            });
 
             var workingInstances = await _scaleSetMonitor.GetNumberOfWorkingInstances(
-                _configuration.LoadBalancerResourceId, _configuration.HealthPortPort);
-            if (expectedInstances < workingInstances)
+               _configuration.LoadBalancerResourceId, _configuration.HealthPortPort);
+            if (instances < workingInstances)
             {
                 var usableInstances = Math.Max(workingInstances - _configuration.ReservedInstances, 0);
                 return (int)(usableInstances * _configuration.RequestsPerInstance);
@@ -63,25 +67,26 @@ namespace Bullfrog.Actors.ResourceScalers
                 return null;
         }
 
-        private async Task UpdateProfile(
-            ScaleSetConfiguration configuration,
-            Func<IAutoscaleProfile, (int minInstance, int defaultInstances)> newInstanceCounts,
-            CancellationToken cancellationToken = default)
+        private static async Task LogAzureCallDuration(IBigBrother bigBrother, string operation, string resourceId, Func<Task> action)
         {
-            var listResourcesOperation = new AzureOperationDurationEvent
+            var durationEvent = new AzureOperationDurationEvent
             {
-                Operation = "UpdateAutoscale",
-                ResourceId = configuration.AutoscaleSettingsResourceId,
+                Operation = operation,
+                ResourceId = resourceId,
             };
+            try
+            {
+                await action();
+            }
+            catch (Exception ex)
+            {
+                durationEvent.ExceptionMessage = ex.Message;
+                bigBrother.Publish(durationEvent);
 
-            var azure = _authenticated.WithSubscriptionFor(configuration.AutoscaleSettingsResourceId);
-            await azure.UpdateAutoscaleProfile(
-                configuration.AutoscaleSettingsResourceId,
-                configuration.ProfileName,
-                newInstanceCounts,
-                forceUpdate: false,
-                cancellationToken);
-            _bigBrother.Publish(listResourcesOperation);
+                throw;
+            }
+
+            bigBrother.Publish(durationEvent);
         }
     }
 }

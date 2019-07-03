@@ -231,7 +231,7 @@ namespace Bullfrog.Actors
             return WakeMeAt(_dateTimeProvider.UtcNow);
         }
 
-        void CreateScaleRequests(Dictionary<string, ScaleRequest> scaleRequests, int? throughput, string resourceType, IEnumerable<string> names)
+        void CreateScaleRequests(Dictionary<string, ScaleRequest> scaleRequests, int? throughput, DateTimeOffset? endsAt, string resourceType, IEnumerable<string> names)
         {
             bool replacing = false;
 
@@ -241,7 +241,7 @@ namespace Bullfrog.Actors
                     replacing = true;
 
                 scaleRequests[name]
-                    = new ScaleRequest(throughput, _dateTimeProvider.UtcNow);
+                    = new ScaleRequest(throughput, endsAt, _dateTimeProvider.UtcNow);
             }
 
             BigBrother.Publish(new ScaleChangeStarted
@@ -273,7 +273,8 @@ namespace Bullfrog.Actors
                 {
                     // the requested throughput has been changes so scale requests for all resources must be created.
                     state.RequestedScaleSetThroughput = scaleSetThroughput;
-                    CreateScaleRequests(state.ScaleRequests, scaleSetThroughput, "scalesets", configuration.ScaleSetConfigurations.Select(o => o.Name));
+                    var endsAt = FindEndOfActiveEvents(events, now, configuration.ScaleSetPrescaleLeadTime);
+                    CreateScaleRequests(state.ScaleRequests, scaleSetThroughput, endsAt, "scalesets", configuration.ScaleSetConfigurations.Select(o => o.Name));
                 }
             }
 
@@ -286,7 +287,8 @@ namespace Bullfrog.Actors
                 {
                     // the requested throughput has been changes so scale requests for all resources must be created.
                     state.RequestedCosmosThroughput = cosmosThroughput;
-                    CreateScaleRequests(state.ScaleRequests, cosmosThroughput, "cosmosdb", configuration.CosmosConfigurations.Select(o => o.Name));
+                    var endsAt = FindEndOfActiveEvents(events, now, configuration.CosmosDbPrescaleLeadTime);
+                    CreateScaleRequests(state.ScaleRequests, cosmosThroughput, endsAt, "cosmosdb", configuration.CosmosConfigurations.Select(o => o.Name));
                 }
             }
 
@@ -507,6 +509,13 @@ namespace Bullfrog.Actors
             return total;
         }
 
+        private static DateTimeOffset? FindEndOfActiveEvents(IEnumerable<ManagedScaleEvent> events, DateTimeOffset now, TimeSpan leadTime)
+        {
+            return events
+                .Where(e => e.IsActive(now, leadTime))
+                .Max(x => (DateTimeOffset?)x.StartScaleDownAt);
+        }
+
         private static DateTimeOffset? FindNextWakeUpTime(IEnumerable<ManagedScaleEvent> events, DateTimeOffset now, TimeSpan scaleSetLeadTime, TimeSpan cosmosDbLeadTime)
         {
             var nextTime = events.SelectMany(ev => new[] { ev.StartScaleDownAt, ev.RequiredScaleAt, ev.RequiredScaleAt - cosmosDbLeadTime, ev.RequiredScaleAt - scaleSetLeadTime })
@@ -569,6 +578,9 @@ namespace Bullfrog.Actors
             public int? RequestedThroughput { get; set; }
 
             [DataMember]
+            public DateTimeOffset? EndsAt { get; set; }
+
+            [DataMember]
             public int? FinalThroughput { get; set; }
 
             [DataMember]
@@ -595,9 +607,10 @@ namespace Bullfrog.Actors
                 }
             }
 
-            public ScaleRequest(int? throughput, DateTimeOffset now)
+            public ScaleRequest(int? throughput, DateTimeOffset? endsAt, DateTimeOffset now)
             {
                 RequestedThroughput = throughput;
+                EndsAt = endsAt;
                 OperationStarted = now;
             }
 
@@ -609,7 +622,9 @@ namespace Bullfrog.Actors
                 try
                 {
                     var scaler = getScaler();
-                    FinalThroughput = await scaler.SetThroughput(RequestedThroughput);
+                    FinalThroughput = RequestedThroughput.HasValue
+                        ? await scaler.ScaleOut(RequestedThroughput.Value, EndsAt.Value)
+                        : await scaler.ScaleIn();
                     ResetError();
                     return Status;
                 }
