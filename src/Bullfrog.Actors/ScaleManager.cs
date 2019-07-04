@@ -87,8 +87,24 @@ namespace Bullfrog.Actors
             // For more information, see https://aka.ms/servicefabricactorsstateserialization
 
             await _events.TryAdd(new List<ManagedScaleEvent>());
+            await FixStateModelSchameChange();
             await _scaleState.TryAdd(new ScalingState());
             await StateManager.TryRemoveStateAsync("scaleOutStarted"); // no longer used
+
+            // The temporary way of dealing with incompatible schame change.
+            async Task FixStateModelSchameChange()
+            {
+                try
+                {
+                    await _scaleState.TryGet();
+                }
+                catch (Exception ex)
+                {
+                    var descriptionEx = new Exception($"Failed to read scale set. Reseting it.", ex);
+                    BigBrother.Publish(descriptionEx.ToExceptionEvent());
+                    await _scaleState.TryRemove();
+                }
+            }
         }
 
         async Task IScaleManager.DeleteScaleEvent(Guid id)
@@ -232,7 +248,15 @@ namespace Bullfrog.Actors
             return WakeMeAt(_dateTimeProvider.UtcNow);
         }
 
-        void CreateScaleRequests(Dictionary<string, ScaleRequest> scaleRequests, int? throughput, DateTimeOffset? endsAt, string resourceType, IEnumerable<string> names)
+        void AddScaleOutRequests(Dictionary<string, ScaleRequest> scaleRequests, int throughput, DateTimeOffset endsAt,
+            string resourceType, IEnumerable<string> names)
+            => AddScaleRequest(throughput, scaleRequests, () => new ScaleOutRequest(throughput, endsAt, _dateTimeProvider.UtcNow), resourceType, names);
+
+        void AddScaleInRequests(Dictionary<string, ScaleRequest> scaleRequests, string resourceType, IEnumerable<string> names)
+            => AddScaleRequest(null, scaleRequests, () => new ScaleInRequest(_dateTimeProvider.UtcNow), resourceType, names);
+
+        private void AddScaleRequest(int? requestedThroughput, Dictionary<string, ScaleRequest> scaleRequests,
+            Func<ScaleRequest> scaleRequestFactory, string resourceType, IEnumerable<string> names)
         {
             bool replacing = false;
 
@@ -241,17 +265,44 @@ namespace Bullfrog.Actors
                 if (scaleRequests.TryGetValue(name, out var previous) && previous.IsExecuting)
                     replacing = true;
 
-                scaleRequests[name]
-                    = new ScaleRequest(throughput, endsAt, _dateTimeProvider.UtcNow);
+                scaleRequests[name] = scaleRequestFactory();
             }
 
             BigBrother.Publish(new ScaleChangeStarted
             {
                 ActorId = Id.ToString(),
                 ResourceType = resourceType,
-                RequestedThroughput = throughput ?? -1,
+                RequestedThroughput = requestedThroughput ?? -1,
                 PreviousChangeNotCompleted = replacing,
             });
+        }
+
+        private int? CreateScaleRequests(int? requestedThroughput, Dictionary<string, ScaleRequest> scaleRequests,
+            List<ManagedScaleEvent> events, IEnumerable<string> resourceNames, TimeSpan leadTime,
+            string resourceType, DateTimeOffset now)
+        {
+            var resources = resourceNames?.ToList();
+            if (resources != null && resources.Any())
+            {
+                var throughput = CalculateTotalThroughput(events, now, leadTime);
+                if (throughput != requestedThroughput)
+                {
+                    // the requested throughput has been changes so scale requests for all resources must be created.
+                    if (throughput.HasValue)
+                    {
+                        var endsAt = FindEndOfActiveEvents(events, now, leadTime);
+                        AddScaleOutRequests(scaleRequests, throughput.Value, endsAt.Value, resourceType, resources);
+                    }
+                    else
+                    {
+                        AddScaleInRequests(scaleRequests, "scalesets", resources);
+                    }
+                }
+
+                return throughput;
+            }
+
+            return null;
         }
 
         private async Task UpdateState(CancellationToken cancellationToken = default)
@@ -261,66 +312,21 @@ namespace Bullfrog.Actors
             var state = await _scaleState.Get();
             var now = _dateTimeProvider.UtcNow;
 
-            var scaleEventInProgress = false;
-
-            // TODO: replace two following ifs with one shared method
-
-            // Check whether scale sets throughput needs to be changed.
-            if (configuration.ScaleSetConfigurations.Any())
-            {
-                var scaleSetThroughput = CalculateTotalThroughput(events, now, configuration.ScaleSetPrescaleLeadTime);
-                scaleEventInProgress |= scaleSetThroughput.HasValue;
-                if (scaleSetThroughput != state.RequestedScaleSetThroughput)
-                {
-                    // the requested throughput has been changes so scale requests for all resources must be created.
-                    state.RequestedScaleSetThroughput = scaleSetThroughput;
-                    var endsAt = FindEndOfActiveEvents(events, now, configuration.ScaleSetPrescaleLeadTime);
-                    CreateScaleRequests(state.ScaleRequests, scaleSetThroughput, endsAt, "scalesets", configuration.ScaleSetConfigurations.Select(o => o.Name));
-                }
-            }
-
-            // Check whether cosmos db throughput needs to be changed.
-            if (configuration.CosmosConfigurations != null && configuration.CosmosConfigurations.Any())
-            {
-                var cosmosThroughput = CalculateTotalThroughput(events, now, configuration.CosmosDbPrescaleLeadTime);
-                scaleEventInProgress |= cosmosThroughput.HasValue;
-                if (cosmosThroughput != state.RequestedCosmosThroughput)
-                {
-                    // the requested throughput has been changes so scale requests for all resources must be created.
-                    state.RequestedCosmosThroughput = cosmosThroughput;
-                    var endsAt = FindEndOfActiveEvents(events, now, configuration.CosmosDbPrescaleLeadTime);
-                    CreateScaleRequests(state.ScaleRequests, cosmosThroughput, endsAt, "cosmosdb", configuration.CosmosConfigurations.Select(o => o.Name));
-                }
-            }
+            state.RequestedScaleSetThroughput = CreateScaleRequests(state.RequestedScaleSetThroughput, state.ScaleRequests, events,
+                configuration.ScaleSetConfigurations.Select(x => x.Name), configuration.ScaleSetPrescaleLeadTime, "scalesets", now);
+            state.RequestedCosmosThroughput = CreateScaleRequests(state.RequestedCosmosThroughput, state.ScaleRequests, events,
+                configuration.CosmosConfigurations?.Select(x => x.Name), configuration.CosmosDbPrescaleLeadTime, "cosmosdb", now);
 
             // Process new or previously created scale change requests
-            foreach (var scaleRequestKV in state.ScaleRequests.Where(x => x.Value.IsExecuting))
+            foreach (var scaleRequestKV in state.ScaleRequests)
             {
                 var name = scaleRequestKV.Key;
                 var scaleRequest = scaleRequestKV.Value;
-                try
-                {
-                    var status = await scaleRequest.Process(_dateTimeProvider.UtcNow, () => GetScaler(name, configuration));
-                    if (status == ScaleRequestStatus.Completed || status == ScaleRequestStatus.Limited)
-                    {
-                        BigBrother.Publish(new ResourceScalingCompleted
-                        {
-                            ActorId = Id.ToString(),
-                            FinalThroughput = scaleRequest.FinalThroughput.Value,
-                            Duration = _dateTimeProvider.UtcNow - scaleRequest.OperationStarted,
-                            RequiredThroughput = scaleRequest.RequestedThroughput ?? -1,
-                            ResourceName = name,
-                        });
-                    }
-                }
-                catch (Exception ex)
-                {
-                    var contextEx = new BullfrogException($"Failed to scale {name} to {scaleRequest.RequestedThroughput}", ex);
-                    BigBrother.Publish(contextEx.ToExceptionEvent());
-                }
+                await scaleRequest.Process(_dateTimeProvider.UtcNow, () => GetScaler(name, configuration), BigBrother, name, Id.ToString());
             }
 
-            if (scaleEventInProgress)
+            var isScaledOut = state.RequestedScaleSetThroughput.HasValue || state.RequestedCosmosThroughput.HasValue;
+            if (isScaledOut)
             {
                 if (!state.ScalingOutStartTime.HasValue)
                     state.ScalingOutStartTime = _dateTimeProvider.UtcNow;
@@ -337,7 +343,7 @@ namespace Bullfrog.Actors
                 : configuration.ScaleSetPrescaleLeadTime;
             var finalScale = state.ScaleRequests.Any(o => o.Value.IsExecuting)
                 ? null
-                : state.ScaleRequests.Min(o => o.Value.FinalThroughput);
+                : state.ScaleRequests.Min(o => o.Value.CompletedThroughput);
             await ReportEventState(events, now, maxLeadTime,
                 finalScale,
                 state.ScaleRequests.Any(o => o.Value.Status == ScaleRequestStatus.Failing));
@@ -352,7 +358,7 @@ namespace Bullfrog.Actors
                     configuration.CosmosDbPrescaleLeadTime);
             await WakeMeAt(nextWakeUpTime);
 
-            if (!scaleEventInProgress && state.ScaleRequests.All(x => !x.Value.IsExecuting))
+            if (!isScaledOut && state.ScaleRequests.All(x => !x.Value.IsExecuting))
                 state.ScaleRequests.Clear();
             await _scaleState.Set(state);
 
@@ -448,7 +454,6 @@ namespace Bullfrog.Actors
                     reportedEventStates.Remove(ev.Key);
                 }
             }
-
 
             if (changes.Any())
             {
@@ -570,20 +575,12 @@ namespace Bullfrog.Actors
         }
 
         [DataContract]
+        [KnownType(typeof(ScaleOutRequest))]
+        [KnownType(typeof(ScaleInRequest))]
         private class ScaleRequest
         {
-            private static readonly TimeSpan EndsAtHintDelay = TimeSpan.FromMinutes(3);
             private static readonly TimeSpan DefaultErrorDelay = TimeSpan.FromMinutes(1);
             private static readonly TimeSpan MaxErrorDelay = TimeSpan.FromMinutes(5);
-
-            [DataMember]
-            public int? RequestedThroughput { get; set; }
-
-            [DataMember]
-            public DateTimeOffset? EndsAt { get; set; }
-
-            [DataMember]
-            public int? FinalThroughput { get; set; }
 
             [DataMember]
             public DateTimeOffset? TryAfter { get; set; }
@@ -594,48 +591,74 @@ namespace Bullfrog.Actors
             [DataMember]
             public DateTimeOffset OperationStarted { get; set; }
 
-            public bool IsExecuting => !FinalThroughput.HasValue;
+            public virtual bool IsExecuting => false;
+
+            public virtual int? CompletedThroughput => null;
+
+            protected virtual ScaleRequestStatus CompletionStatus => ScaleRequestStatus.Completed;
 
             public ScaleRequestStatus Status
             {
                 get
                 {
-                    if (FinalThroughput.HasValue)
-                        return (RequestedThroughput ?? 0) <= FinalThroughput.Value
-                            ? ScaleRequestStatus.Completed
-                            : ScaleRequestStatus.Limited;
-                    else
+                    if (IsExecuting)
                         return TryAfter.HasValue ? ScaleRequestStatus.Failing : ScaleRequestStatus.InProgress;
+                    else
+                        return CompletionStatus;
                 }
             }
 
-            public ScaleRequest(int? throughput, DateTimeOffset? endsAt, DateTimeOffset now)
+            public ScaleRequest(DateTimeOffset now)
             {
-                RequestedThroughput = throughput;
-                EndsAt = endsAt;
                 OperationStarted = now;
             }
 
-            public async Task<ScaleRequestStatus> Process(DateTimeOffset now, Func<ResourceScaler> getScaler)
+            public async Task Process(DateTimeOffset now, Func<ResourceScaler> getScaler, IBigBrother bigBrother, string resourceName, string actorId)
             {
+                if (!IsExecuting)
+                    return;
+
                 if (now < TryAfter)
-                    return ScaleRequestStatus.Failing;
+                    return;
 
                 try
                 {
-                    var scaler = getScaler();
-                    if (RequestedThroughput.HasValue)
-                        FinalThroughput = await scaler.ScaleOut(RequestedThroughput.Value, EndsAt.Value + EndsAtHintDelay);
-                    else
-                        FinalThroughput = await scaler.ScaleIn() ? (int?)1 : null;
+                    await ProcessRequest(getScaler());
                     ResetError();
-                    return Status;
+
+                    if (!IsExecuting)
+                    {
+                        var ev = new ResourceScalingCompleted
+                        {
+                            ActorId = actorId,
+                            Duration = now - OperationStarted,
+                            ResourceName = resourceName,
+                        };
+                        UpdateCompletionEvent(ev);
+                        bigBrother.Publish(ev);
+                    }
                 }
-                catch
+                catch (Exception ex)
                 {
                     RegisterError(now);
-                    throw;
+                    var contextEx = new BullfrogException($"Failed to {OperationDescription(resourceName)}", ex);
+                    bigBrother.Publish(contextEx.ToExceptionEvent());
                 }
+            }
+
+            protected virtual void UpdateCompletionEvent(ResourceScalingCompleted ev)
+            {
+            }
+
+            protected virtual string OperationDescription(string resourceName)
+            {
+                throw new NotImplementedException();
+            }
+
+            protected virtual Task ProcessRequest(ResourceScaler scaler)
+            {
+                // This code is only temporary. This method will be abstract.
+                throw new NotImplementedException("Old ScaleRequest");
             }
 
             private void RegisterError(DateTimeOffset now)
@@ -656,6 +679,74 @@ namespace Bullfrog.Actors
                 ErrorDelay = null;
                 TryAfter = null;
             }
+        }
+
+        private class ScaleOutRequest : ScaleRequest
+        {
+            private static readonly TimeSpan EndsAtHintDelay = TimeSpan.FromMinutes(3);
+
+            [DataMember]
+            public int RequestedThroughput { get; set; }
+
+            [DataMember]
+            public DateTimeOffset EndsAt { get; set; }
+
+            [DataMember]
+            public int? FinalThroughput { get; set; }
+
+            public override int? CompletedThroughput => FinalThroughput;
+
+            public override bool IsExecuting => !FinalThroughput.HasValue;
+
+            protected override ScaleRequestStatus CompletionStatus => RequestedThroughput <= FinalThroughput.Value
+                       ? ScaleRequestStatus.Completed
+                       : ScaleRequestStatus.Limited;
+
+            public ScaleOutRequest(int throughput, DateTimeOffset endsAt, DateTimeOffset now)
+                : base(now)
+            {
+                RequestedThroughput = throughput;
+                EndsAt = endsAt;
+            }
+
+            protected override void UpdateCompletionEvent(ResourceScalingCompleted ev)
+            {
+                ev.FinalThroughput = FinalThroughput.Value;
+                ev.RequiredThroughput = RequestedThroughput;
+            }
+
+            protected override async Task ProcessRequest(ResourceScaler scaler)
+            {
+                FinalThroughput = await scaler.ScaleOut(RequestedThroughput, EndsAt + EndsAtHintDelay);
+            }
+
+            protected override string OperationDescription(string resourceName)
+                => $"scale out {resourceName} to {RequestedThroughput}";
+        }
+
+        private class ScaleInRequest : ScaleRequest
+        {
+            [DataMember]
+            public bool Completed { get; set; }
+
+            public override bool IsExecuting => !Completed;
+
+            public override int? CompletedThroughput => Completed ? 0 : (int?)null;
+
+            protected override ScaleRequestStatus CompletionStatus => ScaleRequestStatus.Completed;
+
+            public ScaleInRequest(DateTimeOffset now)
+                : base(now)
+            {
+            }
+
+            protected override async Task ProcessRequest(ResourceScaler scaler)
+            {
+                Completed = await scaler.ScaleIn();
+            }
+
+            protected override string OperationDescription(string resourceName)
+                => $"scale in {resourceName}";
         }
     }
 }
