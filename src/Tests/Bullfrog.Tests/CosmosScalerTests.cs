@@ -32,11 +32,18 @@ public class CosmosScalerTests
         };
         var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
-        var result = newThroughput.HasValue
-            ? await scaler.ScaleOut(newThroughput.Value, DateTimeOffset.MaxValue)
-            : await scaler.ScaleIn();
+        if (newThroughput.HasValue)
+        {
+            var result = await scaler.ScaleOut(newThroughput.Value, DateTimeOffset.MaxValue);
 
-        result.Should().Be(40);
+            result.Should().Be(40);
+        }
+        else
+        {
+            await scaler.ScaleIn();
+        }
+
+        cosmosThroughputClinetMoq.VerifyAll();
     }
 
     [Theory, IsLayer0]
@@ -58,11 +65,18 @@ public class CosmosScalerTests
         };
         var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
-        var result = newThroughput.HasValue
-           ? await scaler.ScaleOut(newThroughput.Value, DateTimeOffset.MaxValue)
-           : await scaler.ScaleIn();
+        if(newThroughput.HasValue)
+        {
+            var result = await scaler.ScaleOut(newThroughput.Value, DateTimeOffset.MaxValue);
 
-        result.Should().Be(30);
+            result.Should().Be(30);
+        }
+        else
+        {
+            await scaler.ScaleIn();
+        }
+
+        cosmosThroughputClinetMoq.VerifyAll();
     }
 
     [Theory, IsLayer0]
@@ -84,11 +98,18 @@ public class CosmosScalerTests
         };
         var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
-        var result = newThroughput.HasValue
-        ? await scaler.ScaleOut(newThroughput.Value, DateTimeOffset.MaxValue)
-        : await scaler.ScaleIn();
+        if (newThroughput.HasValue)
+        {
+            var result = await scaler.ScaleOut(newThroughput.Value, DateTimeOffset.MaxValue);
 
-        result.Should().BeNull();
+            result.Should().BeNull();
+        }
+        else
+        {
+            await scaler.ScaleIn();
+        }
+
+        cosmosThroughputClinetMoq.VerifyAll();
     }
 
     [Theory, IsLayer0]
@@ -115,11 +136,18 @@ public class CosmosScalerTests
         };
         var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
-        var result = newThroughput.HasValue
-       ? await scaler.ScaleOut(newThroughput.Value, DateTimeOffset.MaxValue)
-       : await scaler.ScaleIn();
+        if (newThroughput.HasValue)
+        {
+            var result = await scaler.ScaleOut(newThroughput.Value, DateTimeOffset.MaxValue);
 
-        result.Should().Be(setValue / 10);
+            result.Should().Be(setValue / 10);
+        }
+        else
+        {
+            await scaler.ScaleIn();
+        }
+
+        cosmosThroughputClinetMoq.VerifyAll();
     }
 
     [Fact, IsLayer0]

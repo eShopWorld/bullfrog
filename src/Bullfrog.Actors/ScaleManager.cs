@@ -202,6 +202,7 @@ namespace Bullfrog.Actors
             await _events.Set(new List<ManagedScaleEvent>());
             await _configuration.TryRemove();
             await _scaleState.Set(new ScalingState());
+            await _reportedEventStates.TryRemove();
             await WakeMeAt(null);
         }
 
@@ -571,8 +572,9 @@ namespace Bullfrog.Actors
         [DataContract]
         private class ScaleRequest
         {
-            private readonly TimeSpan DefaultErrorDelay = TimeSpan.FromMinutes(1);
-            private readonly TimeSpan MaxErrorDelay = TimeSpan.FromMinutes(5);
+            private static readonly TimeSpan EndsAtHintDelay = TimeSpan.FromMinutes(3);
+            private static readonly TimeSpan DefaultErrorDelay = TimeSpan.FromMinutes(1);
+            private static readonly TimeSpan MaxErrorDelay = TimeSpan.FromMinutes(5);
 
             [DataMember]
             public int? RequestedThroughput { get; set; }
@@ -622,9 +624,10 @@ namespace Bullfrog.Actors
                 try
                 {
                     var scaler = getScaler();
-                    FinalThroughput = RequestedThroughput.HasValue
-                        ? await scaler.ScaleOut(RequestedThroughput.Value, EndsAt.Value)
-                        : await scaler.ScaleIn();
+                    if (RequestedThroughput.HasValue)
+                        FinalThroughput = await scaler.ScaleOut(RequestedThroughput.Value, EndsAt.Value + EndsAtHintDelay);
+                    else
+                        FinalThroughput = await scaler.ScaleIn() ? (int?)1 : null;
                     ResetError();
                     return Status;
                 }

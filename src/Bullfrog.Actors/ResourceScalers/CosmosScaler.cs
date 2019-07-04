@@ -20,9 +20,9 @@ namespace Bullfrog.Actors.ResourceScalers
             _bigBrother = bigBrother;
         }
 
-        public override async Task<int?> ScaleIn()
+        public override async Task<bool> ScaleIn()
         {
-            return await SetThroughput(null);
+            return await SetThroughput(null) != null;
         }
 
         public override async Task<int?> ScaleOut(int throughput, DateTimeOffset endsAt)

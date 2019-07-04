@@ -20,9 +20,9 @@ namespace TestScalers
             _currentThroughput = minThroughput;
         }
 
-        public override Task<int?> ScaleIn()
+        public override async Task<bool> ScaleIn()
         {
-            return SetThroughput(null);
+            return await SetThroughput(null) != null;
         }
 
         public override Task<int?> ScaleOut(int throughput, DateTimeOffset validTill)

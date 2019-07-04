@@ -16,11 +16,13 @@ namespace Bullfrog.Common
     {
         private const string BullfrogProfileName = "BullfrogProfile";
 
-        public static async Task<IAzure> SaveBullfrogProfile(
+        public static async Task<int> SaveBullfrogProfile(
             this IAzure azure,
             string autoscaleSettingsResourceId,
             string defaultProfileName,
-            Func<IAutoscaleProfile, (int minInstance, int defaultInstances)> instanceCalculator,
+            int instances,
+            DateTimeOffset start,
+            DateTimeOffset end,
             CancellationToken cancellationToken = default)
         {
             var autoscale = await azure.AutoscaleSettings.ValidateAccessAsync(autoscaleSettingsResourceId, cancellationToken);
@@ -29,15 +31,21 @@ namespace Bullfrog.Common
                 throw new BullfrogException($"The profile {defaultProfileName} has not been found in the autoscale settings {autoscaleSettingsResourceId}.");
             }
 
-            var (minInstance, defaultInstances) = instanceCalculator(defaultProfile);
+            var minInstances = Math.Max(defaultProfile.MinInstanceCount, instances);
+            minInstances = Math.Min(defaultProfile.MaxInstanceCount, minInstances);
+            var defaultInstances = Math.Max(defaultProfile.DefaultInstanceCount, minInstances);
 
             if (autoscale.Profiles.TryGetValue(BullfrogProfileName, out var bullfrogProfile))
             {
-                if (bullfrogProfile.MinInstanceCount != minInstance || bullfrogProfile.DefaultInstanceCount != defaultInstances)
+                if (bullfrogProfile.MinInstanceCount != minInstances
+                    || bullfrogProfile.DefaultInstanceCount != defaultInstances
+                    || bullfrogProfile.FixedDateSchedule == null
+                    || bullfrogProfile.FixedDateSchedule.End != end.UtcDateTime )
                 {
                     await autoscale.Update()
                          .UpdateAutoscaleProfile(BullfrogProfileName)
-                         .WithMetricBasedScale(minInstance, defaultProfile.MaxInstanceCount, defaultInstances)
+                         .WithMetricBasedScale(minInstances, defaultProfile.MaxInstanceCount, defaultInstances)
+                         .WithFixedDateSchedule("UTC", start.UtcDateTime, end.UtcDateTime)
                          .Parent()
                          .ApplyAsync();
                 }
@@ -46,13 +54,14 @@ namespace Bullfrog.Common
             {
                 await autoscale.Update()
                     .DefineAutoscaleProfile(BullfrogProfileName)
-                    .WithMetricBasedScale(minInstance, defaultProfile.MaxInstanceCount, defaultInstances)
+                    .WithMetricBasedScale(minInstances, defaultProfile.MaxInstanceCount, defaultInstances)
                     .AddRules(defaultProfile.Rules)
+                    .WithFixedDateSchedule("UTC", start.UtcDateTime, end.UtcDateTime)
                     .Attach()
                     .ApplyAsync();
             }
 
-            return azure;
+            return minInstances;
         }
 
         public static async Task<IAutoscaleSetting> RemoveBullfrogProfile(

@@ -19,7 +19,7 @@ namespace Bullfrog.Actors.ResourceScalers
         /// <summary>
         /// Starts the scale in operation.
         /// </summary>
-        /// <returns>The final throughput value or null if the operation has not completed yet.</returns>
-        public abstract Task<int?> ScaleIn();
+        /// <returns>Returns true if operation has completed or false if the request should be repeated after some delay.</returns>
+        public abstract Task<bool> ScaleIn();
     }
 }

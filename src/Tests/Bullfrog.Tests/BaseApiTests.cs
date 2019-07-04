@@ -185,7 +185,7 @@ public class BaseApiTests : IDisposable
         scalerMoq.Setup(x => x.ScaleOut(It.IsAny<int>(), It.IsAny<DateTimeOffset>()))
             .ReturnsAsync((int?)null);
         scalerMoq.Setup(x => x.ScaleIn())
-            .ReturnsAsync((int?)null);
+            .ReturnsAsync(true);
         ScalerFactoryMoq.Setup(x => x.CreateScaler(It.IsAny<string>(), It.IsAny<ScaleManagerConfiguration>()))
             .Returns(scalerMoq.Object);
     }
@@ -203,7 +203,7 @@ public class BaseApiTests : IDisposable
         scalerMoq.Setup(x => x.ScaleOut(It.IsAny<int>(), It.IsAny<DateTimeOffset>()))
             .Returns((int n, DateTimeOffset dt) => Task.FromResult(CalculateAndSaveThroughput(n)));
         scalerMoq.Setup(x => x.ScaleIn())
-            .Returns(() => Task.FromResult(CalculateAndSaveThroughput(null)));
+            .Returns(() => Task.FromResult(CalculateAndSaveThroughput(null) != null));
         ScalerFactoryMoq.Setup(x => x.CreateScaler(name, It.IsAny<ScaleManagerConfiguration>()))
             .Returns(scalerMoq.Object);
         ScaleHistory[name] = new List<(TimeSpan SinceStart, int? RequestedThroughput, int? ReachedThroughput)>();
@@ -289,10 +289,10 @@ public class BaseApiTests : IDisposable
             _logSetThroughputAction = logSetThroughputAction;
         }
 
-        public override async Task<int?> ScaleIn()
+        public override async Task<bool> ScaleIn()
         {
             var result = await _scaler.ScaleIn();
-            _logSetThroughputAction(null, result);
+            _logSetThroughputAction(null, result ? 1 : 0);
             return result;
         }
 

@@ -20,9 +20,9 @@ namespace Bullfrog.Actors.ResourceScalers
             _bigBrother = bigBrother;
         }
 
-        public override async Task<int?> ScaleIn()
+        public override async Task<bool> ScaleIn()
         {
-            return await SetThroughput(null);
+            return await SetThroughput(null) != null;
         }
 
         public override async Task<int?> ScaleOut(int throughput, DateTimeOffset endsAt)
@@ -51,7 +51,7 @@ namespace Bullfrog.Actors.ResourceScalers
                 {
                     _bigBrother.Publish(new CosmosThroughputTooLow
                     {
-                        CosmosAccunt = _cosmosConfiguration.Name,
+                        CosmosAccount = _cosmosConfiguration.Name,
                         ErrorMessage = ex.Message,
                         MinThroughput = ex.MinimumThroughput,
                         ThroughputRequired = requestUnits,
