@@ -577,7 +577,7 @@ namespace Bullfrog.Actors
         [DataContract]
         [KnownType(typeof(ScaleOutRequest))]
         [KnownType(typeof(ScaleInRequest))]
-        private class ScaleRequest
+        private abstract class ScaleRequest
         {
             private static readonly TimeSpan DefaultErrorDelay = TimeSpan.FromMinutes(1);
             private static readonly TimeSpan MaxErrorDelay = TimeSpan.FromMinutes(5);
@@ -591,11 +591,11 @@ namespace Bullfrog.Actors
             [DataMember]
             public DateTimeOffset OperationStarted { get; set; }
 
-            public virtual bool IsExecuting => false;
+            public abstract bool IsExecuting { get; }
 
-            public virtual int? CompletedThroughput => null;
+            public abstract int? CompletedThroughput { get; }
 
-            protected virtual ScaleRequestStatus CompletionStatus => ScaleRequestStatus.Completed;
+            protected abstract ScaleRequestStatus CompletionStatus { get; }
 
             public ScaleRequestStatus Status
             {
@@ -646,20 +646,11 @@ namespace Bullfrog.Actors
                 }
             }
 
-            protected virtual void UpdateCompletionEvent(ResourceScalingCompleted ev)
-            {
-            }
+            protected abstract void UpdateCompletionEvent(ResourceScalingCompleted ev);
 
-            protected virtual string OperationDescription(string resourceName)
-            {
-                throw new NotImplementedException();
-            }
+            protected abstract string OperationDescription(string resourceName);
 
-            protected virtual Task ProcessRequest(ResourceScaler scaler)
-            {
-                // This code is only temporary. This method will be abstract.
-                throw new NotImplementedException("Old ScaleRequest");
-            }
+            protected abstract Task ProcessRequest(ResourceScaler scaler);
 
             private void RegisterError(DateTimeOffset now)
             {
@@ -681,6 +672,7 @@ namespace Bullfrog.Actors
             }
         }
 
+        [DataContract]
         private class ScaleOutRequest : ScaleRequest
         {
             private static readonly TimeSpan EndsAtHintDelay = TimeSpan.FromMinutes(3);
@@ -724,6 +716,7 @@ namespace Bullfrog.Actors
                 => $"scale out {resourceName} to {RequestedThroughput}";
         }
 
+        [DataContract]
         private class ScaleInRequest : ScaleRequest
         {
             [DataMember]
@@ -747,6 +740,10 @@ namespace Bullfrog.Actors
 
             protected override string OperationDescription(string resourceName)
                 => $"scale in {resourceName}";
+
+            protected override void UpdateCompletionEvent(ResourceScalingCompleted ev)
+            {
+            }
         }
     }
 }

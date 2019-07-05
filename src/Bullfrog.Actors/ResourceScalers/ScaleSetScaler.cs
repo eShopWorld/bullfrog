@@ -52,8 +52,12 @@ namespace Bullfrog.Actors.ResourceScalers
                     _dateTime.UtcNow, endsAt);
             });
 
-            var workingInstances = await _scaleSetMonitor.GetNumberOfWorkingInstances(
-               _configuration.LoadBalancerResourceId, _configuration.HealthPortPort);
+            int workingInstances = 0;
+            await LogAzureCallDuration(_bigBrother, "GetNumberOfInstances", _configuration.LoadBalancerResourceId, async () =>
+            {
+                workingInstances = await _scaleSetMonitor.GetNumberOfWorkingInstances(
+                  _configuration.LoadBalancerResourceId, _configuration.HealthPortPort);
+            });
             if (instances < workingInstances)
             {
                 var usableInstances = Math.Max(workingInstances - _configuration.ReservedInstances, 0);
