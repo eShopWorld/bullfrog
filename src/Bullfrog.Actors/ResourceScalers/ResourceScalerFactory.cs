@@ -38,13 +38,7 @@ namespace Bullfrog.Actors.ResourceScalers
                         return _controlPlaneCosmosScalerFactory(cosmosConfiguration);
                     }
 
-                    var connectionDetails = cosmosConfiguration.DataPlaneConnection ?? new CosmosDbDataPlaneConnection
-                    {
-                        AccountName = cosmosConfiguration.AccountName,
-                        ContainerName = cosmosConfiguration.ContainerName,
-                        DatabaseName = cosmosConfiguration.DatabaseName,
-                    };
-                    var client = _cosmosDataPlaneClientFactory(connectionDetails);
+                    var client = _cosmosDataPlaneClientFactory(cosmosConfiguration.DataPlaneConnection);
                     return _cosmosScalerFactory(client, cosmosConfiguration);
                 }
             }

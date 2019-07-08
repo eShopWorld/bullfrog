@@ -503,15 +503,6 @@
         "name": {
           "type": "string"
         },
-        "accountName": {
-          "type": "string"
-        },
-        "databaseName": {
-          "type": "string"
-        },
-        "containerName": {
-          "type": "string"
-        },
         "dataPlaneConnection": {
           "$ref": "#/definitions/CosmosDbDataPlaneConnection"
         },
