@@ -145,11 +145,14 @@ public class MultiRegionScaleGroupTests : BaseApiTests
                         new CosmosConfiguration
                         {
                             Name = "c1",
-                            AccountName = "ac",
-                            DatabaseName = "dn",
                             MaximumRU = 1000,
                             MinimumRU = 400,
                             RequestUnitsPerRequest = 10,
+                            DataPlaneConnection = new CosmosDbDataPlaneConnection
+                            {
+                                AccountName = "ac",
+                                DatabaseName = "dn",
+                            }
                         },
                     },
                     ScaleSets = new List<ScaleSetConfiguration>
@@ -176,11 +179,14 @@ public class MultiRegionScaleGroupTests : BaseApiTests
                         new CosmosConfiguration
                         {
                             Name = "c2",
-                            AccountName = "ac",
-                            DatabaseName = "dn",
                             MaximumRU = 1000,
                             MinimumRU = 400,
                             RequestUnitsPerRequest = 10,
+                            DataPlaneConnection = new CosmosDbDataPlaneConnection
+                            {
+                                AccountName = "ac",
+                                DatabaseName = "dn",
+                            }
                         },
                     },
                     ScaleSets = new List<ScaleSetConfiguration>
@@ -207,11 +213,14 @@ public class MultiRegionScaleGroupTests : BaseApiTests
                         new CosmosConfiguration
                         {
                             Name = "c3",
-                            AccountName = "ac",
-                            DatabaseName = "dn",
                             MaximumRU = 1000,
                             MinimumRU = 400,
                             RequestUnitsPerRequest = 10,
+                            DataPlaneConnection = new CosmosDbDataPlaneConnection
+                            {
+                                AccountName = "ac",
+                                DatabaseName = "dn",
+                            }
                         },
                     },
                     ScaleSets = new List<ScaleSetConfiguration>

@@ -70,7 +70,7 @@ namespace Bullfrog.Api.Controllers
         /// <param name="scaleGroup">The name of the scale group to configure.</param>
         /// <param name="definition">The new or updated configuration of the scale group.</param>
         /// <returns></returns>
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesDefaultResponseType]
         [HttpPut("{scaleGroup}")]
         public async Task<ActionResult> SetDefinition(string scaleGroup, ScaleGroupDefinition definition)
@@ -88,7 +88,7 @@ namespace Bullfrog.Api.Controllers
             {
                 ScaleGroup = scaleGroup,
             });
-            return NoContent();
+            return Ok(definition);
         }
 
         /// <summary>

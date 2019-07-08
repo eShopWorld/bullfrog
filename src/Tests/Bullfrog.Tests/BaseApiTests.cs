@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -14,6 +15,7 @@ using Bullfrog.Common;
 using Bullfrog.Common.Models;
 using Client;
 using Eshopworld.Core;
+using FluentAssertions;
 using Helpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.TestHost;
@@ -26,6 +28,7 @@ using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors.Runtime;
 using Moq;
+using Newtonsoft.Json;
 using ServiceFabric.Mocks;
 
 public class BaseApiTests : IDisposable
@@ -209,6 +212,24 @@ public class BaseApiTests : IDisposable
         ScaleHistory[name] = new List<(TimeSpan SinceStart, int? RequestedThroughput, int? ReachedThroughput)>();
     }
 
+    protected static void ShouldThrowBullfrogError(Func<Task> call, int errorCode)
+    {
+        var response = call.Should().Throw<Client.Models.ProblemDetailsException>()
+              .Which.Response;
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var json = JsonConvert.DeserializeObject<BullfrogErrorResponse>(response.Content);
+        json.Should().BeEquivalentTo(new BullfrogErrorResponse
+        {
+            Errors = new[]
+            {
+                new BullfrogErrorDescription
+                {
+                    Code = errorCode.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                }
+            }
+        }, o => o.Excluding(r => r.Errors[0].Message));
+    }
+
     protected async Task AdvanceTimeTo(DateTimeOffset newTime)
     {
         while (true)
@@ -329,5 +350,14 @@ public class BaseApiTests : IDisposable
     }
     #endregion
 }
+public class BullfrogErrorResponse
+{
+    public IList<BullfrogErrorDescription> Errors { get; set; }
+}
+public class BullfrogErrorDescription
+{
+    public string Code { get; set; }
 
+    public string Message { get; set; }
+}
 

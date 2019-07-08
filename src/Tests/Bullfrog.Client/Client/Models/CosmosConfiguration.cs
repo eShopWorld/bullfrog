@@ -23,12 +23,14 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the CosmosConfiguration class.
         /// </summary>
-        public CosmosConfiguration(string name, string accountName, string databaseName, string containerName = default(string), double? requestUnitsPerRequest = default(double?), int? minimumRU = default(int?), int? maximumRU = default(int?))
+        public CosmosConfiguration(string name, string accountName = default(string), string databaseName = default(string), string containerName = default(string), CosmosDbDataPlaneConnection dataPlaneConnection = default(CosmosDbDataPlaneConnection), CosmosDbControlPlaneConnection controlPlaneConnection = default(CosmosDbControlPlaneConnection), double? requestUnitsPerRequest = default(double?), int? minimumRU = default(int?), int? maximumRU = default(int?))
         {
             Name = name;
             AccountName = accountName;
             DatabaseName = databaseName;
             ContainerName = containerName;
+            DataPlaneConnection = dataPlaneConnection;
+            ControlPlaneConnection = controlPlaneConnection;
             RequestUnitsPerRequest = requestUnitsPerRequest;
             MinimumRU = minimumRU;
             MaximumRU = maximumRU;
@@ -62,6 +64,16 @@ namespace Client.Models
 
         /// <summary>
         /// </summary>
+        [JsonProperty(PropertyName = "dataPlaneConnection")]
+        public CosmosDbDataPlaneConnection DataPlaneConnection { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "controlPlaneConnection")]
+        public CosmosDbControlPlaneConnection ControlPlaneConnection { get; set; }
+
+        /// <summary>
+        /// </summary>
         [JsonProperty(PropertyName = "requestUnitsPerRequest")]
         public double? RequestUnitsPerRequest { get; set; }
 
@@ -87,13 +99,13 @@ namespace Client.Models
             {
                 throw new ValidationException(ValidationRules.CannotBeNull, "Name");
             }
-            if (AccountName == null)
+            if (DataPlaneConnection != null)
             {
-                throw new ValidationException(ValidationRules.CannotBeNull, "AccountName");
+                DataPlaneConnection.Validate();
             }
-            if (DatabaseName == null)
+            if (ControlPlaneConnection != null)
             {
-                throw new ValidationException(ValidationRules.CannotBeNull, "DatabaseName");
+                ControlPlaneConnection.Validate();
             }
         }
     }

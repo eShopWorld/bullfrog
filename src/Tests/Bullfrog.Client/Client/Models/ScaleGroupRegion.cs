@@ -25,13 +25,14 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleGroupRegion class.
         /// </summary>
-        public ScaleGroupRegion(string regionName, IList<ScaleSetConfiguration> scaleSets, IList<CosmosConfiguration> cosmos = default(IList<CosmosConfiguration>), string scaleSetPrescaleLeadTime = default(string), string cosmosDbPrescaleLeadTime = default(string))
+        public ScaleGroupRegion(string regionName, IList<ScaleSetConfiguration> scaleSets, IList<CosmosConfiguration> cosmos = default(IList<CosmosConfiguration>), string scaleSetPrescaleLeadTime = default(string), string cosmosDbPrescaleLeadTime = default(string), int? maxScale = default(int?))
         {
             RegionName = regionName;
             ScaleSets = scaleSets;
             Cosmos = cosmos;
             ScaleSetPrescaleLeadTime = scaleSetPrescaleLeadTime;
             CosmosDbPrescaleLeadTime = cosmosDbPrescaleLeadTime;
+            MaxScale = maxScale;
             CustomInit();
         }
 
@@ -64,6 +65,11 @@ namespace Client.Models
         /// </summary>
         [JsonProperty(PropertyName = "cosmosDbPrescaleLeadTime")]
         public string CosmosDbPrescaleLeadTime { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "maxScale")]
+        public int? MaxScale { get; set; }
 
         /// <summary>
         /// Validate the object.

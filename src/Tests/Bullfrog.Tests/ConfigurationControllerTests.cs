@@ -38,11 +38,14 @@ public class ConfigurationControllerTests : BaseApiTests
                         new CosmosConfiguration
                         {
                             Name = "aa",
-                            AccountName = "bb",
-                            DatabaseName = "cc",
                             MinimumRU = 400,
                             MaximumRU = 5000,
                             RequestUnitsPerRequest = 10,
+                            DataPlaneConnection = new CosmosDbDataPlaneConnection
+                            {
+                                AccountName = "bb",
+                                DatabaseName = "cc",
+                            }
                         },
                     },
                     ScaleSets = new List<ScaleSetConfiguration>

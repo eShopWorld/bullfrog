@@ -65,17 +65,6 @@ namespace Bullfrog.Actors.Interfaces.Models
 
         IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)
         {
-            if(DataPlaneConnection == null &&  ControlPlaneConnection == null)
-            {
-                // TODO: remove this after updating tests
-                DataPlaneConnection = new CosmosDbDataPlaneConnection
-                {
-                    AccountName = AccountName,
-                    ContainerName = ContainerName,
-                    DatabaseName = DatabaseName,
-                };
-            }
-
             if (DataPlaneConnection != null)
             {
                 if (ControlPlaneConnection != null)
