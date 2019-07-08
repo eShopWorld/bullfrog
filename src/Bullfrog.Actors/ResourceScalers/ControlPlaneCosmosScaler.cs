@@ -4,18 +4,22 @@ using Bullfrog.Actors.EventModels;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common.Cosmos;
 using Eshopworld.Core;
+using Microsoft.Azure.Management.ResourceManager.Fluent;
 
 namespace Bullfrog.Actors.ResourceScalers
 {
     public class ControlPlaneCosmosScaler : ResourceScaler
     {
-        private readonly ControlPlaneCosmosThroughputClient _throughputClient;
+        private readonly IResourceManagementClient _resourceManagementClient;
         private readonly CosmosConfiguration _cosmosConfiguration;
         private readonly IBigBrother _bigBrother;
 
-        public ControlPlaneCosmosScaler(ControlPlaneCosmosThroughputClient throughputClient, CosmosConfiguration cosmosConfiguration, IBigBrother bigBrother)
+        public ControlPlaneCosmosScaler(IResourceManagementClient resourceManagementClient, CosmosConfiguration cosmosConfiguration, IBigBrother bigBrother)
         {
-            _throughputClient = throughputClient;
+            if (cosmosConfiguration.ControlPlaneConnection == null)
+                throw new ArgumentException("CosmosConfiguration must use ControlPlaneConnection.", nameof(cosmosConfiguration));
+
+            _resourceManagementClient = resourceManagementClient;
             _cosmosConfiguration = cosmosConfiguration;
             _bigBrother = bigBrother;
         }
@@ -40,12 +44,12 @@ namespace Bullfrog.Actors.ResourceScalers
             if (requestUnits > _cosmosConfiguration.MaximumRU)
                 requestUnits = _cosmosConfiguration.MaximumRU;
 
-            var currentThroughput = await _throughputClient.Get();
+            var currentThroughput = await _resourceManagementClient.GetThroughput(_cosmosConfiguration.ControlPlaneConnection);
             if (currentThroughput != requestUnits)
             {
                 try
                 {
-                    requestUnits = await _throughputClient.Set(requestUnits);
+                    requestUnits = await _resourceManagementClient.SetThroughput(requestUnits, _cosmosConfiguration.ControlPlaneConnection);
                 }
                 catch (ThroughputOutOfRangeException ex) when (requestUnits < ex.MinimumThroughput)
                 {
@@ -56,7 +60,7 @@ namespace Bullfrog.Actors.ResourceScalers
                         MinThroughput = ex.MinimumThroughput,
                         ThroughputRequired = requestUnits,
                     });
-                    requestUnits = await _throughputClient.Set(ex.MinimumThroughput);
+                    requestUnits = await _resourceManagementClient.SetThroughput(ex.MinimumThroughput, _cosmosConfiguration.ControlPlaneConnection);
                 }
             }
 
