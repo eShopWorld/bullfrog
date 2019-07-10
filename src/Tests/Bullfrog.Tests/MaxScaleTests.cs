@@ -78,7 +78,7 @@ public class MaxScaleTests : BaseApiTests
         }
         var lastEvent = events.Last();
 
-        Func<Task> call = () => SaveScaleEvent(lastEvent.start, lastEvent.end, lastEvent.region1Scale, lastEvent.region2Scale);
+        Task call() => SaveScaleEvent(lastEvent.start, lastEvent.end, lastEvent.region1Scale, lastEvent.region2Scale);
 
         if (isValid)
         {

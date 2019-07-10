@@ -230,16 +230,6 @@ namespace Bullfrog.Actors
                     {
                         Scale = region.Scale,
                     });
-
-                    var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, region.Name);
-                    await scaleManagerActor.ScheduleScaleEvent(new RegionScaleEvent
-                    {
-                        Id = eventId,
-                        Name = scaleEvent.Name,
-                        RequiredScaleAt = scaleEvent.RequiredScaleAt,
-                        Scale = region.Scale,
-                        StartScaleDownAt = scaleEvent.StartScaleDownAt,
-                    });
                 }
             }
             else
