@@ -4,7 +4,7 @@ namespace Bullfrog.Actors.EventModels
 {
     public class CosmosThroughputTooLow : TelemetryEvent
     {
-        public string CosmosAccunt { get; set; }
+        public string CosmosAccount { get; set; }
 
         public string Database { get; set; }
 

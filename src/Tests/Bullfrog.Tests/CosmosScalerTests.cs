@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common.Cosmos;
@@ -31,9 +32,18 @@ public class CosmosScalerTests
         };
         var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
-        var result = await scaler.SetThroughput(newThroughput);
+        if (newThroughput.HasValue)
+        {
+            var result = await scaler.ScaleOut(newThroughput.Value, DateTimeOffset.MaxValue);
 
-        result.Should().Be(40);
+            result.Should().Be(40);
+        }
+        else
+        {
+            await scaler.ScaleIn();
+        }
+
+        cosmosThroughputClinetMoq.VerifyAll();
     }
 
     [Theory, IsLayer0]
@@ -55,9 +65,18 @@ public class CosmosScalerTests
         };
         var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
-        var result = await scaler.SetThroughput(newThroughput);
+        if(newThroughput.HasValue)
+        {
+            var result = await scaler.ScaleOut(newThroughput.Value, DateTimeOffset.MaxValue);
 
-        result.Should().Be(30);
+            result.Should().Be(30);
+        }
+        else
+        {
+            await scaler.ScaleIn();
+        }
+
+        cosmosThroughputClinetMoq.VerifyAll();
     }
 
     [Theory, IsLayer0]
@@ -79,9 +98,18 @@ public class CosmosScalerTests
         };
         var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
-        var result = await scaler.SetThroughput(newThroughput);
+        if (newThroughput.HasValue)
+        {
+            var result = await scaler.ScaleOut(newThroughput.Value, DateTimeOffset.MaxValue);
 
-        result.Should().BeNull();
+            result.Should().BeNull();
+        }
+        else
+        {
+            await scaler.ScaleIn();
+        }
+
+        cosmosThroughputClinetMoq.VerifyAll();
     }
 
     [Theory, IsLayer0]
@@ -108,9 +136,18 @@ public class CosmosScalerTests
         };
         var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
-        var result = await scaler.SetThroughput(newThroughput);
+        if (newThroughput.HasValue)
+        {
+            var result = await scaler.ScaleOut(newThroughput.Value, DateTimeOffset.MaxValue);
 
-        result.Should().Be(setValue / 10);
+            result.Should().Be(setValue / 10);
+        }
+        else
+        {
+            await scaler.ScaleIn();
+        }
+
+        cosmosThroughputClinetMoq.VerifyAll();
     }
 
     [Fact, IsLayer0]
@@ -130,7 +167,7 @@ public class CosmosScalerTests
         };
         var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
-        var result = await scaler.SetThroughput(50);
+        var result = await scaler.ScaleOut(50, DateTimeOffset.MaxValue);
 
         result.Should().BeNull();
     }
@@ -150,7 +187,7 @@ public class CosmosScalerTests
         };
         var scaler = new CosmosScaler(cosmosThroughputClinetMoq.Object, configuration, BigBrotherMoq.Object);
 
-        var result = await scaler.SetThroughput(60);
+        var result = await scaler.ScaleOut(60, DateTimeOffset.MaxValue);
 
         result.Should().Be(60);
     }

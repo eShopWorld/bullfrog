@@ -5,5 +5,7 @@
         public string ResourceId { get; set; }
 
         public string Operation { get; set; }
+
+        public string ExceptionMessage { get; set; }
     }
 }

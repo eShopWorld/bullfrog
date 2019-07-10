@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.Monitor.Fluent;
+using Microsoft.Azure.Management.Monitor.Fluent.AutoscaleProfile.UpdateDefinition;
 using Microsoft.Azure.Management.Monitor.Fluent.Models;
 
 namespace Bullfrog.Common
@@ -12,44 +14,70 @@ namespace Bullfrog.Common
     /// </summary>
     public static class AzureFluentExtensions
     {
-        /// <summary>
-        /// Updadates the minimal and default number of instances in the specified autoscale settings profile
-        /// </summary>
-        /// <param name="azure">The azure management client.</param>
-        /// <param name="autoscaleSettingsResourceId">The resource ID of the autoscale settings.</param>
-        /// <param name="profileName">The name of the profile to modify.</param>
-        /// <param name="instanceCalculator">The function which based on the current profile returns new values of changed profile's properties.</param>
-        /// <param name="forceUpdate">Specifies whether the profile should be updated even if the new values equal to existing.</param>
-        /// <param name="cancellationToken">The cancellation toke.</param>
-        /// <returns></returns>
-        public static async Task<IAzure> UpdateAutoscaleProfile(
+        private const string BullfrogProfileName = "BullfrogProfile";
+
+        public static async Task<int> SaveBullfrogProfile(
             this IAzure azure,
             string autoscaleSettingsResourceId,
-            string profileName,
-            Func<IAutoscaleProfile, (int minInstance, int defaultInstances)> instanceCalculator,
-            bool forceUpdate = false,
+            string defaultProfileName,
+            int instances,
+            DateTimeOffset start,
+            DateTimeOffset end,
             CancellationToken cancellationToken = default)
         {
             var autoscale = await azure.AutoscaleSettings.ValidateAccessAsync(autoscaleSettingsResourceId, cancellationToken);
-            if (!autoscale.Profiles.TryGetValue(profileName, out var profile))
+            if (!autoscale.Profiles.TryGetValue(defaultProfileName, out var defaultProfile))
             {
-                throw new BullfrogException($"The profile {profileName} has not been found in the autoscale settings {autoscaleSettingsResourceId}.");
+                throw new BullfrogException($"The profile {defaultProfileName} has not been found in the autoscale settings {autoscaleSettingsResourceId}.");
             }
 
-            var (minInstance, defaultInstances) = instanceCalculator(profile);
+            var minInstances = Math.Max(defaultProfile.MinInstanceCount, instances);
+            minInstances = Math.Min(defaultProfile.MaxInstanceCount, minInstances);
+            var defaultInstances = Math.Max(defaultProfile.DefaultInstanceCount, minInstances);
 
-            if (forceUpdate
-                || profile.MinInstanceCount != minInstance
-                || profile.DefaultInstanceCount != defaultInstances)
+            if (autoscale.Profiles.TryGetValue(BullfrogProfileName, out var bullfrogProfile))
+            {
+                if (bullfrogProfile.MinInstanceCount != minInstances
+                    || bullfrogProfile.DefaultInstanceCount != defaultInstances
+                    || bullfrogProfile.FixedDateSchedule == null
+                    || bullfrogProfile.FixedDateSchedule.End != end.UtcDateTime )
+                {
+                    await autoscale.Update()
+                         .UpdateAutoscaleProfile(BullfrogProfileName)
+                         .WithMetricBasedScale(minInstances, defaultProfile.MaxInstanceCount, defaultInstances)
+                         .WithFixedDateSchedule("UTC", start.UtcDateTime, end.UtcDateTime)
+                         .Parent()
+                         .ApplyAsync();
+                }
+            }
+            else
             {
                 await autoscale.Update()
-                    .UpdateAutoscaleProfile(profileName)
-                    .WithMetricBasedScale(minInstance, profile.MaxInstanceCount, defaultInstances)
-                    .Parent()
+                    .DefineAutoscaleProfile(BullfrogProfileName)
+                    .WithMetricBasedScale(minInstances, defaultProfile.MaxInstanceCount, defaultInstances)
+                    .AddRules(defaultProfile.Rules)
+                    .WithFixedDateSchedule("UTC", start.UtcDateTime, end.UtcDateTime)
+                    .Attach()
                     .ApplyAsync();
             }
 
-            return azure;
+            return minInstances;
+        }
+
+        public static async Task<IAutoscaleSetting> RemoveBullfrogProfile(
+            this IAzure azure,
+            string autoscaleSettingsResourceId,
+            CancellationToken cancellationToken = default)
+        {
+            var autoscale = await azure.AutoscaleSettings.ValidateAccessAsync(autoscaleSettingsResourceId, cancellationToken);
+            if (autoscale.Profiles.ContainsKey(BullfrogProfileName))
+            {
+                return await autoscale.Update()
+                    .WithoutAutoscaleProfile(BullfrogProfileName)
+                    .ApplyAsync();
+            }
+
+            return autoscale;
         }
 
         /// <summary>
@@ -76,6 +104,26 @@ namespace Bullfrog.Common
             {
                 throw new BullfrogException($"Failed to access autoscale settings {resourceId}: {ex.Message}");
             }
+        }
+
+        private static IWithScaleRuleOptional AddRules(this IWithScaleRule profile, IEnumerable<IScaleRule> rules)
+        {
+            IWithScaleRuleOptional ruleOptional = null;
+            foreach (var rule in rules)
+            {
+                ruleOptional = (ruleOptional?.DefineScaleRule() ?? profile.DefineScaleRule())
+                    .WithMetricSource(rule.MetricSource)
+                    .WithMetricName(rule.MetricName)
+                    .WithStatistic(rule.Duration, rule.Frequency, rule.FrequencyStatistic)
+                    .WithCondition(rule.TimeAggregation, rule.Condition, rule.Threshold)
+                    .WithScaleAction(rule.ScaleDirection, rule.ScaleType, rule.ScaleInstanceCount, rule.CoolDown)
+                    .Attach();
+            }
+
+            if (ruleOptional == null)
+                throw new ArgumentException("The list of rules must not be empty.");
+
+            return ruleOptional;
         }
     }
 }
