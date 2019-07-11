@@ -38,7 +38,7 @@ namespace Bullfrog.Api.Helpers
                 var claims = new List<Claim>();
                 foreach (var header in context.Request.Headers)
                 {
-                    if (header.Key.StartsWith(FakeClaimHeaderPrefix))
+                    if (header.Key.StartsWith(FakeClaimHeaderPrefix, StringComparison.Ordinal))
                     {
                         claims.Add(new Claim(header.Key.Substring(FakeClaimHeaderPrefix.Length), header.Value.ToString()));
                     }

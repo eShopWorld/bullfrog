@@ -11,9 +11,9 @@ namespace Bullfrog.Api.Helpers
     public static class FakeAuthBuilderExtensions
     {
         /// <summary>
-        /// Adds the <see cref="T:FakeAuthenticationMiddleware" /> to the specified <see cref="T:Microsoft.AspNetCore.Builder.IApplicationBuilder" />, which simulates authentication of users.
+        /// Adds the <see cref="FakeAuthenticationMiddleware" /> to the specified <see cref="Microsoft.AspNetCore.Builder.IApplicationBuilder" />, which simulates authentication of users.
         /// </summary>
-        /// <param name="app">The <see cref="T:Microsoft.AspNetCore.Builder.IApplicationBuilder" /> to add the middleware to.</param>
+        /// <param name="app">The <see cref="Microsoft.AspNetCore.Builder.IApplicationBuilder" /> to add the middleware to.</param>
         /// <returns>A reference to this instance after the operation has completed.</returns>
         public static  IApplicationBuilder UseFakeAuthentication(this IApplicationBuilder app)
         {
