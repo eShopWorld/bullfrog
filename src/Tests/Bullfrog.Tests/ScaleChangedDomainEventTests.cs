@@ -93,7 +93,7 @@ public class ScaleChangedDomainEventTests : BaseApiTests
     }
 
     [Fact, IsLayer0]
-    public async Task ScaleOutAtTheBeginningAreReported()
+    public async Task InitialScaleOutIssuesAreReported()
     {
         _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(16);
         _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(12);
