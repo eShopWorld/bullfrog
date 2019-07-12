@@ -61,13 +61,6 @@ namespace Bullfrog.Actors.Interfaces.Models
         public int? MinInstanceCount { get; set; }
 
         /// <summary>
-        /// The default number of instances defined in the profile.
-        /// </summary>
-        [Range(1, 1000)]
-        [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(MinInstanceCount))]
-        public int? DefaultInstanceCount { get; set; }
-
-        /// <summary>
         /// The number (might be partial) of VM instances which are not used to handle requests.
         /// </summary>
         [ValueIs(ValueComparison.GreaterThanOrEqualTo, Value = 0)]
@@ -125,13 +118,6 @@ namespace Bullfrog.Actors.Interfaces.Models
                 return new ValidationResult(
                     $"The specified min instance count {MinInstanceCount} is higher than the profile's max instance count {profile.MaxInstanceCount}",
                     new[] { nameof(MinInstanceCount) });
-            }
-
-            if (DefaultInstanceCount > profile.MaxInstanceCount)
-            {
-                return new ValidationResult(
-                    $"The specified default instance count {DefaultInstanceCount} is higher than the profile's max instance count {profile.MaxInstanceCount}",
-                    new[] { nameof(DefaultInstanceCount) });
             }
 
             try

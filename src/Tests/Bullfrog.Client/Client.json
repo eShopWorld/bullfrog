@@ -446,12 +446,6 @@
           "minimum": 1,
           "type": "integer"
         },
-        "defaultInstanceCount": {
-          "format": "int32",
-          "maximum": 1000,
-          "minimum": 1,
-          "type": "integer"
-        },
         "reservedInstances": {
           "format": "double",
           "type": "number"

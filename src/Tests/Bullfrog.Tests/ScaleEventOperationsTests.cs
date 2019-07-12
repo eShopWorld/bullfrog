@@ -221,8 +221,6 @@ public class ScaleEventOperationsTests : BaseApiTests
                             ProfileName = "pr",
                             LoadBalancerResourceId = GetLoadBalancerResourceId(),
                             HealthPortPort = 9999,
-                            DefaultInstanceCount = 1,
-                            MinInstanceCount = 1,
                             RequestsPerInstance = 100,
                         },
                     },
