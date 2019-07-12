@@ -13,6 +13,7 @@
     <ServerGarbageCollection>false</ServerGarbageCollection>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <DebugType>Full</DebugType>
+    <AspNetCoreModuleName>AspNetCoreModuleV2</AspNetCoreModuleName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

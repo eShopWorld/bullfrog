@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Eshopworld.DevOps" Version="4.0.0" />
+    <PackageReference Include="Eshopworld.DevOps" Version="4.1.0" />
     <PackageReference Include="EShopworld.Security.Services.Rest" Version="2.0.3" />
     <PackageReference Include="EShopworld.Security.Services.Testing" Version="1.0.3" />
     <PackageReference Include="Eshopworld.Tests.Core" Version="1.1.1" />
