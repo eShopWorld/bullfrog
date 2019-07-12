@@ -23,7 +23,7 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleSetConfiguration class.
         /// </summary>
-        public ScaleSetConfiguration(string name, string autoscaleSettingsResourceId, string profileName, string loadBalancerResourceId, int? healthPortPort = default(int?), int? requestsPerInstance = default(int?), int? minInstanceCount = default(int?), int? defaultInstanceCount = default(int?), double? reservedInstances = default(double?))
+        public ScaleSetConfiguration(string name, string autoscaleSettingsResourceId, string profileName, string loadBalancerResourceId, int? healthPortPort = default(int?), int? requestsPerInstance = default(int?), int? minInstanceCount = default(int?), double? reservedInstances = default(double?))
         {
             Name = name;
             AutoscaleSettingsResourceId = autoscaleSettingsResourceId;
@@ -32,7 +32,6 @@ namespace Client.Models
             HealthPortPort = healthPortPort;
             RequestsPerInstance = requestsPerInstance;
             MinInstanceCount = minInstanceCount;
-            DefaultInstanceCount = defaultInstanceCount;
             ReservedInstances = reservedInstances;
             CustomInit();
         }
@@ -76,11 +75,6 @@ namespace Client.Models
         /// </summary>
         [JsonProperty(PropertyName = "minInstanceCount")]
         public int? MinInstanceCount { get; set; }
-
-        /// <summary>
-        /// </summary>
-        [JsonProperty(PropertyName = "defaultInstanceCount")]
-        public int? DefaultInstanceCount { get; set; }
 
         /// <summary>
         /// </summary>
@@ -134,14 +128,6 @@ namespace Client.Models
             if (MinInstanceCount < 1)
             {
                 throw new ValidationException(ValidationRules.InclusiveMinimum, "MinInstanceCount", 1);
-            }
-            if (DefaultInstanceCount > 1000)
-            {
-                throw new ValidationException(ValidationRules.InclusiveMaximum, "DefaultInstanceCount", 1000);
-            }
-            if (DefaultInstanceCount < 1)
-            {
-                throw new ValidationException(ValidationRules.InclusiveMinimum, "DefaultInstanceCount", 1);
             }
         }
     }

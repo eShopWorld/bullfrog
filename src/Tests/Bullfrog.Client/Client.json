@@ -446,12 +446,6 @@
           "minimum": 1,
           "type": "integer"
         },
-        "defaultInstanceCount": {
-          "format": "int32",
-          "maximum": 1000,
-          "minimum": 1,
-          "type": "integer"
-        },
         "reservedInstances": {
           "format": "double",
           "type": "number"
@@ -501,15 +495,6 @@
       "type": "object",
       "properties": {
         "name": {
-          "type": "string"
-        },
-        "accountName": {
-          "type": "string"
-        },
-        "databaseName": {
-          "type": "string"
-        },
-        "containerName": {
           "type": "string"
         },
         "dataPlaneConnection": {

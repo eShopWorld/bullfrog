@@ -82,6 +82,6 @@ namespace Bullfrog.Actors.Interfaces.Models
                 .Union(Enumerable.Repeat(CosmosDbPrescaleLeadTime, 1))
                 .Max();
 
-        private TimeSpan ZeroTimeSpan => TimeSpan.Zero;
+        private static TimeSpan ZeroTimeSpan => TimeSpan.Zero;
     }
 }

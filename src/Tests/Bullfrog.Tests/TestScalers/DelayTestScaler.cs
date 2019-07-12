@@ -25,7 +25,7 @@ namespace TestScalers
             return await SetThroughput(null) != null;
         }
 
-        public override Task<int?> ScaleOut(int throughput, DateTimeOffset validTill)
+        public override Task<int?> ScaleOut(int throughput, DateTimeOffset endsAt)
         {
             return SetThroughput(throughput);
         }

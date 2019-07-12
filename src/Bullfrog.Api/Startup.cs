@@ -90,7 +90,7 @@ namespace Bullfrog.Api
                             {
                                 Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" },
                             },
-                            new string[0]
+                            Array.Empty<string>()
                         }
                     });
 
@@ -144,7 +144,7 @@ namespace Bullfrog.Api
         /// The framework DI container configuration entry point.
         ///     Use this to setup specific AutoFac dependencies that don't have <see cref="IServiceCollection"/> extension methods.
         /// </summary>
-        /// <param name="builder">The builder for an <see cref="T:Autofac.IContainer" /> from component registrations.</param>
+        /// <param name="builder">The builder for an <see cref="Autofac.IContainer" /> from component registrations.</param>
         public void ConfigureContainer(ContainerBuilder builder)
         {
             builder.RegisterModule<CoreModule>();

@@ -92,7 +92,7 @@ namespace Bullfrog.Common.Cosmos
             return new DocumentClient(serviceEndpoint, authKey);
         }
 
-        private (Uri serviceEndpoint, string authKey) ParseConnectionString(string connectionString)
+        private static (Uri serviceEndpoint, string authKey) ParseConnectionString(string connectionString)
         {
             // Use this generic builder to parse the connection string
             var builder = new DbConnectionStringBuilder

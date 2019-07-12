@@ -62,8 +62,8 @@ public class ScaleEventOperationsTests : BaseApiTests
         var eventId = Guid.NewGuid();
         await AdvanceTimeTo(UtcNow.AddHours(2));
 
-        Func<Task<HttpOperationResponse<ScheduledScaleEvent>>> call =
-            () => ApiClient.SaveScaleEventWithHttpMessagesAsync("sg", eventId, NewScaleEvent(-2, -1));
+        Task<HttpOperationResponse<ScheduledScaleEvent>> call()
+            => ApiClient.SaveScaleEventWithHttpMessagesAsync("sg", eventId, NewScaleEvent(-2, -1));
 
         ShouldThrowBullfrogError(call, -1);
     }
@@ -75,8 +75,8 @@ public class ScaleEventOperationsTests : BaseApiTests
         var eventId = Guid.NewGuid();
         await AdvanceTimeTo(UtcNow.AddHours(2));
 
-        Func<Task<HttpOperationResponse<ScheduledScaleEvent>>> call =
-            () => ApiClient.SaveScaleEventWithHttpMessagesAsync("sg", eventId, NewScaleEvent(-2, -1, new[] { ("r1", 30) }));
+        Task<HttpOperationResponse<ScheduledScaleEvent>> call()
+            => ApiClient.SaveScaleEventWithHttpMessagesAsync("sg", eventId, NewScaleEvent(-2, -1, new[] { ("r1", 30) }));
 
         ShouldThrowBullfrogError(call, -3);
     }
@@ -221,8 +221,6 @@ public class ScaleEventOperationsTests : BaseApiTests
                             ProfileName = "pr",
                             LoadBalancerResourceId = GetLoadBalancerResourceId(),
                             HealthPortPort = 9999,
-                            DefaultInstanceCount = 1,
-                            MinInstanceCount = 1,
                             RequestsPerInstance = 100,
                         },
                     },

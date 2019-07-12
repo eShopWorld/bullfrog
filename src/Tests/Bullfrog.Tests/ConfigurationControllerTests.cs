@@ -57,8 +57,6 @@ public class ConfigurationControllerTests : BaseApiTests
                             ProfileName = "pr",
                             LoadBalancerResourceId = GetLoadBalancerResourceId(),
                             HealthPortPort = 9999,
-                            MinInstanceCount = 1,
-                            DefaultInstanceCount = 1,
                             RequestsPerInstance = 20,
                         },
                     },

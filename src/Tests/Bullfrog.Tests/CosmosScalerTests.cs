@@ -25,7 +25,6 @@ public class CosmosScalerTests
             .ReturnsAsync(new CosmosThroughput { RequestsUnits = 400 });
         var configuration = new CosmosConfiguration
         {
-            AccountName = "a",
             MinimumRU = 300,
             MaximumRU = 800,
             RequestUnitsPerRequest = 10,
@@ -58,7 +57,6 @@ public class CosmosScalerTests
             .ReturnsAsync(new CosmosThroughput { RequestsUnits = 300 });
         var configuration = new CosmosConfiguration
         {
-            AccountName = "a",
             MinimumRU = 300,
             MaximumRU = 800,
             RequestUnitsPerRequest = 10,
@@ -91,7 +89,6 @@ public class CosmosScalerTests
         // The Set method is not called
         var configuration = new CosmosConfiguration
         {
-            AccountName = "a",
             MinimumRU = 300,
             MaximumRU = 800,
             RequestUnitsPerRequest = 10,
@@ -129,7 +126,6 @@ public class CosmosScalerTests
             .ReturnsAsync(new CosmosThroughput { RequestsUnits = setValue });
         var configuration = new CosmosConfiguration
         {
-            AccountName = "a",
             MinimumRU = 300,
             MaximumRU = 800,
             RequestUnitsPerRequest = 10,
@@ -160,7 +156,6 @@ public class CosmosScalerTests
             .ReturnsAsync(new CosmosThroughput { IsThroughputChangePending = true, RequestsUnits = 500 });
         var configuration = new CosmosConfiguration
         {
-            AccountName = "a",
             MinimumRU = 300,
             MaximumRU = 800,
             RequestUnitsPerRequest = 10,
@@ -180,7 +175,6 @@ public class CosmosScalerTests
             .ReturnsAsync(new CosmosThroughput { MinimalRequestUnits = 200, RequestsUnits = 600 });
         var configuration = new CosmosConfiguration
         {
-            AccountName = "a",
             MinimumRU = 300,
             MaximumRU = 800,
             RequestUnitsPerRequest = 10,

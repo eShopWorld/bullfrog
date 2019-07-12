@@ -82,10 +82,34 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         var events = GetPublishedEvents<ScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type));
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
-            (StartTime.AddMinutes(30).Add(-MaxLeadTime), eventId, ScaleChangeType.ScaleOutStarted),
+            (StartTime.AddMinutes(14), eventId, ScaleChangeType.ScaleOutStarted),
             (StartTime.AddMinutes(18), eventId, ScaleChangeType.ScaleIssue),
             (StartTime.AddMinutes(26), eventId, ScaleChangeType.ScaleOutStarted),
             (StartTime.AddMinutes(30), eventId, ScaleChangeType.ScaleOutComplete),
+            (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInStarted),
+            (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInComplete),
+        };
+        events.Should().BeEquivalentTo(expected);
+    }
+
+    [Fact, IsLayer0]
+    public async Task InitialScaleOutIssuesAreReported()
+    {
+        _cosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(16);
+        _scaleSetPrescaleLeadTime = TimeSpan.FromMinutes(12);
+        CreateScaleGroup();
+        RegisterResourceScaler("c", x => UtcNow >= StartTime.AddMinutes(26) ? 10 : throw new BullfrogException());
+        RegisterResourceScaler("s", x => UtcNow >= StartTime.AddMinutes(22) ? 10 : (int?)null);
+        var eventId = AddEvent(StartTime.AddMinutes(30), StartTime.AddMinutes(60), 10);
+
+        await AdvanceTimeTo(StartTime + TimeSpan.FromHours(1));
+
+        var events = GetPublishedEvents<ScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type));
+        var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
+        {
+            (StartTime.AddMinutes(14), eventId, ScaleChangeType.ScaleOutStarted),
+            (StartTime.AddMinutes(14), eventId, ScaleChangeType.ScaleIssue),
+            (StartTime.AddMinutes(28), eventId, ScaleChangeType.ScaleOutComplete),
             (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInStarted),
             (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInComplete),
         };
@@ -107,7 +131,7 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         var events = GetPublishedEvents<ScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type));
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
-            (StartTime.AddMinutes(30).Add(-MaxLeadTime), eventId, ScaleChangeType.ScaleOutStarted),
+            (StartTime.AddMinutes(24), eventId, ScaleChangeType.ScaleOutStarted),
             (StartTime.AddMinutes(28), eventId, ScaleChangeType.ScaleIssue),
             (StartTime.AddMinutes(36), eventId, ScaleChangeType.ScaleOutComplete),
             (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInStarted),
@@ -199,8 +223,6 @@ public class ScaleChangedDomainEventTests : BaseApiTests
                             ProfileName = "pr",
                             LoadBalancerResourceId = GetLoadBalancerResourceId(),
                             HealthPortPort = 9999,
-                            DefaultInstanceCount = 1,
-                            MinInstanceCount = 1,
                             RequestsPerInstance = 100,
                         },
                     },

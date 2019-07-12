@@ -39,15 +39,13 @@ namespace Bullfrog.Actors.Interfaces.Models.Validation
         protected override ValidationResult IsValid(object value, ValidationContext validationContext)
         {
             if (value == null)
-            {
                 return ValidationResult.Success;
-            }
 
             var otherValue = GetValueToCompare(validationContext);
+            if (otherValue is null)
+                return ValidationResult.Success;
             if (otherValue.GetType() != value.GetType())
-            {
                 otherValue = Convert.ChangeType(otherValue, value.GetType());
-            }
 
             var comparisionResult = Compare(value, otherValue);
             bool succeeded;
@@ -107,7 +105,7 @@ namespace Bullfrog.Actors.Interfaces.Models.Validation
                     throw new ArgumentException($"The property {PropertyValue} has not been found.");
                 }
 
-                return prop.GetValue(validationContext.ObjectInstance) ?? throw new Exception($"The property {PropertyValue} returned null");
+                return prop.GetValue(validationContext.ObjectInstance);
             }
             else if (Value != null)
             {

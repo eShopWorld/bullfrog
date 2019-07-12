@@ -18,21 +18,6 @@ namespace Bullfrog.Actors.Interfaces.Models
         public string Name { get; set; }
 
         /// <summary>
-        /// The Cosmos DB account name.
-        /// </summary>
-        public string AccountName { get; set; }
-
-        /// <summary>
-        /// The Cosmos DB database name.
-        /// </summary>
-        public string DatabaseName { get; set; }
-
-        /// <summary>
-        /// The optional name of the container in the Cosmos DB database.
-        /// </summary>
-        public string ContainerName { get; set; }
-
-        /// <summary>
         /// The data plane connection details.
         /// </summary>
         public CosmosDbDataPlaneConnection DataPlaneConnection { get; set; }

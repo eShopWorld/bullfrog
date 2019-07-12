@@ -78,7 +78,7 @@ public class MaxScaleTests : BaseApiTests
         }
         var lastEvent = events.Last();
 
-        Func<Task> call = () => SaveScaleEvent(lastEvent.start, lastEvent.end, lastEvent.region1Scale, lastEvent.region2Scale);
+        Task call() => SaveScaleEvent(lastEvent.start, lastEvent.end, lastEvent.region1Scale, lastEvent.region2Scale);
 
         if (isValid)
         {
@@ -137,8 +137,6 @@ public class MaxScaleTests : BaseApiTests
                             ProfileName = "pr",
                             LoadBalancerResourceId = GetLoadBalancerResourceId(),
                             HealthPortPort = 9999,
-                            DefaultInstanceCount = 1,
-                            MinInstanceCount = 1,
                             RequestsPerInstance = 100,
                         },
                     },
@@ -157,8 +155,6 @@ public class MaxScaleTests : BaseApiTests
                             ProfileName = "pr",
                             LoadBalancerResourceId = GetLoadBalancerResourceId(),
                             HealthPortPort = 9999,
-                            DefaultInstanceCount = 1,
-                            MinInstanceCount = 1,
                             RequestsPerInstance = 100,
                         },
                     },

@@ -18,7 +18,7 @@ using Xunit;
 
 public class ControlPlaneCosmosScalerTests
 {
-    private CosmosDbControlPlaneConnection TestControlPlaneConnection => new CosmosDbControlPlaneConnection
+    private static CosmosDbControlPlaneConnection TestControlPlaneConnection => new CosmosDbControlPlaneConnection
     {
         AccountResurceId = "subscriptions/79726995-901e-4020-85c6-b6401df55210/resourceGroups/rg/providers/Microsoft.DocumentDb/databaseAccounts/db",
         DatabaseName = "db",

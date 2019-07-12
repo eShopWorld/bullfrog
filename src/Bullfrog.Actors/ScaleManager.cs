@@ -608,7 +608,7 @@ namespace Bullfrog.Actors
                 }
             }
 
-            public ScaleRequest(DateTimeOffset now)
+            protected ScaleRequest(DateTimeOffset now)
             {
                 OperationStarted = now;
             }
