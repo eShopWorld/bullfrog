@@ -43,7 +43,7 @@ namespace Bullfrog.Actors.ResourceScalers
                  / _configuration.RequestsPerInstance;
 
             if (instances < _configuration.MinInstanceCount)
-                instances = _configuration.MinInstanceCount;
+                instances = _configuration.MinInstanceCount.Value;
 
             await LogAzureCallDuration(_bigBrother, "SaveBullfrogProfile", _configuration.AutoscaleSettingsResourceId, async () =>
             {
