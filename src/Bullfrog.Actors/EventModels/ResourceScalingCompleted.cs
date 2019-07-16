@@ -5,8 +5,6 @@ namespace Bullfrog.Actors.EventModels
 {
     public class ResourceScalingCompleted : TelemetryEvent
     {
-        public string ActorId { get; set; }
-
         public string ResourceName { get; set; }
 
         public int RequiredThroughput { get; set; }

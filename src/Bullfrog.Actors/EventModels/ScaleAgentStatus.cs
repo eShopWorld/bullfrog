@@ -5,8 +5,6 @@ namespace Bullfrog.Actors.EventModels
 {
     public class ScaleAgentStatus : TelemetryEvent
     {
-        public string ActorId { get; set; }
-
         public int RequestedScaleSetScale { get; set; }
 
         public int RequestedCosmosDbScale { get; set; }

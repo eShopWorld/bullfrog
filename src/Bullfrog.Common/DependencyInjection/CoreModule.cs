@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using Autofac;
+using Bullfrog.Common.Telemetry;
 using Eshopworld.Core;
 using Eshopworld.DevOps;
 using Eshopworld.Telemetry;
 using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Configuration;
 using Microsoft.ServiceFabric.Actors.Client;
 
@@ -34,6 +36,7 @@ namespace Bullfrog.Common.DependencyInjection
 
             builder.RegisterType<ActorProxyFactory>().As<IActorProxyFactory>().SingleInstance();
             builder.RegisterType<DateTimeProvider>().As<IDateTimeProvider>().SingleInstance();
+            builder.RegisterInstance(LogicalCallTelemetryInitializer.Instance).As<ITelemetryInitializer>();
         }
 
         private class DateTimeProvider : IDateTimeProvider
