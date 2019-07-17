@@ -28,10 +28,16 @@ namespace Bullfrog.Actors.ResourceScalers
 
         public override async Task<bool> ScaleIn()
         {
-            await LogAzureCallDuration(_bigBrother, "RemoveBullfrogProfile", _configuration.AutoscaleSettingsResourceId, async () =>
+            var profile = await _bigBrother.LogAzureCallDuration("RemoveBullfrogProfile", _configuration.AutoscaleSettingsResourceId, async () =>
             {
                 var azure = _authenticated.WithSubscriptionFor(_configuration.AutoscaleSettingsResourceId);
-                await azure.RemoveBullfrogProfile(_configuration.AutoscaleSettingsResourceId);
+                return await azure.RemoveBullfrogProfile(_configuration.AutoscaleSettingsResourceId);
+            });
+
+            _bigBrother.Publish(new ScaleSetReset
+            {
+                ScalerName = _configuration.Name,
+                ConfiguredInstances = profile.Profiles[_configuration.ProfileName].MinInstanceCount,
             });
 
             return true;
@@ -45,48 +51,49 @@ namespace Bullfrog.Actors.ResourceScalers
             if (instances < _configuration.MinInstanceCount)
                 instances = _configuration.MinInstanceCount.Value;
 
-            await LogAzureCallDuration(_bigBrother, "SaveBullfrogProfile", _configuration.AutoscaleSettingsResourceId, async () =>
+            var ssConfiguredInstances = await _bigBrother.LogAzureCallDuration("SaveBullfrogProfile", _configuration.AutoscaleSettingsResourceId, async () =>
             {
                 var azure = _authenticated.WithSubscriptionFor(_configuration.AutoscaleSettingsResourceId);
-                await azure.SaveBullfrogProfile(_configuration.AutoscaleSettingsResourceId, _configuration.ProfileName, instances,
-                    _dateTime.UtcNow, endsAt);
+                var (configuredInstances, profileChanged) = await azure.SaveBullfrogProfile(_configuration.AutoscaleSettingsResourceId, _configuration.ProfileName, instances,
+                      _dateTime.UtcNow, endsAt);
+
+                if (profileChanged)
+                {
+                    _bigBrother.Publish(new ScaleSetModified
+                    {
+                        ScalerName = _configuration.Name,
+                        RequestedInstances = instances,
+                        ConfiguredInstances = configuredInstances,
+                        RequestedThroughput = throughput,
+                    });
+                }
+
+                return configuredInstances;
             });
 
-            int workingInstances = 0;
-            await LogAzureCallDuration(_bigBrother, "GetNumberOfInstances", _configuration.LoadBalancerResourceId, async () =>
+            var workingInstances = await _bigBrother.LogAzureCallDuration("GetNumberOfInstances", _configuration.LoadBalancerResourceId,
+                async () => await _scaleSetMonitor.GetNumberOfWorkingInstances(
+                    _configuration.LoadBalancerResourceId, _configuration.HealthPortPort));
+
+            var usableInstances = Math.Max(workingInstances - _configuration.ReservedInstances, 0);
+            var availableThroughput = (int)(usableInstances * _configuration.RequestsPerInstance);
+
+            _bigBrother.Publish(new ScaleSetThroughput
             {
-                workingInstances = await _scaleSetMonitor.GetNumberOfWorkingInstances(
-                  _configuration.LoadBalancerResourceId, _configuration.HealthPortPort);
+                ScalerName = _configuration.Name,
+                RequestedThroughput = throughput,
+                RequiredInstances = instances,
+                ConfiguredInstances = ssConfiguredInstances,
+                WorkingInstances = workingInstances,
+                AvailableThroughput = availableThroughput,
             });
+
             if (instances < workingInstances)
             {
-                var usableInstances = Math.Max(workingInstances - _configuration.ReservedInstances, 0);
-                return (int)(usableInstances * _configuration.RequestsPerInstance);
+                return availableThroughput;
             }
             else
                 return null;
-        }
-
-        private static async Task LogAzureCallDuration(IBigBrother bigBrother, string operation, string resourceId, Func<Task> action)
-        {
-            var durationEvent = new AzureOperationDurationEvent
-            {
-                Operation = operation,
-                ResourceId = resourceId,
-            };
-            try
-            {
-                await action();
-            }
-            catch (Exception ex)
-            {
-                durationEvent.ExceptionMessage = ex.Message;
-                bigBrother.Publish(durationEvent);
-
-                throw;
-            }
-
-            bigBrother.Publish(durationEvent);
         }
     }
 }
