@@ -8,10 +8,10 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors;
-using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common;
+using Bullfrog.Common.Helpers;
 using Bullfrog.Common.Models;
 using Client;
 using Eshopworld.Core;
@@ -99,8 +99,12 @@ public class BaseApiTests : IDisposable
             .Returns(azureMoq.Object);
         services.AddSingleton(authenticatedMoq.Object);
 
-        ScalerFactoryMoq = new Mock<IResourceScalerFactory>(MockBehavior.Strict);
         ScaleSetMonitorMoq = new Mock<ScaleSetMonitor>(new Mock<Azure.IAuthenticated>().Object, bigBrother);
+        ScaleSetMonitorMoq.Setup(x => x.ValidateAccess(It.IsAny<LoadBalancerConfiguration>()))
+            .ReturnsAsync(ValidationResult.Success);
+        services.AddSingleton(ScaleSetMonitorMoq.Object);
+
+        ScalerFactoryMoq = new Mock<IResourceScalerFactory>(MockBehavior.Strict);
         foreach (var regionName in "eu,eu1,eu2,eu3,$cosmos".Split(','))
         {
             RegisterScaleManagerActor("sg", regionName, ScalerFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, bigBrother, actorProxyFactory);

@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Bullfrog.Common.Events;
 using Eshopworld.Core;
 
-namespace Bullfrog.Actors.EventModels
+namespace Bullfrog.Common.Telemetry
 {
     public static class BigBrotherExtensions
     {

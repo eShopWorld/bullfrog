@@ -5,9 +5,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Integration.ServiceFabric;
-using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common.DependencyInjection;
+using Bullfrog.Common.Helpers;
 using Eshopworld.Telemetry;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -32,7 +32,6 @@ namespace Bullfrog.Actors
                 builder.RegisterModule<ThroughputClientModule>();
                 builder.RegisterType<ControlPlaneCosmosScaler>().AsSelf();
                 builder.RegisterType<CosmosScaler>().AsSelf();
-                builder.RegisterType<ScaleSetMonitor>().AsSelf();
                 builder.RegisterType<ScaleSetScaler>().AsSelf();
                 builder.RegisterType<ResourceScalerFactory>().As<IResourceScalerFactory>();
 

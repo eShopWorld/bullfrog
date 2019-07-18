@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Bullfrog.Actors.EventModels;
-using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common;
+using Bullfrog.Common.Helpers;
+using Bullfrog.Common.Telemetry;
 using Eshopworld.Core;
 using Microsoft.Azure.Management.Fluent;
 
