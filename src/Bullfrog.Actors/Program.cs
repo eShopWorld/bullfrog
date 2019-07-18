@@ -45,7 +45,11 @@ namespace Bullfrog.Actors
                     }
                     return configuration;
                 });
-                builder.RegisterType<TelemetryClient>().SingleInstance();
+                builder.RegisterType<TelemetryClient>().SingleInstance().OnActivated(env =>
+                    {
+                        env.Instance.Context.GlobalProperties["AspNetCoreEnvironment"]
+                            = Environment.GetEnvironmentVariable("AspNetCore_Environment");
+                    });
 
                 builder.RegisterServiceFabricSupport();
 
