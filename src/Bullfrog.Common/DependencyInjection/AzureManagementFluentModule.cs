@@ -36,7 +36,7 @@ namespace Bullfrog.Common.DependencyInjection
             {
                 var configuration = c.Resolve<IConfigurationRoot>();
                 var authenticated = c.Resolve<Azure.IAuthenticated>();
-                var subscriptionId = configuration["AzureSubscriptionId"];
+                var subscriptionId = configuration.GetSection("Environment:SubscriptionId").Value;
                 return authenticated.WithSubscription(subscriptionId);
             });
 

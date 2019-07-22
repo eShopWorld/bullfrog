@@ -27,7 +27,7 @@ namespace Bullfrog.Common.DependencyInjection
                    .As<IConfigurationRoot>()
                    .SingleInstance();
 
-            builder.Register((Func<IComponentContext, IBigBrother>)(c =>
+            builder.Register<IBigBrother>(c =>
             {
                 var configuration = c.Resolve<IConfigurationRoot>();
 
@@ -36,11 +36,11 @@ namespace Bullfrog.Common.DependencyInjection
                 var bb = new BigBrother(telemetryClient, insKey);
 
                 var serviceBusConnectionString = configuration.GetSection("SB:eda:ConnectionString").Value;
-                var subscriptionId = configuration["AzureSubscriptionId"];
+                var subscriptionId = configuration.GetSection("Environment:SubscriptionId").Value;
                 bb.PublishEventsToTopics(new Messenger(serviceBusConnectionString, subscriptionId));
 
                 return bb;
-            }))
+            })
             .SingleInstance();
 
             builder.RegisterType<ActorProxyFactory>().As<IActorProxyFactory>().SingleInstance();
