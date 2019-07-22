@@ -11,16 +11,14 @@ using Xunit;
 
 public sealed class CosmosFixture : IDisposable
 {
-    private readonly IConfigurationRoot _configuration;
     private readonly IContainer _container;
     private CosmosDetails _testCosmos;
     private CosmosClient _cosmosClient;
 
     public CosmosFixture()
     {
-        _configuration = Eshopworld.DevOps.EswDevOpsSdk.BuildConfiguration();
-
         var builder = new ContainerBuilder();
+        builder.RegisterModule<CoreModule>();
         builder.RegisterModule<AzureManagementFluentModule>();
         _container = builder.Build();
     }
@@ -32,7 +30,8 @@ public sealed class CosmosFixture : IDisposable
         if (_testCosmos != null)
             return _testCosmos;
 
-        var accountResourceId = _configuration.GetSection("Bullfrog").GetSection("Testing")["TestCosmosAccountResourceId"];
+        var configuration = _container.Resolve<IConfigurationRoot>();
+        var accountResourceId = configuration.GetSection("Bullfrog").GetSection("Testing")["TestCosmosAccountResourceId"];
         var azure = _container.Resolve<IAzure>();
         var account = await azure.CosmosDBAccounts.GetByIdAsync(accountResourceId);
         var connectionStrings = await account.ListConnectionStringsAsync();
