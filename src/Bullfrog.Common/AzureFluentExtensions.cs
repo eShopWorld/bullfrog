@@ -16,7 +16,7 @@ namespace Bullfrog.Common
     {
         private const string BullfrogProfileName = "BullfrogProfile";
 
-        public static async Task<int> SaveBullfrogProfile(
+        public static async Task<(int Instances, bool ProfileChanged)> SaveBullfrogProfile(
             this IAzure azure,
             string autoscaleSettingsResourceId,
             string defaultProfileName,
@@ -35,6 +35,7 @@ namespace Bullfrog.Common
             minInstances = Math.Min(defaultProfile.MaxInstanceCount, minInstances);
             var defaultInstances = Math.Max(defaultProfile.DefaultInstanceCount, minInstances);
 
+            bool profileModified = false;
             if (autoscale.Profiles.TryGetValue(BullfrogProfileName, out var bullfrogProfile))
             {
                 if (bullfrogProfile.MinInstanceCount != minInstances
@@ -48,6 +49,7 @@ namespace Bullfrog.Common
                          .WithFixedDateSchedule("UTC", start.UtcDateTime, end.UtcDateTime)
                          .Parent()
                          .ApplyAsync();
+                    profileModified = true;
                 }
             }
             else
@@ -59,9 +61,10 @@ namespace Bullfrog.Common
                     .WithFixedDateSchedule("UTC", start.UtcDateTime, end.UtcDateTime)
                     .Attach()
                     .ApplyAsync();
+                    profileModified = true;
             }
 
-            return minInstances;
+            return (minInstances, profileModified);
         }
 
         public static async Task<IAutoscaleSetting> RemoveBullfrogProfile(

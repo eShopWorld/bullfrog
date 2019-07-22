@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using Bullfrog.Actors.EventModels;
+using Bullfrog.Common.Telemetry;
 using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Runtime;
@@ -23,10 +24,10 @@ namespace Bullfrog.Actors
 
         protected override Task OnPreActorMethodAsync(ActorMethodContext actorMethodContext)
         {
-            var reference = ActorReference.Get(this);
+            LogicalCallTelemetryInitializer.Instance.SetProperty("ActorId", Id.ToString());
+
             _actorMethodDurationEvent = new ActorMethodDuration
             {
-                ActorId = reference.ActorId.ToString(),
                 Name = actorMethodContext.MethodName,
             };
             return base.OnPreActorMethodAsync(actorMethodContext);

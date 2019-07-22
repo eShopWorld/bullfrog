@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
+using Bullfrog.Common.Helpers;
 using Eshopworld.DevOps;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
@@ -56,6 +57,8 @@ namespace Bullfrog.Common.DependencyInjection
                 var restClient = c.Resolve<RestClient>();
                 return new ResourceManagementClient(restClient);
             }).As<IResourceManagementClient>();
+
+            builder.RegisterType<ScaleSetMonitor>();
         }
 
         private class AzureServiceTokenProviderAdapter : ITokenProvider

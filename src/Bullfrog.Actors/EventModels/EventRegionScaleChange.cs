@@ -8,8 +8,6 @@ namespace Bullfrog.Actors.EventModels
 {
     public class EventRegionScaleChange : TelemetryEvent
     {
-        public string ActorId { get; set; }
-
         /// <summary>
         /// The id of the scale event.
         /// </summary>

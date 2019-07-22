@@ -6,12 +6,12 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors.EventModels;
-using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.Models;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common;
+using Bullfrog.Common.Helpers;
 using Bullfrog.DomainEvents;
 using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
@@ -270,7 +270,6 @@ namespace Bullfrog.Actors
 
             BigBrother.Publish(new ScaleChangeStarted
             {
-                ActorId = Id.ToString(),
                 ResourceType = resourceType,
                 RequestedThroughput = requestedThroughput ?? -1,
                 PreviousChangeNotCompleted = replacing,
@@ -322,7 +321,7 @@ namespace Bullfrog.Actors
             {
                 var name = scaleRequestKV.Key;
                 var scaleRequest = scaleRequestKV.Value;
-                await scaleRequest.Process(_dateTimeProvider.UtcNow, () => GetScaler(name, configuration), BigBrother, name, Id.ToString());
+                await scaleRequest.Process(_dateTimeProvider.UtcNow, () => GetScaler(name, configuration), BigBrother, name);
             }
 
             var isScaledOut = state.RequestedScaleSetThroughput.HasValue || state.RequestedCosmosThroughput.HasValue;
@@ -365,7 +364,6 @@ namespace Bullfrog.Actors
             var states = state.ScaleRequests.Values.Select(o => o.Status).ToList();
             BigBrother.Publish(new ScaleAgentStatus
             {
-                ActorId = Id.ToString(),
                 RequestedScaleSetScale = state.RequestedScaleSetThroughput ?? -1,
                 RequestedCosmosDbScale = state.RequestedCosmosThroughput ?? -1,
                 NextWakeUpTime = nextWakeUpTime,
@@ -393,7 +391,6 @@ namespace Bullfrog.Actors
                     details = temporaryIssue ? "temporary" : "permanent";
                 BigBrother.Publish(new EventRegionScaleChange
                 {
-                    ActorId = Id.ToString(),
                     Id = id,
                     RegionName = _regionName,
                     ScaleGroup = _scaleGroupName,
@@ -613,7 +610,7 @@ namespace Bullfrog.Actors
                 OperationStarted = now;
             }
 
-            public async Task Process(DateTimeOffset now, Func<ResourceScaler> getScaler, IBigBrother bigBrother, string resourceName, string actorId)
+            public async Task Process(DateTimeOffset now, Func<ResourceScaler> getScaler, IBigBrother bigBrother, string resourceName)
             {
                 if (!IsExecuting)
                     return;
@@ -630,7 +627,6 @@ namespace Bullfrog.Actors
                     {
                         var ev = new ResourceScalingCompleted
                         {
-                            ActorId = actorId,
                             Duration = now - OperationStarted,
                             ResourceName = resourceName,
                         };

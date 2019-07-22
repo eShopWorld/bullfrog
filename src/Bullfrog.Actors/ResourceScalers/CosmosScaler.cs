@@ -47,6 +47,14 @@ namespace Bullfrog.Actors.ResourceScalers
             if (requestUnits < currentThroughput.MinimalRequestUnits)
                 requestUnits = currentThroughput.MinimalRequestUnits;
 
+            _bigBrother.Publish(new CosmosThroughputReport
+            {
+                ScalerName = _cosmosConfiguration.Name,
+                RequestedThroughput = throughput ?? -1,
+                PreviousRequestUnits = currentThroughput.RequestsUnits,
+                NewRequestUnits = requestUnits,
+            });
+
             if (requestUnits != currentThroughput.RequestsUnits)
             {
                 currentThroughput = await _throughputClient.Set(requestUnits);

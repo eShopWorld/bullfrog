@@ -1,4 +1,4 @@
-﻿namespace Bullfrog.Actors.EventModels
+﻿namespace Bullfrog.Common.Events
 {
     public class AzureOperationDurationEvent : Eshopworld.Core.TimedTelemetryEvent
     {

@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models.Validation;
 using Bullfrog.Common;
+using Bullfrog.Common.Helpers;
 using Bullfrog.Common.Models.Validation;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.Monitor.Fluent;
@@ -72,11 +73,12 @@ namespace Bullfrog.Actors.Interfaces.Models
         IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)
         {
             var authenticated = (Azure.IAuthenticated)validationContext.GetService(typeof(Azure.IAuthenticated));
+            var scaleSetMonitor = (ScaleSetMonitor)validationContext.GetService(typeof(ScaleSetMonitor));
 
-            yield return IsValidAsync(authenticated).GetAwaiter().GetResult();
+            yield return IsValidAsync(authenticated, scaleSetMonitor).GetAwaiter().GetResult();
         }
 
-        private async Task<ValidationResult> IsValidAsync(Azure.IAuthenticated authenticated)
+        private async Task<ValidationResult> IsValidAsync(Azure.IAuthenticated authenticated, ScaleSetMonitor monitor)
         {
             IAzure azure;
             IAutoscaleSetting autoscale;
@@ -120,18 +122,11 @@ namespace Bullfrog.Actors.Interfaces.Models
                     new[] { nameof(MinInstanceCount) });
             }
 
-            try
+            return await monitor.ValidateAccess(new LoadBalancerConfiguration
             {
-                await azure.MetricDefinitions.ListByResourceAsync(LoadBalancerResourceId);
-            }
-            catch (Exception ex)
-            {
-                return new ValidationResult(
-                                   $"Failed to read metric definitions of {LoadBalancerResourceId}: {ex.Message}",
-                                   new[] { nameof(LoadBalancerResourceId) });
-            }
-
-            return ValidationResult.Success;
+                HealthProbePort = HealthPortPort,
+                LoadBalancerResourceId = LoadBalancerResourceId,
+            });
         }
 
         #endregion

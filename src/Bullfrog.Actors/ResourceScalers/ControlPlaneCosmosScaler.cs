@@ -55,7 +55,7 @@ namespace Bullfrog.Actors.ResourceScalers
                 {
                     _bigBrother.Publish(new CosmosThroughputTooLow
                     {
-                        CosmosAccount = _cosmosConfiguration.Name,
+                        ScalerName = _cosmosConfiguration.Name,
                         ErrorMessage = ex.Message,
                         MinThroughput = ex.MinimumThroughput,
                         ThroughputRequired = requestUnits,
