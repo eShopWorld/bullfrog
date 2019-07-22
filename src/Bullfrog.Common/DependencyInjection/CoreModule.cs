@@ -4,6 +4,7 @@ using Autofac;
 using Bullfrog.Common.Telemetry;
 using Eshopworld.Core;
 using Eshopworld.DevOps;
+using Eshopworld.Messaging;
 using Eshopworld.Telemetry;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
@@ -26,12 +27,20 @@ namespace Bullfrog.Common.DependencyInjection
                    .As<IConfigurationRoot>()
                    .SingleInstance();
 
-            builder.Register<IBigBrother>(c =>
+            builder.Register((Func<IComponentContext, IBigBrother>)(c =>
             {
+                var configuration = c.Resolve<IConfigurationRoot>();
+
                 var telemetryClient = c.Resolve<TelemetryClient>();
-                var insKey = c.Resolve<IConfigurationRoot>()["BBInstrumentationKey"];
-                return new BigBrother(telemetryClient, insKey);
-            })
+                var insKey = configuration["BBInstrumentationKey"];
+                var bb = new BigBrother(telemetryClient, insKey);
+
+                var serviceBusConnectionString = configuration.GetSection("SB:eda:ConnectionString").Value;
+                var subscriptionId = configuration["AzureSubscriptionId"];
+                bb.PublishEventsToTopics(new Messenger(serviceBusConnectionString, subscriptionId));
+
+                return bb;
+            }))
             .SingleInstance();
 
             builder.RegisterType<ActorProxyFactory>().As<IActorProxyFactory>().SingleInstance();
