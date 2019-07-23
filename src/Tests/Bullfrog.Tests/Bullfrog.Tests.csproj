@@ -15,6 +15,7 @@
     <PackageReference Include="Castle.Core" Version="4.4.0" />
     <PackageReference Include="Eshopworld.Tests.Core" Version="1.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="2.2.0" />
+    <!-- Reference to ActiveDirectory nuget can be removed after the https://github.com/Azure/azure-sdk-for-net/issues/6458 issue is fixed. -->
     <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.1.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
     <PackageReference Include="Moq" Version="4.12.0" />
