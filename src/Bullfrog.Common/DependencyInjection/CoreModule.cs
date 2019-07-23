@@ -35,8 +35,8 @@ namespace Bullfrog.Common.DependencyInjection
                 var insKey = configuration["BBInstrumentationKey"];
                 var bb = new BigBrother(telemetryClient, insKey);
 
-                var serviceBusConnectionString = configuration.GetSection("SB:eda:ConnectionString").Value;
-                var subscriptionId = configuration.GetSection("Environment:SubscriptionId").Value;
+                var serviceBusConnectionString = configuration["SB:eda:ConnectionString"];
+                var subscriptionId = configuration["Environment:SubscriptionId"];
                 bb.PublishEventsToTopics(new Messenger(serviceBusConnectionString, subscriptionId));
 
                 return bb;

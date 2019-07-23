@@ -31,7 +31,7 @@ public sealed class CosmosFixture : IDisposable
             return _testCosmos;
 
         var configuration = _container.Resolve<IConfigurationRoot>();
-        var accountResourceId = configuration.GetSection("Bullfrog").GetSection("Testing")["TestCosmosAccountResourceId"];
+        var accountResourceId = configuration["Bullfrog:Testing:TestCosmosAccountResourceId"];
         var azure = _container.Resolve<IAzure>();
         var account = await azure.CosmosDBAccounts.GetByIdAsync(accountResourceId);
         var connectionStrings = await account.ListConnectionStringsAsync();
