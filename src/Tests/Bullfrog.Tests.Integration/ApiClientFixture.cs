@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Net.Http;
 using Client;
 using Eshopworld.Core;
+using EShopworld.Security.Services.Rest;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Rest;
 using Moq;
-using Security.Services.Rest;
 using Xunit;
 
 public class ApiClientFixture
@@ -18,10 +20,13 @@ public class ApiClientFixture
 
     public TokenCredentials GetAuthToken(string user)
     {
+        var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
+        var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
+
         var clientsConfig = configuration.GetSection("Bullfrog:Testing:Clients");
         var clientConfig = clientsConfig.GetSection(user);
         var tokenProviderOptions = clientConfig.Get<RefreshingTokenProviderOptions>();
-        var tokenProvider = new RefreshingTokenProvider(new TokenClientFactory(), Mock.Of<IBigBrother>(), tokenProviderOptions);
+        var tokenProvider = new RefreshingTokenProvider(httpClientFactory, Mock.Of<IBigBrother>(), tokenProviderOptions);
         return new TokenCredentials(tokenProvider);
     }
 

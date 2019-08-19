@@ -20,34 +20,34 @@ namespace Bullfrog.Common
         /// <returns></returns>
         public static async Task SetProvisionedThrouputAsync(this CosmosClient client, int? throughput, string database, string container, CancellationToken cancellationToken = default)
         {
-            var db = client.Databases[database];
+            var db = client.GetDatabase(database);
             if (container == null)
             {
                 if (!throughput.HasValue)
                 {
-                    throughput = await db.ReadProvisionedThroughputAsync(cancellationToken);
+                    throughput = await db.ReadThroughputAsync(cancellationToken);
                     if (!throughput.HasValue)
                     {
                         throw new BullfrogException($"The database {database} does not have provisioned throughput set.");
                     }
                 }
 
-                await db.ReplaceProvisionedThroughputAsync(throughput.Value, cancellationToken);
+                await db.ReplaceThroughputAsync(throughput.Value, cancellationToken: cancellationToken);
             }
             else
             {
-                var cnt = db.Containers[container];
+                var cnt = db.GetContainer(container);
 
                 if (!throughput.HasValue)
                 {
-                    throughput = await cnt.ReadProvisionedThroughputAsync(cancellationToken);
+                    throughput = await cnt.ReadThroughputAsync(cancellationToken);
                     if (!throughput.HasValue)
                     {
                         throw new BullfrogException($"The container {container} in the database {database} does not have provisioned throughput set.");
                     }
                 }
 
-                await cnt.ReplaceProvisionedThroughputAsync(throughput.Value, cancellationToken);
+                await cnt.ReplaceThroughputAsync(throughput.Value, cancellationToken: cancellationToken);
             }
         }
 
@@ -61,15 +61,15 @@ namespace Bullfrog.Common
         /// <returns></returns>
         public static async Task<int?> GetProvisionedThroughputAsync(this CosmosClient client, string database, string container, CancellationToken cancellationToken = default)
         {
-            var db = client.Databases[database];
+            var db = client.GetDatabase(database);
             if (container == null)
             {
-                return await db.ReadProvisionedThroughputAsync(cancellationToken);
+                return await db.ReadThroughputAsync(cancellationToken);
             }
             else
             {
-                var cosmosContainer = db.Containers[container];
-                return await cosmosContainer.ReadProvisionedThroughputAsync(cancellationToken);
+                var cosmosContainer = db.GetContainer(container);
+                return await cosmosContainer.ReadThroughputAsync(cancellationToken);
             }
         }
     }

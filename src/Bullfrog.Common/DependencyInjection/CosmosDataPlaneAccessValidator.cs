@@ -30,18 +30,18 @@ namespace Bullfrog.Common.DependencyInjection
                 {
                     try
                     {
-                        await client.GetAccountSettingsAsync();
+                        await client.ReadAccountAsync();
                     }
                     catch (Exception ex)
                     {
                         return new ValidationResult($"Failed to access account: {ex.Message}", new[] { nameof(connection.AccountName) });
                     }
 
-                    var database = client.Databases[connection.DatabaseName];
+                    var database = client.GetDatabase(connection.DatabaseName);
 
                     try
                     {
-                        var throughput = await database.ReadProvisionedThroughputAsync();
+                        var throughput = await database.ReadThroughputAsync();
                         if(connection.ContainerName == null && !throughput.HasValue)
                         {
                             return new ValidationResult($"The database {connection.DatabaseName} does not have provisioned throughput set.", new[] { nameof(connection.DatabaseName) });
@@ -54,11 +54,11 @@ namespace Bullfrog.Common.DependencyInjection
 
                     if (connection.ContainerName != null)
                     {
-                        var container = database.Containers[connection.ContainerName];
+                        var container = database.GetContainer(connection.ContainerName);
 
                         try
                         {
-                            var throughput =  await container.ReadProvisionedThroughputAsync();
+                            var throughput =  await container.ReadThroughputAsync();
                             if(!throughput.HasValue)
                                 return new ValidationResult($"The container {connection.ContainerName} in the database {connection.DatabaseName} does not have provisioned throughput set.", new[] { nameof(connection.ContainerName) });
                         }
