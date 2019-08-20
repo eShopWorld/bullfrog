@@ -40,8 +40,8 @@ public sealed class CosmosFixture : IDisposable
         var containerName = "TestContainer1";
         var connectionString = connectionStrings.ConnectionStrings.First().ConnectionString;
         _cosmosClient = new CosmosClient(connectionString);
-        var databaseResponse = await _cosmosClient.Databases.CreateDatabaseIfNotExistsAsync(databaseName, 400);
-        await databaseResponse.Database.Containers.CreateContainerIfNotExistsAsync(containerName, "/partitionKey");
+        var databaseResponse = await _cosmosClient.CreateDatabaseIfNotExistsAsync(databaseName, 400);
+        await databaseResponse.Database.CreateContainerIfNotExistsAsync(containerName, "/partitionKey");
 
         _testCosmos = new CosmosDetails
         {
@@ -69,7 +69,7 @@ public sealed class CosmosFixture : IDisposable
         _container?.Dispose();
         if (_testCosmos != null)
         {
-            _cosmosClient.Databases[_testCosmos.DatabaseName].DeleteAsync().GetAwaiter().GetResult();
+            _cosmosClient.GetDatabase(_testCosmos.DatabaseName).DeleteAsync().GetAwaiter().GetResult();
             _cosmosClient.Dispose();
         }
     }
