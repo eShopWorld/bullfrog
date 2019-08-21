@@ -3,6 +3,7 @@ using System.Fabric;
 using Autofac;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.ServiceFabric;
+using Microsoft.ApplicationInsights.ServiceFabric.Module;
 using Microsoft.ServiceFabric.Actors.Client;
 
 namespace Bullfrog.Common.DependencyInjection
@@ -18,6 +19,8 @@ namespace Bullfrog.Common.DependencyInjection
                 var serviceContext = x.ResolveOptional<ServiceContext>();
                 return FabricTelemetryInitializerExtension.CreateFabricTelemetryInitializer(serviceContext);
             }).As<ITelemetryInitializer>();
+            builder.Register(c => new ServiceRemotingRequestTrackingTelemetryModule { SetComponentCorrelationHttpHeaders = true }).As<ITelemetryModule>();
+            builder.RegisterType<ServiceRemotingDependencyTrackingTelemetryModule>().As<ITelemetryModule>();
         }
     }
 }

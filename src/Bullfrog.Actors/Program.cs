@@ -7,9 +7,9 @@ using Autofac;
 using Autofac.Integration.ServiceFabric;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common.DependencyInjection;
-using Bullfrog.Common.Helpers;
 using Eshopworld.Telemetry;
 using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.DependencyCollector;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Configuration;
 
@@ -35,6 +35,10 @@ namespace Bullfrog.Actors
                 builder.RegisterType<ScaleSetScaler>().AsSelf();
                 builder.RegisterType<ResourceScalerFactory>().As<IResourceScalerFactory>();
 
+                builder.RegisterType<OperationCorrelationTelemetryInitializer>().As<ITelemetryInitializer>();
+                builder.RegisterType<HttpDependenciesParsingTelemetryInitializer>().As<ITelemetryInitializer>();
+                builder.RegisterType<DependencyTrackingTelemetryModule>().As<ITelemetryModule>();
+
                 builder.Register(c =>
                 {
                     var insKey = c.Resolve<IConfigurationRoot>()["BBInstrumentationKey"];
@@ -43,6 +47,12 @@ namespace Bullfrog.Actors
                     {
                         configuration.TelemetryInitializers.Add(initializer);
                     }
+
+                    foreach(var modules in c.Resolve<IEnumerable<ITelemetryModule>>())
+                    {
+                        modules.Initialize(configuration);
+                    }
+
                     return configuration;
                 });
                 builder.RegisterType<TelemetryClient>().SingleInstance().OnActivated(env =>
@@ -53,8 +63,8 @@ namespace Bullfrog.Actors
 
                 builder.RegisterServiceFabricSupport();
 
-                builder.RegisterActor<ScaleManager>();
-                builder.RegisterActor<ConfigurationManager>();
+                builder.RegisterActor<ScaleManager>(typeof(MonitoredActorService));
+                builder.RegisterActor<ConfigurationManager>(typeof(MonitoredActorService));
 
                 using (var container = builder.Build())
                 {
