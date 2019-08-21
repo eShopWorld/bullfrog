@@ -10,7 +10,7 @@ using Microsoft.ServiceFabric.Services.Runtime;
 
 namespace Bullfrog.Api
 {
-    [EventSource(Name = "MyCompany-Bullfrog.Fabric-Bullfrog.Api")]
+    [EventSource(Name = "Esw.Bullfrog.Api")]
     [ExcludeFromCodeCoverage]
     internal sealed class ServiceEventSource : EventSource
     {
