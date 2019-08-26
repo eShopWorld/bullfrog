@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Fabric;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ namespace Bullfrog.Actors
     /// <summary>
     /// Creates actors with telemetry components injected into remoting pipeline to track requests and dependecies.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     internal class MonitoredActorService : ActorService
     {
         public MonitoredActorService(
@@ -88,6 +90,7 @@ namespace Bullfrog.Actors
             }
         }
 
+        [ExcludeFromCodeCoverage]
         [DataContract(Name = "msgBody", Namespace = Constants.ServiceCommunicationNamespace)]
         private class MyServiceRemotingRequestMessageBody : IServiceRemotingRequestMessageBody
         {
@@ -110,6 +113,7 @@ namespace Bullfrog.Actors
             }
         }
 
+        [ExcludeFromCodeCoverage]
         [DataContract(Name = "msgResponse", Namespace = Constants.ServiceCommunicationNamespace)]
         private class MyServiceRemotingResponseMessageBody : IServiceRemotingResponseMessageBody
         {
