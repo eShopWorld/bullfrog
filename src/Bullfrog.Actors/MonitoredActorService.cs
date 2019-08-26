@@ -90,7 +90,6 @@ namespace Bullfrog.Actors
             }
         }
 
-        [ExcludeFromCodeCoverage]
         [DataContract(Name = "msgBody", Namespace = Constants.ServiceCommunicationNamespace)]
         private class MyServiceRemotingRequestMessageBody : IServiceRemotingRequestMessageBody
         {
@@ -113,7 +112,6 @@ namespace Bullfrog.Actors
             }
         }
 
-        [ExcludeFromCodeCoverage]
         [DataContract(Name = "msgResponse", Namespace = Constants.ServiceCommunicationNamespace)]
         private class MyServiceRemotingResponseMessageBody : IServiceRemotingResponseMessageBody
         {
