@@ -6,9 +6,8 @@
     using System.Threading.Tasks;
     using Microsoft.ServiceFabric.Actors.Runtime;
 
-
     [ExcludeFromCodeCoverage]
-    [EventSource(Name = "MyCompany-Bullfrog.Fabric-Bullfrog.Actor")]
+    [EventSource(Name = "Esw.Bullfrog.Actors")]
     internal sealed class ActorEventSource : EventSource
     {
         public static readonly ActorEventSource Current = new ActorEventSource();

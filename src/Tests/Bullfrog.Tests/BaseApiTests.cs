@@ -49,7 +49,7 @@ public class BaseApiTests : IDisposable
     protected DateTimeOffset UtcNow { get; set; }
     protected TimeSpan TimeSincStart => UtcNow - StartTime;
 
-    private Mock<IDateTimeProvider> DateTimeProviderMoq;
+    private Mock<IDateTimeProvider> _dateTimeProviderMoq;
     protected Mock<IResourceScalerFactory> ScalerFactoryMoq { get; private set; }
     protected Mock<ScaleSetMonitor> ScaleSetMonitorMoq { get; private set; }
 
@@ -85,8 +85,8 @@ public class BaseApiTests : IDisposable
         actorProxyFactory.MissingActor += ActoryProxyFactory_MissingActor;
         services.AddSingleton<IActorProxyFactory>(new BullfrogMockActorProxyFactory(actorProxyFactory));
 
-        DateTimeProviderMoq = new Mock<IDateTimeProvider>();
-        DateTimeProviderMoq.SetupGet(o => o.UtcNow).Returns(() => UtcNow);
+        _dateTimeProviderMoq = new Mock<IDateTimeProvider>();
+        _dateTimeProviderMoq.SetupGet(o => o.UtcNow).Returns(() => UtcNow);
 
         RegisterConfigurationManagerActor(actorProxyFactory, bigBrother);
 
@@ -107,7 +107,7 @@ public class BaseApiTests : IDisposable
         ScalerFactoryMoq = new Mock<IResourceScalerFactory>(MockBehavior.Strict);
         foreach (var regionName in "eu,eu1,eu2,eu3,$cosmos".Split(','))
         {
-            RegisterScaleManagerActor("sg", regionName, ScalerFactoryMoq, ScaleSetMonitorMoq, DateTimeProviderMoq.Object, bigBrother, actorProxyFactory);
+            RegisterScaleManagerActor("sg", regionName, ScalerFactoryMoq, ScaleSetMonitorMoq, _dateTimeProviderMoq.Object, bigBrother, actorProxyFactory);
         }
 
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
@@ -142,7 +142,7 @@ public class BaseApiTests : IDisposable
     {
         ActorBase scaleManagerActorFactory(ActorService service, ActorId id)
             => new ScaleManager(service, id, scalerFactoryMoq.Object, scaleSetMonitor.Object, dateTimeProvider, actorProxyFactory, bigBrother);
-        var stateProvider = new MyActorStateProvider(DateTimeProviderMoq.Object);
+        var stateProvider = new MyActorStateProvider(_dateTimeProviderMoq.Object);
         var scaleManagerSvc = MockActorServiceFactory.CreateActorServiceForActor<ScaleManager>(scaleManagerActorFactory, stateProvider);
         var scaleManagerActor = scaleManagerSvc.Activate(new ActorId($"ScaleManager:{scaleGroup}/{region}"));
         scaleManagerActor.InvokeOnActivateAsync().GetAwaiter().GetResult();
@@ -154,8 +154,8 @@ public class BaseApiTests : IDisposable
     {
         var id = new ActorId("configuration");
         ActorBase actorFactory(ActorService service, ActorId actorId)
-            => new ConfigurationManager(service, actorId, DateTimeProviderMoq.Object, actoryProxyFactory, bigBrother);
-        var stateProvider = new MyActorStateProvider(DateTimeProviderMoq.Object);
+            => new ConfigurationManager(service, actorId, _dateTimeProviderMoq.Object, actoryProxyFactory, bigBrother);
+        var stateProvider = new MyActorStateProvider(_dateTimeProviderMoq.Object);
         var svc = MockActorServiceFactory.CreateActorServiceForActor<ConfigurationManager>(actorFactory, stateProvider);
         ConfigurationManagerActor = svc.Activate(id);
         ConfigurationManagerActor.InvokeOnActivateAsync().GetAwaiter().GetResult();

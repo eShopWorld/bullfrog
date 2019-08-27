@@ -11,11 +11,11 @@ using Xunit;
 
 public class ApiClientFixture
 {
-    private readonly IConfigurationRoot configuration;
+    private readonly IConfigurationRoot _configuration;
 
     public ApiClientFixture()
     {
-        configuration = Eshopworld.DevOps.EswDevOpsSdk.BuildConfiguration();
+        _configuration = Eshopworld.DevOps.EswDevOpsSdk.BuildConfiguration();
     }
 
     public TokenCredentials GetAuthToken(string user)
@@ -23,7 +23,7 @@ public class ApiClientFixture
         var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
         var httpClientFactory = serviceProvider.GetService<IHttpClientFactory>();
 
-        var clientsConfig = configuration.GetSection("Bullfrog:Testing:Clients");
+        var clientsConfig = _configuration.GetSection("Bullfrog:Testing:Clients");
         var clientConfig = clientsConfig.GetSection(user);
         var tokenProviderOptions = clientConfig.Get<RefreshingTokenProviderOptions>();
         var tokenProvider = new RefreshingTokenProvider(httpClientFactory, Mock.Of<IBigBrother>(), tokenProviderOptions);
@@ -43,13 +43,13 @@ public class ApiClientFixture
     public IBullfrogApi GetBullfrogApi(string user)
     {
         var token = GetAuthToken(user);
-        var url = new Uri(configuration["Bullfrog:Testing:ApiUrl"]);
+        var url = new Uri(_configuration["Bullfrog:Testing:ApiUrl"]);
         return new BullfrogApi(url, token);
     }
 
     public IBullfrogApi GetBullfrogApiUnauthenticated()
     {
-        var url = new Uri(configuration["Bullfrog:Testing:ApiUrl"]);
+        var url = new Uri(_configuration["Bullfrog:Testing:ApiUrl"]);
 
         return new BullfrogApi(url, AnonymousCredential.Instance);
     }

@@ -66,7 +66,7 @@ namespace Bullfrog.Actors
             _scaleSetMonitor = scaleSetMonitor;
             _dateTimeProvider = dateTimeProvider;
             _proxyFactory = proxyFactory;
-            var match = Regex.Match(actorId.ToString(), ":(.+)/(.+)$");
+            var match = Regex.Match(actorId.ToString(), ":([^/]+)/([^/]+)$");
             if (!match.Success)
                 throw new BullfrogException($"The ActorId {actorId} has invalid format.");
             _scaleGroupName = match.Groups[1].Value;
