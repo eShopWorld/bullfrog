@@ -16,7 +16,7 @@ namespace Bullfrog.Api.Controllers
     [ApiController]
     public abstract class BaseManagementController : ControllerBase
     {
-        private static readonly Dictionary<Type, string> actorServices = new Dictionary<Type, string>
+        private static readonly Dictionary<Type, string> ActorServices = new Dictionary<Type, string>
         {
             [typeof(IScaleManager)] = "ScaleManagerActorService",
             [typeof(IConfigurationManager)] = "ConfigurationManagerActorService",
@@ -49,7 +49,7 @@ namespace Bullfrog.Api.Controllers
         protected TActor GetActor<TActor>(ActorId actorId)
             where TActor : IActor
         {
-            var serviceName = actorServices[typeof(TActor)];
+            var serviceName = ActorServices[typeof(TActor)];
             var actorUri = new Uri($"{StatelessServiceContext.CodePackageActivationContext.ApplicationName}/{serviceName}");
             return _proxyFactory.CreateActorProxy<TActor>(actorUri, actorId);
         }

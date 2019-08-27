@@ -16,7 +16,7 @@ using Microsoft.ServiceFabric.Services.Remoting.V2.Runtime;
 namespace Bullfrog.Actors
 {
     /// <summary>
-    /// Creates actors with telemetry components injected into remoting pipeline to track requests and dependecies.
+    /// Creates actors with telemetry components injected into a remoting pipeline to track requests and dependencies.
     /// </summary>
     [ExcludeFromCodeCoverage]
     internal class MonitoredActorService : ActorService
@@ -93,39 +93,39 @@ namespace Bullfrog.Actors
         [DataContract(Name = "msgBody", Namespace = Constants.ServiceCommunicationNamespace)]
         private class MyServiceRemotingRequestMessageBody : IServiceRemotingRequestMessageBody
         {
-            [DataMember]
-            private Dictionary<string, object> parameters;
+            [DataMember(Name = "parameters")]
+            private readonly Dictionary<string, object> _parameters;
 
             public MyServiceRemotingRequestMessageBody(int parameterInfos)
             {
-                parameters = new Dictionary<string, object>(parameterInfos);
+                _parameters = new Dictionary<string, object>(parameterInfos);
             }
 
             public void SetParameter(int position, string parameName, object parameter)
             {
-                parameters[parameName] = parameter;
+                _parameters[parameName] = parameter;
             }
 
             public object GetParameter(int position, string parameName, Type paramType)
             {
-                return parameters[parameName];
+                return _parameters[parameName];
             }
         }
 
         [DataContract(Name = "msgResponse", Namespace = Constants.ServiceCommunicationNamespace)]
         private class MyServiceRemotingResponseMessageBody : IServiceRemotingResponseMessageBody
         {
-            [DataMember]
-            private object response;
+            [DataMember(Name = "response")]
+            private object _response;
 
             public void Set(object response)
             {
-                this.response = response;
+                _response = response;
             }
 
             public object Get(Type paramType)
             {
-                return response;
+                return _response;
             }
         }
 
