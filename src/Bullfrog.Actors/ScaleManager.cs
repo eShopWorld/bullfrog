@@ -240,7 +240,15 @@ namespace Bullfrog.Actors
 
         async Task IRemindable.ReceiveReminderAsync(string reminderName, byte[] state, TimeSpan dueTime, TimeSpan period)
         {
-            await UpdateState();
+            try
+            {
+                await UpdateState();
+            }
+            catch (Exception ex)
+            {
+                BigBrother.Publish(ex.ToExceptionEvent());
+                await WakeMeAt(_dateTimeProvider.UtcNow.AddMinutes(2));
+            }
         }
 
         private Task ScheduleStateUpdate()
@@ -343,12 +351,12 @@ namespace Bullfrog.Actors
             var finalScale = state.ScaleRequests.Any(o => o.Value.IsExecuting)
                 ? null
                 : state.ScaleRequests.Min(o => o.Value.CompletedThroughput);
-            await ReportEventState(events, now, maxLeadTime,
+            await ReportEventState(events, state.Changes, now, maxLeadTime,
                 finalScale,
                 state.ScaleRequests.Any(o => o.Value.Status == ScaleRequestStatus.Failing));
 
             // Find out when to wake up the next time.
-            var nextWakeUpTime = state.ScaleRequests.Any(o => o.Value.IsExecuting)
+            var nextWakeUpTime = state.IsRefreshRequired
                 ? _dateTimeProvider.UtcNow.Add(ScanPeriod)
                 : FindNextWakeUpTime(
                     events,
@@ -375,17 +383,17 @@ namespace Bullfrog.Actors
             });
         }
 
-        private async Task ReportEventState(List<ManagedScaleEvent> events, DateTimeOffset now, TimeSpan leadTime, int? finalScale, bool issuesReported)
+        private async Task ReportEventState(List<ManagedScaleEvent> events, List<ScaleEventStateChange> changes, DateTimeOffset now,
+            TimeSpan leadTime, int? finalScale, bool issuesReported)
         {
             var activeEvents = events.Where(e => e.IsActive(now, leadTime)).ToHashSet();
             var executingEvents = events.Where(e => e.IsActive(now, TimeSpan.Zero)).ToHashSet();
             var reportedEventStates = (await _reportedEventStates.TryGet()).Value ?? new Dictionary<Guid, ScaleChangeType>();
-            var changes = new List<(Guid id, ScaleChangeType type)>();
 
             void ChangeState(Guid id, ScaleChangeType type, bool temporaryIssue = false)
             {
                 reportedEventStates[id] = type;
-                changes.Add((id, type));
+                changes.Add(new ScaleEventStateChange { EventId = id, State = type });
                 string details = null;
                 if (type == ScaleChangeType.ScaleIssue)
                     details = temporaryIssue ? "temporary" : "permanent";
@@ -454,8 +462,16 @@ namespace Bullfrog.Actors
 
             if (changes.Any())
             {
-                var reportedChanges = changes.Select(c => new ScaleEventStateChange { EventId = c.id, State = c.type }).ToList();
-                await GetConfigurationManager().ReportScaleEventState(_scaleGroupName, _regionName, reportedChanges);
+                try
+                {
+                    await GetConfigurationManager().ReportScaleEventState(_scaleGroupName, _regionName, changes);
+                    changes.Clear();
+                }
+                catch (Exception ex)
+                {
+                    BigBrother.Publish(ex.ToExceptionEvent());
+                }
+
                 await _reportedEventStates.Set(reportedEventStates);
             }
         }
@@ -557,10 +573,19 @@ namespace Bullfrog.Actors
                 = new Dictionary<string, ScaleRequest>();
 
             [DataMember]
+            public List<ScaleEventStateChange> Changes { get; set; }
+                = new List<ScaleEventStateChange>();
+
+            [DataMember]
             public int? RequestedScaleSetThroughput { get; set; }
 
             [DataMember]
             public int? RequestedCosmosThroughput { get; set; }
+
+            /// <summary>
+            /// Informs whether the state should be refreshed shortly.
+            /// </summary>
+            public bool IsRefreshRequired => ScaleRequests.Any(o => o.Value.IsExecuting) || Changes.Any();
         }
 
         private enum ScaleRequestStatus
