@@ -48,7 +48,7 @@ namespace Bullfrog.Actors
                         configuration.TelemetryInitializers.Add(initializer);
                     }
 
-                    foreach(var modules in c.Resolve<IEnumerable<ITelemetryModule>>())
+                    foreach (var modules in c.Resolve<IEnumerable<ITelemetryModule>>())
                     {
                         modules.Initialize(configuration);
                     }

@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="4.9.4" />
-    <PackageReference Include="Eshopworld.DevOps" Version="4.1.0" />
+    <PackageReference Include="Eshopworld.DevOps" Version="4.2.0" />
     <PackageReference Include="Eshopworld.Messaging" Version="1.1.1" />
     <PackageReference Include="Eshopworld.Telemetry" Version="2.1.5" />
     <PackageReference Include="Microsoft.ApplicationInsights.ServiceFabric.Native" Version="2.3.1" />
