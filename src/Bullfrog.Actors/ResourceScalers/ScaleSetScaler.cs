@@ -89,7 +89,7 @@ namespace Bullfrog.Actors.ResourceScalers
                 AvailableThroughput = availableThroughput,
             });
 
-            if (instances < workingInstances)
+            if (instances <= workingInstances)
             {
                 return availableThroughput;
             }
