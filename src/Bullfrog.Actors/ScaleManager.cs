@@ -351,6 +351,8 @@ namespace Bullfrog.Actors
             var finalScale = state.ScaleRequests.Any(o => o.Value.IsExecuting)
                 ? null
                 : state.ScaleRequests.Min(o => o.Value.CompletedThroughput);
+            if (state.Changes == null)
+                state.Changes = new List<ScaleEventStateChange>();
             await ReportEventState(events, state.Changes, now, maxLeadTime,
                 finalScale,
                 state.ScaleRequests.Any(o => o.Value.Status == ScaleRequestStatus.Failing));
