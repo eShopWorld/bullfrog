@@ -25,7 +25,7 @@ namespace Bullfrog.Actors
             ActorService actorService,
             ActorId actorId,
             IBigBrother bigBrother)
-            : base(actorService, actorId, bigBrother)
+            : base(actorService, actorId, bigBrother, null)
         {
             _events = new StateItem<Dictionary<Guid, ScaleEventCurrentState>>(StateManager, "events");
             _regions = new StateItem<HashSet<string>>(StateManager, "regions");
@@ -69,9 +69,24 @@ namespace Bullfrog.Actors
 
                 scaleEvent.Regions[region] = change.State;
                 ReportEventStateChange(_scaleGroupName, change.EventId, scaleEvent);
+                if (scaleEvent.ReportedState == ScaleChangeType.ScaleInComplete)
+                    scaleEvents.Remove(change.EventId);
             }
 
             await _events.Set(scaleEvents);
+        }
+
+        async Task IScaleEventStateReporter.PurgeScaleEvents(List<Guid> scaleEvents)
+        {
+            var events = await _events.Get();
+            var changed = false;
+            foreach(var id in scaleEvents)
+            {
+                changed |= events.Remove(id);
+            }
+
+            if (changed)
+                await _events.Set(events);
         }
 
         private void ReportEventStateChange(string scaleGroup, Guid eventId, ScaleEventCurrentState scaleEvent)

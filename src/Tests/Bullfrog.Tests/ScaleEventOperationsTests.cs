@@ -56,6 +56,21 @@ public class ScaleEventOperationsTests : BaseApiTests
     }
 
     [Fact, IsLayer0]
+    public async Task UpdateAlreadyFinishedEvent()
+    {
+        RegisterDefaultScalers();
+        CreateScaleGroup();
+        var eventId = Guid.NewGuid();
+        await ApiClient.SaveScaleEventAsync("sg", eventId, NewScaleEvent(1, 3));
+        await AdvanceTimeTo(UtcNow.AddHours(6));
+
+        Task<HttpOperationResponse<ScheduledScaleEvent>> call()
+            => ApiClient.SaveScaleEventWithHttpMessagesAsync("sg", eventId, NewScaleEvent(8, 9));
+
+        ShouldThrowBullfrogError(call, -1);
+    }
+
+    [Fact, IsLayer0]
     public async Task CreateEventInThePast()
     {
         CreateScaleGroup();

@@ -25,6 +25,9 @@ namespace Bullfrog.Actors
     {
         private const string ReminderName = "wakeupReminder";
         internal static readonly TimeSpan ScanPeriod = TimeSpan.FromMinutes(2);
+
+        internal static TimeSpan OldScaleEventAge { get; set; } = TimeSpan.FromDays(7);
+
         private readonly StateItem<List<ManagedScaleEvent>> _events;
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
         private readonly StateItem<Dictionary<Guid, ScaleChangeType>> _reportedEventStates;
@@ -32,7 +35,6 @@ namespace Bullfrog.Actors
         private readonly IResourceScalerFactory _scalerFactory;
         private readonly ScaleSetMonitor _scaleSetMonitor;
         private readonly IDateTimeProvider _dateTimeProvider;
-        private readonly IActorProxyFactory _proxyFactory;
         private readonly string _scaleGroupName;
         private readonly string _regionName;
         private readonly Dictionary<string, ResourceScaler> _scalers
@@ -56,7 +58,7 @@ namespace Bullfrog.Actors
             IDateTimeProvider dateTimeProvider,
             IActorProxyFactory proxyFactory,
             IBigBrother bigBrother)
-            : base(actorService, actorId, bigBrother)
+            : base(actorService, actorId, bigBrother, proxyFactory)
         {
             _events = new StateItem<List<ManagedScaleEvent>>(StateManager, "scaleEvents");
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
@@ -65,7 +67,6 @@ namespace Bullfrog.Actors
             _scalerFactory = scalerFactory;
             _scaleSetMonitor = scaleSetMonitor;
             _dateTimeProvider = dateTimeProvider;
-            _proxyFactory = proxyFactory;
             var match = Regex.Match(actorId.ToString(), ":([^/]+)/([^/]+)$");
             if (!match.Success)
                 throw new BullfrogException($"The ActorId {actorId} has invalid format.");
@@ -207,6 +208,9 @@ namespace Bullfrog.Actors
             var estimatedScaleTime = TimeSpan.FromTicks(Math.Max(configuration.Value.CosmosDbPrescaleLeadTime.Ticks,
                 configuration.Value.ScaleSetPrescaleLeadTime.Ticks));
             modifiedEvent.EstimatedScaleUpAt = modifiedEvent.RequiredScaleAt - estimatedScaleTime;
+
+            var completedBefore = _dateTimeProvider.UtcNow.Add(-OldScaleEventAge);
+            events.RemoveAll(e => e.StartScaleDownAt < completedBefore);
 
             await _events.Set(events);
 
@@ -466,7 +470,7 @@ namespace Bullfrog.Actors
             {
                 try
                 {
-                    await GetScaleEventStateReporter().ReportScaleEventState(_regionName, changes);
+                    await GetScaleEventStateReporter(_scaleGroupName).ReportScaleEventState(_regionName, changes);
                     changes.Clear();
                 }
                 catch (Exception ex)
@@ -545,16 +549,6 @@ namespace Bullfrog.Actors
                 .Min();
 
             return nextTime;
-        }
-
-        private IScaleEventStateReporter GetScaleEventStateReporter()
-        {
-            return _proxyFactory.CreateActorProxy<IScaleEventStateReporter>(new ActorId("reporter:" +_scaleGroupName));
-        }
-
-        private IConfigurationManager GetConfigurationManager()
-        {
-            return _proxyFactory.CreateActorProxy<IConfigurationManager>(new ActorId("configuration"));
         }
 
         private ResourceScaler GetScaler(string name, ScaleManagerConfiguration configuration)

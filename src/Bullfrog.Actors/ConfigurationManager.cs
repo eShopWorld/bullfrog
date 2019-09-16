@@ -21,7 +21,8 @@ namespace Bullfrog.Actors
         private const string ScaleGroupKeyPrefix = "scaleGroup:";
         private const string EventsListKeyPrefix = "events:";
         private readonly IDateTimeProvider _dateTimeProvider;
-        private readonly IActorProxyFactory _proxyFactory;
+
+        internal static TimeSpan OldScaleEventAge { get; set; } = TimeSpan.FromDays(7);
 
         /// <summary>
         /// Initializes a new instance of ScaleManager
@@ -36,10 +37,9 @@ namespace Bullfrog.Actors
             IDateTimeProvider dateTimeProvider,
             IActorProxyFactory proxyFactory,
             IBigBrother bigBrother)
-            : base(actorService, actorId, bigBrother)
+            : base(actorService, actorId, bigBrother, proxyFactory)
         {
             _dateTimeProvider = dateTimeProvider;
-            _proxyFactory = proxyFactory;
         }
 
         /// <summary>
@@ -85,7 +85,7 @@ namespace Bullfrog.Actors
                 }
 
                 var regions = definition.Regions.Select(x => x.RegionName);
-                if (definition.Cosmos!= null && definition.Cosmos.Count > 0)
+                if (definition.Cosmos != null && definition.Cosmos.Count > 0)
                     regions = regions.Append(ScaleGroupDefinition.SharedCosmosRegion);
                 await GetScaleEventStateReporter(name).ConfigureRegions(regions.ToArray());
                 await UpdateScaleManagers(name, definition, existingGroups);
@@ -168,11 +168,12 @@ namespace Bullfrog.Actors
             var scaleEvents = await eventsListAccessor.Get();
             var isEventUpdated = scaleEvents.TryGetValue(eventId, out var registeredEvent);
             var now = _dateTimeProvider.UtcNow;
-            var isTooLate = isEventUpdated
-                ? registeredEvent.StartScaleDownAt <= now
-                : scaleEvent.StartScaleDownAt <= now;
-            if (isTooLate)
-                throw new ScaleEventSaveException("Can't register scale event in the past.", ScaleEventSaveFailureReason.RegistrationInThePast);
+
+            if (isEventUpdated && registeredEvent.StartScaleDownAt <= now)
+                throw new ScaleEventSaveException("A processed scale event he already processed scale event.", ScaleEventSaveFailureReason.RegistrationInThePast);
+
+            if (scaleEvent.StartScaleDownAt <= now)
+                throw new ScaleEventSaveException("Can't register a scale event that ends in the past.", ScaleEventSaveFailureReason.RegistrationInThePast);
 
             foreach (var region in scaleEvent.RegionConfig)
             {
@@ -256,6 +257,8 @@ namespace Bullfrog.Actors
                 saveResult = SaveScaleEventResult.Created;
             }
 
+            RemoveOldScaleEvents(scaleEvents, now.Add(-OldScaleEventAge));
+
             await eventsListAccessor.Set(scaleEvents);
 
             var leadTime = scaleGroupDefinition.MaxLeadTime(scaleEvent.RegionConfig.Select(r => r.Name));
@@ -319,6 +322,8 @@ namespace Bullfrog.Actors
                     await scaleManagerActor.DeleteScaleEvent(eventId);
                 }
 
+                await GetScaleEventStateReporter(scaleGroup).PurgeScaleEvents(new List<Guid> { eventId });
+
                 list.Remove(eventId);
                 await scaleEventsState.Set(list);
 
@@ -366,6 +371,7 @@ namespace Bullfrog.Actors
             };
         }
 
+        // TODO: remove it after deploying this version
         async Task IConfigurationManager.ReportScaleEventState(string scaleGroup, string region, List<ScaleEventStateChange> changes)
         {
             var stateItem = GetScaleEventsStateItem(scaleGroup);
@@ -403,6 +409,14 @@ namespace Bullfrog.Actors
         private StateItem<ScaleGroupDefinition> GetScaleGroupState(string name)
         {
             return new StateItem<ScaleGroupDefinition>(StateManager, ScaleGroupKeyPrefix + name);
+        }
+
+        private void RemoveOldScaleEvents(Dictionary<Guid, RegisteredScaleEvent> events, DateTimeOffset completedBefore)
+        {
+            var oldEvents = events.Where(kv => kv.Value.StartScaleDownAt < completedBefore).ToList();
+            if (oldEvents.Count > 0)
+                foreach (var e in oldEvents)
+                    events.Remove(e.Key);
         }
 
         private StateItem<Dictionary<Guid, RegisteredScaleEvent>> GetScaleEventsStateItem(string scaleGroup)
@@ -465,21 +479,6 @@ namespace Bullfrog.Actors
             var disableCosmos = existingGroup.HasValue && existingGroup.Value.HasSharedCosmosDb
                 && !definition.HasSharedCosmosDb;
             await DisableRegions(name, removedRegions, disableCosmos);
-        }
-
-        private TActor GetActor<TActor>(string scaleGroup, string region)
-               where TActor : IActor
-        {
-            var actorName = typeof(TActor).Name;
-            if (actorName.StartsWith('I'))
-                actorName = actorName.Substring(1);
-            var actorId = new ActorId($"{actorName}:{scaleGroup}/{region}");
-            return _proxyFactory.CreateActorProxy<TActor>(actorId);
-        }
-
-        private IScaleEventStateReporter GetScaleEventStateReporter(string scaleGroup)
-        {
-            return _proxyFactory.CreateActorProxy<IScaleEventStateReporter>(new ActorId("reporter:" + scaleGroup));
         }
     }
 }

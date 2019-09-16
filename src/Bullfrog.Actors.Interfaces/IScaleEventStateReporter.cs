@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models;
 using Microsoft.ServiceFabric.Actors;
@@ -24,5 +25,12 @@ namespace Bullfrog.Actors.Interfaces
         /// <param name="changes">The lists of events with their new states.</param>
         /// <returns>The task</returns>
         Task ReportScaleEventState(string region, List<ScaleEventStateChange> changes);
+
+        /// <summary>
+        /// Removes scale events.
+        /// </summary>
+        /// <param name="scaleEvents">Scale events to remove.</param>
+        /// <returns>The task</returns>
+        Task PurgeScaleEvents(List<Guid> scaleEvents);
     }
 }
