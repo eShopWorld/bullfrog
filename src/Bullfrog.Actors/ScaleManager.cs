@@ -35,6 +35,7 @@ namespace Bullfrog.Actors
         private readonly IResourceScalerFactory _scalerFactory;
         private readonly ScaleSetMonitor _scaleSetMonitor;
         private readonly IDateTimeProvider _dateTimeProvider;
+        private readonly IActorProxyFactory _proxyFactory;
         private readonly string _scaleGroupName;
         private readonly string _regionName;
         private readonly Dictionary<string, ResourceScaler> _scalers
@@ -58,7 +59,7 @@ namespace Bullfrog.Actors
             IDateTimeProvider dateTimeProvider,
             IActorProxyFactory proxyFactory,
             IBigBrother bigBrother)
-            : base(actorService, actorId, bigBrother, proxyFactory)
+            : base(actorService, actorId, bigBrother)
         {
             _events = new StateItem<List<ManagedScaleEvent>>(StateManager, "scaleEvents");
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
@@ -67,6 +68,7 @@ namespace Bullfrog.Actors
             _scalerFactory = scalerFactory;
             _scaleSetMonitor = scaleSetMonitor;
             _dateTimeProvider = dateTimeProvider;
+            _proxyFactory = proxyFactory;
             var match = Regex.Match(actorId.ToString(), ":([^/]+)/([^/]+)$");
             if (!match.Success)
                 throw new BullfrogException($"The ActorId {actorId} has invalid format.");
@@ -470,7 +472,7 @@ namespace Bullfrog.Actors
             {
                 try
                 {
-                    await GetScaleEventStateReporter(_scaleGroupName).ReportScaleEventState(_regionName, changes);
+                    await _proxyFactory.GetScaleEventStateReporter(_scaleGroupName).ReportScaleEventState(_regionName, changes);
                     changes.Clear();
                 }
                 catch (Exception ex)

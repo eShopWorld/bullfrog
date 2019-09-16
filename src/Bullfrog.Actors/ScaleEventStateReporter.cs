@@ -25,7 +25,7 @@ namespace Bullfrog.Actors
             ActorService actorService,
             ActorId actorId,
             IBigBrother bigBrother)
-            : base(actorService, actorId, bigBrother, null)
+            : base(actorService, actorId, bigBrother)
         {
             _events = new StateItem<Dictionary<Guid, ScaleEventCurrentState>>(StateManager, "events");
             _regions = new StateItem<HashSet<string>>(StateManager, "regions");

@@ -21,6 +21,7 @@ namespace Bullfrog.Actors
         private const string ScaleGroupKeyPrefix = "scaleGroup:";
         private const string EventsListKeyPrefix = "events:";
         private readonly IDateTimeProvider _dateTimeProvider;
+        private readonly IActorProxyFactory _proxyFactory;
 
         internal static TimeSpan OldScaleEventAge { get; set; } = TimeSpan.FromDays(7);
 
@@ -37,9 +38,10 @@ namespace Bullfrog.Actors
             IDateTimeProvider dateTimeProvider,
             IActorProxyFactory proxyFactory,
             IBigBrother bigBrother)
-            : base(actorService, actorId, bigBrother, proxyFactory)
+            : base(actorService, actorId, bigBrother)
         {
             _dateTimeProvider = dateTimeProvider;
+            _proxyFactory = proxyFactory;
         }
 
         /// <summary>
@@ -87,7 +89,7 @@ namespace Bullfrog.Actors
                 var regions = definition.Regions.Select(x => x.RegionName);
                 if (definition.Cosmos != null && definition.Cosmos.Count > 0)
                     regions = regions.Append(ScaleGroupDefinition.SharedCosmosRegion);
-                await GetScaleEventStateReporter(name).ConfigureRegions(regions.ToArray());
+                await _proxyFactory.GetScaleEventStateReporter(name).ConfigureRegions(regions.ToArray());
                 await UpdateScaleManagers(name, definition, existingGroups);
                 await state.Set(definition, default);
             }
@@ -95,7 +97,7 @@ namespace Bullfrog.Actors
             {
                 // Delete the scale group if it has been registered.
                 await DisableRegions(name, existingGroups.Value.Regions.Select(r => r.RegionName), existingGroups.Value.HasSharedCosmosDb);
-                await GetScaleEventStateReporter(name).ConfigureRegions(null);
+                await _proxyFactory.GetScaleEventStateReporter(name).ConfigureRegions(null);
                 await state.Remove(default);
             }
 
@@ -191,7 +193,7 @@ namespace Bullfrog.Actors
                     StartScaleDownAt = scaleEvent.StartScaleDownAt,
                     Scale = regionConfig.Scale,
                 };
-                var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, regionConfig.Name);
+                var scaleManagerActor = _proxyFactory.GetActor<IScaleManager>(scaleGroup, regionConfig.Name);
                 await scaleManagerActor.ScheduleScaleEvent(regionScaleEvent);
             }
 
@@ -205,7 +207,7 @@ namespace Bullfrog.Actors
                     StartScaleDownAt = scaleEvent.StartScaleDownAt,
                     Scale = scaleEvent.RegionConfig.Max(r => r.Scale),
                 };
-                var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, ScaleGroupDefinition.SharedCosmosRegion);
+                var scaleManagerActor = _proxyFactory.GetActor<IScaleManager>(scaleGroup, ScaleGroupDefinition.SharedCosmosRegion);
                 await scaleManagerActor.ScheduleScaleEvent(regionScaleEvent);
             }
 
@@ -225,7 +227,7 @@ namespace Bullfrog.Actors
                     .ToList();
                 foreach (var regionName in removedRegions)
                 {
-                    var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, regionName);
+                    var scaleManagerActor = _proxyFactory.GetActor<IScaleManager>(scaleGroup, regionName);
                     await scaleManagerActor.DeleteScaleEvent(eventId);
                     registeredEvent.Regions.Remove(regionName);
                 }
@@ -312,17 +314,17 @@ namespace Bullfrog.Actors
             {
                 foreach (var region in scaleEvent.Regions)
                 {
-                    var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, region.Key);
+                    var scaleManagerActor = _proxyFactory.GetActor<IScaleManager>(scaleGroup, region.Key);
                     await scaleManagerActor.DeleteScaleEvent(eventId);
                 }
 
                 if (definition.HasSharedCosmosDb)
                 {
-                    var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, ScaleGroupDefinition.SharedCosmosRegion);
+                    var scaleManagerActor = _proxyFactory.GetActor<IScaleManager>(scaleGroup, ScaleGroupDefinition.SharedCosmosRegion);
                     await scaleManagerActor.DeleteScaleEvent(eventId);
                 }
 
-                await GetScaleEventStateReporter(scaleGroup).PurgeScaleEvents(new List<Guid> { eventId });
+                await _proxyFactory.GetScaleEventStateReporter(scaleGroup).PurgeScaleEvents(new List<Guid> { eventId });
 
                 list.Remove(eventId);
                 await scaleEventsState.Set(list);
@@ -349,7 +351,7 @@ namespace Bullfrog.Actors
             var scaleRegionStates = new List<ScaleRegionState>();
             foreach (var region in definition.Regions)
             {
-                var scaleManagerActor = GetActor<IScaleManager>(scaleGroup, region.RegionName);
+                var scaleManagerActor = _proxyFactory.GetActor<IScaleManager>(scaleGroup, region.RegionName);
                 var state = await scaleManagerActor.GetScaleSet();
                 if (state != null)
                 {
@@ -440,7 +442,7 @@ namespace Bullfrog.Actors
                 regions = regions.Union(new[] { ScaleGroupDefinition.SharedCosmosRegion });
             foreach (var region in regions)
             {
-                var actor = GetActor<IScaleManager>(name, region);
+                var actor = _proxyFactory.GetActor<IScaleManager>(name, region);
                 await actor.Disable();
             }
         }
@@ -449,7 +451,7 @@ namespace Bullfrog.Actors
         {
             foreach (var region in definition.Regions)
             {
-                var actor = GetActor<IScaleManager>(name, region.RegionName);
+                var actor = _proxyFactory.GetActor<IScaleManager>(name, region.RegionName);
                 var configuration = new ScaleManagerConfiguration
                 {
                     ScaleSetConfigurations = region.ScaleSets,
@@ -462,7 +464,7 @@ namespace Bullfrog.Actors
 
             if (definition.HasSharedCosmosDb)
             {
-                var actor = GetActor<IScaleManager>(name, ScaleGroupDefinition.SharedCosmosRegion);
+                var actor = _proxyFactory.GetActor<IScaleManager>(name, ScaleGroupDefinition.SharedCosmosRegion);
                 var configuration = new ScaleManagerConfiguration
                 {
                     ScaleSetConfigurations = new List<ScaleSetConfiguration>(),
