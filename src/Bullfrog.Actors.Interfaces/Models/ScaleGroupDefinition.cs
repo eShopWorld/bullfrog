@@ -66,6 +66,12 @@ namespace Bullfrog.Actors.Interfaces.Models
         public TimeSpan CosmosDbPrescaleLeadTime { get; set; }
 
         /// <summary>
+        /// Defines how long after completion time a scale event can be purged.
+        /// </summary>
+        [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(ZeroTimeSpan))]
+        public TimeSpan? OldEventsAge { get; set; }
+
+        /// <summary>
         /// Checks whether shared Cosmos databases are defined.
         /// </summary>
         [JsonIgnore]

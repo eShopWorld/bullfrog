@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Bullfrog.Actors.EventModels;
 using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.Models;
@@ -80,9 +81,19 @@ namespace Bullfrog.Actors
         {
             var events = await _events.Get();
             var changed = false;
-            foreach(var id in scaleEvents)
+            foreach (var id in scaleEvents)
             {
-                changed |= events.Remove(id);
+                if (events.TryGetValue(id, out var sc))
+                {
+                    BigBrother.Publish(new PurgingNotCompletedEvent
+                    {
+                        ScaleEventId = id,
+                        State = sc.CurrentState,
+                        RegionsSummary = string.Join("; ", sc.Regions.Select(kv => $"{kv.Key}={kv.Value}")),
+                    });
+                    events.Remove(id);
+                    changed = true;
+                }
             }
 
             if (changed)

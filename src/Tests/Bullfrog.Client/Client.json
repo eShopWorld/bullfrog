@@ -573,6 +573,9 @@
         },
         "cosmosDbPrescaleLeadTime": {
           "type": "string"
+        },
+        "oldEventsAge": {
+          "type": "string"
         }
       }
     },

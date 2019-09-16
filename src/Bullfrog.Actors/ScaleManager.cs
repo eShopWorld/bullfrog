@@ -26,8 +26,6 @@ namespace Bullfrog.Actors
         private const string ReminderName = "wakeupReminder";
         internal static readonly TimeSpan ScanPeriod = TimeSpan.FromMinutes(2);
 
-        internal static TimeSpan OldScaleEventAge { get; set; } = TimeSpan.FromDays(7);
-
         private readonly StateItem<List<ManagedScaleEvent>> _events;
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
         private readonly StateItem<Dictionary<Guid, ScaleChangeType>> _reportedEventStates;
@@ -211,8 +209,11 @@ namespace Bullfrog.Actors
                 configuration.Value.ScaleSetPrescaleLeadTime.Ticks));
             modifiedEvent.EstimatedScaleUpAt = modifiedEvent.RequiredScaleAt - estimatedScaleTime;
 
-            var completedBefore = _dateTimeProvider.UtcNow.Add(-OldScaleEventAge);
-            events.RemoveAll(e => e.StartScaleDownAt < completedBefore);
+            if (configuration.Value.OldEventsAge.HasValue)
+            {
+                var completedBefore = _dateTimeProvider.UtcNow.Add(-configuration.Value.OldEventsAge.Value);
+                events.RemoveAll(e => e.StartScaleDownAt < completedBefore);
+            }
 
             await _events.Set(events);
 

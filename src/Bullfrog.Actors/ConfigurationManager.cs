@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading.Tasks;
+using Bullfrog.Actors.EventModels;
 using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.Models;
@@ -22,8 +23,6 @@ namespace Bullfrog.Actors
         private const string EventsListKeyPrefix = "events:";
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IActorProxyFactory _proxyFactory;
-
-        internal static TimeSpan OldScaleEventAge { get; set; } = TimeSpan.FromDays(7);
 
         /// <summary>
         /// Initializes a new instance of ScaleManager
@@ -259,7 +258,8 @@ namespace Bullfrog.Actors
                 saveResult = SaveScaleEventResult.Created;
             }
 
-            RemoveOldScaleEvents(scaleEvents, now.Add(-OldScaleEventAge));
+            if (scaleGroupDefinition.OldEventsAge.HasValue)
+                RemoveOldScaleEvents(scaleEvents, now.Add(-scaleGroupDefinition.OldEventsAge.Value));
 
             await eventsListAccessor.Set(scaleEvents);
 
@@ -418,7 +418,17 @@ namespace Bullfrog.Actors
             var oldEvents = events.Where(kv => kv.Value.StartScaleDownAt < completedBefore).ToList();
             if (oldEvents.Count > 0)
                 foreach (var e in oldEvents)
+                {
                     events.Remove(e.Key);
+                    BigBrother.Publish(new PurginScaleEvent
+                    {
+                        ScaleEventId = e.Key,
+                        Name = e.Value.Name,
+                        RegionsSummary = string.Join("; ", e.Value.Regions.Select(x => $"{x.Key}={x.Value.Scale}")),
+                        RequiredScaleAt = e.Value.RequiredScaleAt,
+                        StartScaleDownAt = e.Value.StartScaleDownAt,
+                    });
+                }
         }
 
         private StateItem<Dictionary<Guid, RegisteredScaleEvent>> GetScaleEventsStateItem(string scaleGroup)
