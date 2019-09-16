@@ -7,6 +7,7 @@ using Autofac;
 using Autofac.Integration.ServiceFabric;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common.DependencyInjection;
+using Eshopworld.DevOps;
 using Eshopworld.Telemetry;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DependencyCollector;
@@ -42,7 +43,17 @@ namespace Bullfrog.Actors
                 builder.Register(c =>
                 {
                     var insKey = c.Resolve<IConfigurationRoot>()["BBInstrumentationKey"];
-                    var configuration = new TelemetryConfiguration(insKey);
+                    return new TelemetrySettings
+                    {
+                        InstrumentationKey = insKey,
+                        InternalKey = insKey,
+                    };
+                });
+
+                builder.Register(c =>
+                {
+                    var telemetrySettings = c.Resolve<TelemetrySettings>();
+                    var configuration = new TelemetryConfiguration(telemetrySettings.InstrumentationKey);
                     foreach (var initializer in c.Resolve<IEnumerable<ITelemetryInitializer>>())
                     {
                         configuration.TelemetryInitializers.Add(initializer);
@@ -65,6 +76,7 @@ namespace Bullfrog.Actors
 
                 builder.RegisterActor<ScaleManager>(typeof(MonitoredActorService));
                 builder.RegisterActor<ConfigurationManager>(typeof(MonitoredActorService));
+                builder.RegisterActor<ScaleEventStateReporter>(typeof(MonitoredActorService));
 
                 using (var container = builder.Build())
                 {

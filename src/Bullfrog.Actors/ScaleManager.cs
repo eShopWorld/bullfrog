@@ -466,7 +466,7 @@ namespace Bullfrog.Actors
             {
                 try
                 {
-                    await GetConfigurationManager().ReportScaleEventState(_scaleGroupName, _regionName, changes);
+                    await GetScaleEventStateReporter().ReportScaleEventState(_regionName, changes);
                     changes.Clear();
                 }
                 catch (Exception ex)
@@ -545,6 +545,11 @@ namespace Bullfrog.Actors
                 .Min();
 
             return nextTime;
+        }
+
+        private IScaleEventStateReporter GetScaleEventStateReporter()
+        {
+            return _proxyFactory.CreateActorProxy<IScaleEventStateReporter>(new ActorId("reporter:" +_scaleGroupName));
         }
 
         private IConfigurationManager GetConfigurationManager()

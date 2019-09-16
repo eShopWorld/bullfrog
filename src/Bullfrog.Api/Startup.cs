@@ -69,6 +69,11 @@ namespace Bullfrog.Api
             try
             {
                 var internalKey = _configuration["BBInstrumentationKey"];
+                services.AddSingleton(new TelemetrySettings
+                {
+                    InstrumentationKey = internalKey,
+                    InternalKey = internalKey,
+                });
                 services.AddApplicationInsightsTelemetry(internalKey);
                 services.AddSwaggerGen(c =>
                 {

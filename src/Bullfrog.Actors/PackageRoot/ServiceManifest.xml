@@ -29,6 +29,20 @@
         </Extension>
       </Extensions>
     </StatefulServiceType>
+    <StatefulServiceType ServiceTypeName="ScaleEventStateReporterActorServiceType" HasPersistedState="true">
+      <Extensions>
+        <Extension Name="__GeneratedServiceType__" GeneratedId="031c3807-a16e-4d5e-a8f2-38303cb9ee60|Persisted">
+          <GeneratedNames xmlns="http://schemas.microsoft.com/2015/03/fabact-no-schema">
+            <DefaultService Name="ScaleEventStateReporterActorService" />
+            <ReplicatorEndpoint Name="ScaleEventStateReporterActorServiceReplicatorEndpoint" />
+            <ReplicatorConfigSection Name="ScaleEventStateReporterActorServiceReplicatorConfig" />
+            <ReplicatorSecurityConfigSection Name="ScaleEventStateReporterActorServiceReplicatorSecurityConfig" />
+            <StoreConfigSection Name="ScaleEventStateReporterActorServiceLocalStoreConfig" />
+            <ServiceEndpointV2 Name="ScaleEventStateReporterActorServiceEndpointV2" />
+          </GeneratedNames>
+        </Extension>
+      </Extensions>
+    </StatefulServiceType>
   </ServiceTypes>
   <CodePackage Name="Code" Version="1.0.0">
     <EntryPoint>
@@ -48,6 +62,8 @@
       <Endpoint Name="ScaleManagerActorServiceEndpointV2" />
       <Endpoint Name="ConfigurationManagerActorServiceEndpointV2" />
       <Endpoint Name="ConfigurationManagerActorServiceReplicatorEndpoint" />
+      <Endpoint Name="ScaleEventStateReporterActorServiceEndpointV2" />
+      <Endpoint Name="ScaleEventStateReporterActorServiceReplicatorEndpoint" />
     </Endpoints>
   </Resources>
   <!-- The content will be generated during build -->

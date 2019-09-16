@@ -84,6 +84,10 @@ namespace Bullfrog.Actors
                     }
                 }
 
+                var regions = definition.Regions.Select(x => x.RegionName);
+                if (definition.Cosmos!= null && definition.Cosmos.Count > 0)
+                    regions = regions.Append(ScaleGroupDefinition.SharedCosmosRegion);
+                await GetScaleEventStateReporter(name).ConfigureRegions(regions.ToArray());
                 await UpdateScaleManagers(name, definition, existingGroups);
                 await state.Set(definition, default);
             }
@@ -91,6 +95,7 @@ namespace Bullfrog.Actors
             {
                 // Delete the scale group if it has been registered.
                 await DisableRegions(name, existingGroups.Value.Regions.Select(r => r.RegionName), existingGroups.Value.HasSharedCosmosDb);
+                await GetScaleEventStateReporter(name).ConfigureRegions(null);
                 await state.Remove(default);
             }
 
@@ -470,6 +475,11 @@ namespace Bullfrog.Actors
                 actorName = actorName.Substring(1);
             var actorId = new ActorId($"{actorName}:{scaleGroup}/{region}");
             return _proxyFactory.CreateActorProxy<TActor>(actorId);
+        }
+
+        private IScaleEventStateReporter GetScaleEventStateReporter(string scaleGroup)
+        {
+            return _proxyFactory.CreateActorProxy<IScaleEventStateReporter>(new ActorId("reporter:" + scaleGroup));
         }
     }
 }
