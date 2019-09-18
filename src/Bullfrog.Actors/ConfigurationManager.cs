@@ -85,17 +85,14 @@ namespace Bullfrog.Actors
                     }
                 }
 
-                var regions = definition.Regions.Select(x => x.RegionName);
-                if (definition.Cosmos != null && definition.Cosmos.Count > 0)
-                    regions = regions.Append(ScaleGroupDefinition.SharedCosmosRegion);
-                await _proxyFactory.GetScaleEventStateReporter(name).ConfigureRegions(regions.ToArray());
+                await _proxyFactory.GetScaleEventStateReporter(name).ConfigureRegions(definition.AllRegionNames.ToArray());
                 await UpdateScaleManagers(name, definition, existingGroups);
                 await state.Set(definition, default);
             }
             else if (existingGroups.HasValue)
             {
                 // Delete the scale group if it has been registered.
-                await DisableRegions(name, existingGroups.Value.Regions.Select(r => r.RegionName), existingGroups.Value.HasSharedCosmosDb);
+                await DisableRegions(name, existingGroups.Value.AllRegionNames);
                 await _proxyFactory.GetScaleEventStateReporter(name).ConfigureRegions(null);
                 await state.Remove(default);
             }
@@ -259,7 +256,7 @@ namespace Bullfrog.Actors
             }
 
             if (scaleGroupDefinition.OldEventsAge.HasValue)
-                RemoveOldScaleEvents(scaleEvents, now.Add(-scaleGroupDefinition.OldEventsAge.Value));
+                await RemoveOldScaleEvents(scaleGroup, scaleEvents, now.Add(-scaleGroupDefinition.OldEventsAge.Value));
 
             await eventsListAccessor.Set(scaleEvents);
 
@@ -413,10 +410,13 @@ namespace Bullfrog.Actors
             return new StateItem<ScaleGroupDefinition>(StateManager, ScaleGroupKeyPrefix + name);
         }
 
-        private void RemoveOldScaleEvents(Dictionary<Guid, RegisteredScaleEvent> events, DateTimeOffset completedBefore)
+        private async Task RemoveOldScaleEvents(string scaleGroup, Dictionary<Guid, RegisteredScaleEvent> events, DateTimeOffset completedBefore)
         {
             var oldEvents = events.Where(kv => kv.Value.StartScaleDownAt < completedBefore).ToList();
             if (oldEvents.Count > 0)
+            {
+                await _proxyFactory.GetScaleEventStateReporter(scaleGroup).PurgeScaleEvents(oldEvents.Select(x => x.Key).ToList());
+
                 foreach (var e in oldEvents)
                 {
                     events.Remove(e.Key);
@@ -429,6 +429,7 @@ namespace Bullfrog.Actors
                         StartScaleDownAt = e.Value.StartScaleDownAt,
                     });
                 }
+            }
         }
 
         private StateItem<Dictionary<Guid, RegisteredScaleEvent>> GetScaleEventsStateItem(string scaleGroup)
@@ -446,10 +447,8 @@ namespace Bullfrog.Actors
             throw new ScaleGroupNotFoundException($"The scale group {name} has not been defined.");
         }
 
-        private async Task DisableRegions(string name, IEnumerable<string> regions, bool disableCosmos)
+        private async Task DisableRegions(string name, IEnumerable<string> regions)
         {
-            if (disableCosmos)
-                regions = regions.Union(new[] { ScaleGroupDefinition.SharedCosmosRegion });
             foreach (var region in regions)
             {
                 var actor = _proxyFactory.GetActor<IScaleManager>(name, region);
@@ -484,13 +483,8 @@ namespace Bullfrog.Actors
                 await actor.Configure(configuration);
             }
 
-            var existingRegions = existingGroup.HasValue ? existingGroup.Value.Regions : new List<ScaleGroupRegion>();
-            var removedRegions = existingRegions
-                .Where(rg => !definition.Regions.Any(r => r.RegionName == rg.RegionName))
-                .Select(rg => rg.RegionName);
-            var disableCosmos = existingGroup.HasValue && existingGroup.Value.HasSharedCosmosDb
-                && !definition.HasSharedCosmosDb;
-            await DisableRegions(name, removedRegions, disableCosmos);
+            if (existingGroup.HasValue)
+                await DisableRegions(name, existingGroup.Value.AllRegionNames.Except(definition.AllRegionNames));
         }
     }
 }

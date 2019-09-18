@@ -1,10 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using Eshopworld.Core;
 
 namespace Bullfrog.Actors.EventModels
 {
-    class PurginScaleEvent
+    public class PurginScaleEvent : TelemetryEvent
     {
+        public Guid ScaleEventId { get; set; }
+
+        public string Name { get; set; }
+
+        public string RegionsSummary { get; set; }
+
+        public DateTimeOffset RequiredScaleAt { get; set; }
+
+        public DateTimeOffset StartScaleDownAt { get; set; }
     }
 }

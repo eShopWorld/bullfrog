@@ -16,7 +16,7 @@ using Microsoft.ServiceFabric.Actors.Runtime;
 namespace Bullfrog.Actors
 {
     [StatePersistence(StatePersistence.Persisted)]
-    internal class ScaleEventStateReporter : BullfrogActorBase, IScaleEventStateReporter
+    public class ScaleEventStateReporter : BullfrogActorBase, IScaleEventStateReporter
     {
         private readonly string _scaleGroupName;
         private readonly StateItem<Dictionary<Guid, ScaleEventCurrentState>> _events;

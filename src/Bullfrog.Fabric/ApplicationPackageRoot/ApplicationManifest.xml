@@ -9,6 +9,9 @@
     <Parameter Name="ConfigurationManagerActorService_PartitionCount" DefaultValue="10" />
     <Parameter Name="ConfigurationManagerActorService_MinReplicaSetSize" DefaultValue="3" />
     <Parameter Name="ConfigurationManagerActorService_TargetReplicaSetSize" DefaultValue="3" />
+    <Parameter Name="ScaleEventStateReporterActorService_PartitionCount" DefaultValue="10" />
+    <Parameter Name="ScaleEventStateReporterActorService_MinReplicaSetSize" DefaultValue="3" />
+    <Parameter Name="ScaleEventStateReporterActorService_TargetReplicaSetSize" DefaultValue="3" />
   </Parameters>
   <!-- Import the ServiceManifest from the ServicePackage. The ServiceManifestName and ServiceManifestVersion 
        should match the Name and Version attributes of the ServiceManifest element defined in the 
@@ -40,6 +43,11 @@
     <Service Name="ScaleManagerActorService" GeneratedIdRef="72cb40f2-48e8-4883-b102-c042125eb3dc|Persisted">
       <StatefulService ServiceTypeName="ScaleManagerActorServiceType" TargetReplicaSetSize="[ScaleManagerActorService_TargetReplicaSetSize]" MinReplicaSetSize="[ScaleManagerActorService_MinReplicaSetSize]">
         <UniformInt64Partition PartitionCount="[ScaleManagerActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+      </StatefulService>
+    </Service>
+    <Service Name="ScaleEventStateReporterActorService" GeneratedIdRef="031c3807-a16e-4d5e-a8f2-38303cb9ee60|Persisted">
+      <StatefulService ServiceTypeName="ScaleEventStateReporterActorServiceType" TargetReplicaSetSize="[ScaleEventStateReporterActorService_TargetReplicaSetSize]" MinReplicaSetSize="[ScaleEventStateReporterActorService_MinReplicaSetSize]">
+        <UniformInt64Partition PartitionCount="[ScaleEventStateReporterActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
       </StatefulService>
     </Service>
     <!-- The section below creates instances of service types, when an instance of this 
