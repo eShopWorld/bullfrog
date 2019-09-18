@@ -420,7 +420,7 @@ namespace Bullfrog.Actors
                 foreach (var e in oldEvents)
                 {
                     events.Remove(e.Key);
-                    BigBrother.Publish(new PurginScaleEvent
+                    BigBrother.Publish(new PurgingScaleEvent
                     {
                         ScaleEventId = e.Key,
                         Name = e.Value.Name,

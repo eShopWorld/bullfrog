@@ -101,7 +101,7 @@ namespace Bullfrog.Actors
                 }
                 catch (Exception ex)
                 {
-                    var descriptionEx = new Exception($"Failed to read scale set. Reseting it.", ex);
+                    var descriptionEx = new Exception($"Failed to read scale set. Resetting it.", ex);
                     BigBrother.Publish(descriptionEx.ToExceptionEvent());
                     await _scaleState.TryRemove();
                 }

@@ -3,7 +3,7 @@ using Eshopworld.Core;
 
 namespace Bullfrog.Actors.EventModels
 {
-    public class PurginScaleEvent : TelemetryEvent
+    public class PurgingScaleEvent : TelemetryEvent
     {
         public Guid ScaleEventId { get; set; }
 
