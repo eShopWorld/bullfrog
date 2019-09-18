@@ -110,6 +110,8 @@ public class BaseApiTests : IDisposable
             RegisterScaleManagerActor("sg", regionName, ScalerFactoryMoq, ScaleSetMonitorMoq, _dateTimeProviderMoq.Object, bigBrother, actorProxyFactory);
         }
 
+        RegisterScaleEventStateReporterActor("sg", actorProxyFactory, bigBrother);
+
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
         autoscaleProfile.SetupGet(p => p.MaxInstanceCount).Returns(10);
         autoscaleProfile.SetupGet(p => p.MinInstanceCount).Returns(2);
@@ -160,6 +162,18 @@ public class BaseApiTests : IDisposable
         ConfigurationManagerActor = svc.Activate(id);
         ConfigurationManagerActor.InvokeOnActivateAsync().GetAwaiter().GetResult();
         actoryProxyFactory.RegisterActor(ConfigurationManagerActor);
+    }
+
+    private void RegisterScaleEventStateReporterActor(string scaleGrup, MockActorProxyFactory actoryProxyFactory, IBigBrother bigBrother)
+    {
+        var id = new ActorId("reporter:" + scaleGrup);
+        ActorBase actorFactory(ActorService service, ActorId actorId)
+            => new ScaleEventStateReporter(service, actorId, bigBrother);
+        var stateProvider = new MyActorStateProvider(_dateTimeProviderMoq.Object);
+        var svc = MockActorServiceFactory.CreateActorServiceForActor<ScaleEventStateReporter>(actorFactory, stateProvider);
+        var reporter = svc.Activate(id);
+        reporter.InvokeOnActivateAsync().GetAwaiter().GetResult();
+        actoryProxyFactory.RegisterActor(reporter);
     }
 
     private void ActoryProxyFactory_MissingActor(object sender, MissingActorEventArgs e)

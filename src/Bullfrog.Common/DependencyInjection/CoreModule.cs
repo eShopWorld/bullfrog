@@ -32,8 +32,8 @@ namespace Bullfrog.Common.DependencyInjection
                 var configuration = c.Resolve<IConfigurationRoot>();
 
                 var telemetryClient = c.Resolve<TelemetryClient>();
-                var insKey = configuration["BBInstrumentationKey"];
-                var bb = new BigBrother(telemetryClient, insKey);
+                var telemetrySettings = c.Resolve<TelemetrySettings>();
+                var bb = new BigBrother(telemetryClient, telemetrySettings.InternalKey);
 
                 var serviceBusConnectionString = configuration["SB:eda:ConnectionString"];
                 var subscriptionId = configuration["Environment:SubscriptionId"];

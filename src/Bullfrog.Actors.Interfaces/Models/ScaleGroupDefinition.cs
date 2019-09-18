@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Runtime.Serialization;
 using Bullfrog.Actors.Interfaces.Models.Validation;
 using Newtonsoft.Json;
 
@@ -10,6 +11,7 @@ namespace Bullfrog.Actors.Interfaces.Models
     /// <summary>
     /// Defines the configuration of a scale group.
     /// </summary>
+    [DataContract]
     public class ScaleGroupDefinition
     {
         /// <summary>
@@ -51,19 +53,29 @@ namespace Bullfrog.Actors.Interfaces.Models
         [Required]
         [MinLength(1)]
         [ElementsHaveDistinctValues(nameof(ScaleGroupRegion.RegionName))]
+        [DataMember]
         public List<ScaleGroupRegion> Regions { get; set; }
 
         /// <summary>
         /// The configuration of scaling of Cosmos DB databases or containers.
         /// </summary>
         [ElementsHaveDistinctValues(nameof(CosmosConfiguration.Name))]
+        [DataMember]
         public List<CosmosConfiguration> Cosmos { get; set; }
 
         /// <summary>
         /// Cosmos DB prescale lead time.
         /// </summary>
         [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(ZeroTimeSpan))]
+        [DataMember]
         public TimeSpan CosmosDbPrescaleLeadTime { get; set; }
+
+        /// <summary>
+        /// Defines how long after completion time a scale event can be purged.
+        /// </summary>
+        [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(ZeroTimeSpan))]
+        [DataMember]
+        public TimeSpan? OldEventsAge { get; set; }
 
         /// <summary>
         /// Checks whether shared Cosmos databases are defined.
@@ -71,6 +83,21 @@ namespace Bullfrog.Actors.Interfaces.Models
         [JsonIgnore]
         public bool HasSharedCosmosDb =>
             Cosmos != null && Cosmos.Any();
+
+        /// <summary>
+        /// Returns names of all regions (including shared Cosmos region if it exists).
+        /// </summary>
+        [JsonIgnore]
+        public IEnumerable<string> AllRegionNames
+        {
+            get
+            {
+                var regionNames = Regions.Select(x => x.RegionName);
+                if (HasSharedCosmosDb)
+                    regionNames = regionNames.Concat(new[] { SharedCosmosRegion });
+                return regionNames;
+            }
+        }
 
         /// <summary>
         /// Returns the maximal lead time for given regions.

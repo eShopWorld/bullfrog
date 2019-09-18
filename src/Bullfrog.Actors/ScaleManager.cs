@@ -25,6 +25,7 @@ namespace Bullfrog.Actors
     {
         private const string ReminderName = "wakeupReminder";
         internal static readonly TimeSpan ScanPeriod = TimeSpan.FromMinutes(2);
+
         private readonly StateItem<List<ManagedScaleEvent>> _events;
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
         private readonly StateItem<Dictionary<Guid, ScaleChangeType>> _reportedEventStates;
@@ -100,7 +101,7 @@ namespace Bullfrog.Actors
                 }
                 catch (Exception ex)
                 {
-                    var descriptionEx = new Exception($"Failed to read scale set. Reseting it.", ex);
+                    var descriptionEx = new Exception($"Failed to read scale set. Resetting it.", ex);
                     BigBrother.Publish(descriptionEx.ToExceptionEvent());
                     await _scaleState.TryRemove();
                 }
@@ -207,6 +208,12 @@ namespace Bullfrog.Actors
             var estimatedScaleTime = TimeSpan.FromTicks(Math.Max(configuration.Value.CosmosDbPrescaleLeadTime.Ticks,
                 configuration.Value.ScaleSetPrescaleLeadTime.Ticks));
             modifiedEvent.EstimatedScaleUpAt = modifiedEvent.RequiredScaleAt - estimatedScaleTime;
+
+            if (configuration.Value.OldEventsAge.HasValue)
+            {
+                var completedBefore = _dateTimeProvider.UtcNow.Add(-configuration.Value.OldEventsAge.Value);
+                events.RemoveAll(e => e.StartScaleDownAt < completedBefore);
+            }
 
             await _events.Set(events);
 
@@ -466,7 +473,7 @@ namespace Bullfrog.Actors
             {
                 try
                 {
-                    await GetConfigurationManager().ReportScaleEventState(_scaleGroupName, _regionName, changes);
+                    await _proxyFactory.GetScaleEventStateReporter(_scaleGroupName).ReportScaleEventState(_regionName, changes);
                     changes.Clear();
                 }
                 catch (Exception ex)
@@ -545,11 +552,6 @@ namespace Bullfrog.Actors
                 .Min();
 
             return nextTime;
-        }
-
-        private IConfigurationManager GetConfigurationManager()
-        {
-            return _proxyFactory.CreateActorProxy<IConfigurationManager>(new ActorId("configuration"));
         }
 
         private ResourceScaler GetScaler(string name, ScaleManagerConfiguration configuration)

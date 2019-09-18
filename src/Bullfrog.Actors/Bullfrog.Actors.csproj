@@ -28,7 +28,7 @@
     <PackageReference Include="Autofac" Version="4.9.4" />
     <PackageReference Include="Autofac.ServiceFabric" Version="2.2.0" />
     <PackageReference Include="Eshopworld.Telemetry" Version="2.1.5" />
-    <PackageReference Include="IdentityModel" Version="4.0.0-preview.3" />
+    <PackageReference Include="IdentityModel" Version="4.0.0" />
     <PackageReference Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.10.0" />
     <PackageReference Include="Microsoft.Azure.KeyVault" Version="3.0.4" />
     <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.25.0" />

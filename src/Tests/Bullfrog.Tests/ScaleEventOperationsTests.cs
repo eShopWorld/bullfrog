@@ -56,6 +56,21 @@ public class ScaleEventOperationsTests : BaseApiTests
     }
 
     [Fact, IsLayer0]
+    public async Task UpdateAlreadyFinishedEvent()
+    {
+        RegisterDefaultScalers();
+        CreateScaleGroup();
+        var eventId = Guid.NewGuid();
+        await ApiClient.SaveScaleEventAsync("sg", eventId, NewScaleEvent(1, 3));
+        await AdvanceTimeTo(UtcNow.AddHours(6));
+
+        Task<HttpOperationResponse<ScheduledScaleEvent>> call()
+            => ApiClient.SaveScaleEventWithHttpMessagesAsync("sg", eventId, NewScaleEvent(8, 9));
+
+        ShouldThrowBullfrogError(call, -1);
+    }
+
+    [Fact, IsLayer0]
     public async Task CreateEventInThePast()
     {
         CreateScaleGroup();
@@ -168,6 +183,42 @@ public class ScaleEventOperationsTests : BaseApiTests
 
         func.Should().Throw<ProblemDetailsException>()
             .Which.Response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact, IsLayer0]
+    public async Task OldEventsArePurged()
+    {
+        RegisterDefaultScalers();
+        var scaleGroup = NewScaleGroupDefinition();
+        scaleGroup.OldEventsAge = TimeSpan.FromDays(1).ToString();
+        CreateScaleGroup(scaleGroup);
+        var eventId1 = SaveNewEvent("sg", NewScaleEvent(1, 4)).Id.Value;
+        var eventId2 = SaveNewEvent("sg", NewScaleEvent(10, 23)).Id.Value;
+        var eventId3 = SaveNewEvent("sg", NewScaleEvent(10, 24)).Id.Value;
+        var eventId4 = SaveNewEvent("sg", NewScaleEvent(30, 48)).Id.Value;
+        var start = UtcNow;
+
+        await ValidateStateAt(start.AddHours(24), new[] { eventId1, eventId2, eventId3, eventId4 }, null);
+        await ValidateStateAt(start.AddHours(29), new[] { eventId2, eventId3, eventId4 }, new[] { eventId1, });
+        await ValidateStateAt(start.AddHours(48), new[] { eventId3, eventId4 }, new[] { eventId1, eventId2, });
+        await ValidateStateAt(start.AddHours(49), new[] { eventId4 }, new[] { eventId1, eventId2, eventId3, });
+        await ValidateStateAt(start.AddHours(73), null, new[] { eventId1, eventId2, eventId3, eventId4, });
+    }
+
+    private async Task ValidateStateAt(DateTimeOffset time, Guid[] expectedEvents, Guid[] notExpectedEvents)
+    {
+        await AdvanceTimeTo(time);
+        SaveNewEvent("sg", NewScaleEvent(30, 31)); // triggers purge operation
+        var existing = ApiClient.ListScheduledEvents("sg");
+        if (expectedEvents != null)
+            existing.Select(x => x.Id).Should().Contain(expectedEvents);
+        if (notExpectedEvents != null)
+            existing.Select(x => x.Id).Should().NotContain(notExpectedEvents);
+    }
+
+    private ScheduledScaleEvent SaveNewEvent(string scaleGroup, ScaleEvent scaleEvent)
+    {
+        return ApiClient.SaveScaleEvent(scaleGroup, Guid.NewGuid(), scaleEvent);
     }
 
     private ScaleEvent NewScaleEvent(int scaleOut = 10, int scaleIn = 20, IEnumerable<(string regionName, int scale)> regions = null)

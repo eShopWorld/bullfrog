@@ -28,5 +28,10 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// Cosmos DB prescale lead time.
         /// </summary>
         public TimeSpan CosmosDbPrescaleLeadTime { get; set; }
+
+        /// <summary>
+        /// Defines how long after completion time a scale event can be purged.
+        /// </summary>
+        public TimeSpan? OldEventsAge { get; set; }
     }
 }
