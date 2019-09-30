@@ -8,7 +8,6 @@ using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.Models;
 using Bullfrog.Common;
-using Bullfrog.DomainEvents;
 using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
@@ -129,10 +128,7 @@ namespace Bullfrog.Actors
             var list = await scaleEventsState.Get();
             if (list.TryGetValue(eventId, out var scaleEvent))
             {
-                var leadTime = scaleEvent.Regions
-                 .Select(r => scaleGroupDefinition[r.Key].ScaleSetPrescaleLeadTime)
-                 .Max();
-                return scaleEvent.ToScheduledScaleEvent(eventId, leadTime);
+                return scaleEvent.ToScheduledScaleEvent(eventId, scaleGroupDefinition.MaxLeadTime(scaleEvent.Regions.Keys));
             }
             else
             {
@@ -145,11 +141,7 @@ namespace Bullfrog.Actors
             var scaleGroupDefinition = await GetScaleGroupDefinition(scaleGroup);
             var scaleEventsState = GetScaleEventsStateItem(scaleGroup);
             var list = await scaleEventsState.Get();
-            return list.Select(r => r.Value.ToScheduledScaleEvent(r.Key, LeadTime(r.Value))).ToList();
-
-            TimeSpan LeadTime(RegisteredScaleEvent scaleEvent) => scaleEvent.Regions
-                .Select(r => scaleGroupDefinition[r.Key].ScaleSetPrescaleLeadTime)
-                .Max();
+            return list.Select(r => r.Value.ToScheduledScaleEvent(r.Key, scaleGroupDefinition.MaxLeadTime(r.Value.Regions.Keys))).ToList();
         }
 
         async Task<SaveScaleEventReturnValue> IConfigurationManager.SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent)
@@ -256,7 +248,7 @@ namespace Bullfrog.Actors
             }
 
             if (scaleGroupDefinition.OldEventsAge.HasValue)
-                await RemoveOldScaleEvents(scaleGroup, scaleEvents, now.Add(-scaleGroupDefinition.OldEventsAge.Value));
+                await RemoveOldScaleEvents(scaleGroup, scaleGroupDefinition.AllRegionNames, scaleEvents, now.Add(-scaleGroupDefinition.OldEventsAge.Value));
 
             await eventsListAccessor.Set(scaleEvents);
 
@@ -309,19 +301,7 @@ namespace Bullfrog.Actors
             var list = await scaleEventsState.Get();
             if (list.TryGetValue(eventId, out var scaleEvent))
             {
-                foreach (var region in scaleEvent.Regions)
-                {
-                    var scaleManagerActor = _proxyFactory.GetActor<IScaleManager>(scaleGroup, region.Key);
-                    await scaleManagerActor.DeleteScaleEvent(eventId);
-                }
-
-                if (definition.HasSharedCosmosDb)
-                {
-                    var scaleManagerActor = _proxyFactory.GetActor<IScaleManager>(scaleGroup, ScaleGroupDefinition.SharedCosmosRegion);
-                    await scaleManagerActor.DeleteScaleEvent(eventId);
-                }
-
-                await _proxyFactory.GetScaleEventStateReporter(scaleGroup).PurgeScaleEvents(new List<Guid> { eventId });
+                await DeleteEventsFromOtherActors(scaleGroup, definition.AllRegionNames, new[] { eventId });
 
                 list.Remove(eventId);
                 await scaleEventsState.Set(list);
@@ -346,15 +326,15 @@ namespace Bullfrog.Actors
             var definition = await GetScaleGroupDefinition(scaleGroup);
 
             var scaleRegionStates = new List<ScaleRegionState>();
-            foreach (var region in definition.Regions)
+            foreach (var region in definition.AllRegionNames)
             {
-                var scaleManagerActor = _proxyFactory.GetActor<IScaleManager>(scaleGroup, region.RegionName);
+                var scaleManagerActor = _proxyFactory.GetActor<IScaleManager>(scaleGroup, region);
                 var state = await scaleManagerActor.GetScaleSet();
                 if (state != null)
                 {
                     scaleRegionStates.Add(new ScaleRegionState
                     {
-                        Name = region.RegionName,
+                        Name = region,
                         Scale = state.Scale,
                         RequestedScale = state.RequestedScale,
                         WasScaledUpAt = state.WasScaleUpAt,
@@ -370,52 +350,17 @@ namespace Bullfrog.Actors
             };
         }
 
-        // TODO: remove it after deploying this version
-        async Task IConfigurationManager.ReportScaleEventState(string scaleGroup, string region, List<ScaleEventStateChange> changes)
-        {
-            var stateItem = GetScaleEventsStateItem(scaleGroup);
-            var scaleEvents = await stateItem.Get();
-            foreach (var change in changes)
-            {
-                if (scaleEvents.TryGetValue(change.EventId, out var scaleEvent))
-                {
-                    scaleEvent.Regions[region].State = change.State;
-                    ReportEventStateChange(scaleGroup, change.EventId, scaleEvent);
-                }
-            }
-
-            await stateItem.Set(scaleEvents);
-        }
-
-        private void ReportEventStateChange(string scaleGroup, Guid eventId, RegisteredScaleEvent scaleEvent)
-        {
-            var currentState = scaleEvent.CurrentState;
-            if (currentState == ScaleChangeType.Waiting)
-                return;
-            if (currentState == scaleEvent.ReportedState)
-                return;
-
-            BigBrother.Publish(new ScaleChange
-            {
-                Id = eventId,
-                Type = currentState,
-                ScaleGroup = scaleGroup,
-            });
-
-            scaleEvent.ReportedState = currentState;
-        }
-
         private StateItem<ScaleGroupDefinition> GetScaleGroupState(string name)
         {
             return new StateItem<ScaleGroupDefinition>(StateManager, ScaleGroupKeyPrefix + name);
         }
 
-        private async Task RemoveOldScaleEvents(string scaleGroup, Dictionary<Guid, RegisteredScaleEvent> events, DateTimeOffset completedBefore)
+        private async Task RemoveOldScaleEvents(string scaleGroup, IEnumerable<string> regionNames, Dictionary<Guid, RegisteredScaleEvent> events, DateTimeOffset completedBefore)
         {
             var oldEvents = events.Where(kv => kv.Value.StartScaleDownAt < completedBefore).ToList();
             if (oldEvents.Count > 0)
             {
-                await _proxyFactory.GetScaleEventStateReporter(scaleGroup).PurgeScaleEvents(oldEvents.Select(x => x.Key).ToList());
+                await DeleteEventsFromOtherActors(scaleGroup, regionNames, events.Select(x => x.Key));
 
                 foreach (var e in oldEvents)
                 {
@@ -430,6 +375,15 @@ namespace Bullfrog.Actors
                     });
                 }
             }
+        }
+
+        private async Task DeleteEventsFromOtherActors(string scaleGroup, IEnumerable<string> regionNames, IEnumerable<Guid> events)
+        {
+            var idsToRemove = events.ToList();
+            foreach (var region in regionNames)
+                await _proxyFactory.GetActor<IScaleManager>(scaleGroup, region).PurgeScaleEvents(idsToRemove);
+
+            await _proxyFactory.GetScaleEventStateReporter(scaleGroup).PurgeScaleEvents(idsToRemove);
         }
 
         private StateItem<Dictionary<Guid, RegisteredScaleEvent>> GetScaleEventsStateItem(string scaleGroup)
