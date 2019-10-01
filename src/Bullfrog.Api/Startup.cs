@@ -11,6 +11,7 @@ using Bullfrog.Common;
 using Bullfrog.Common.DependencyInjection;
 using Eshopworld.Core;
 using Eshopworld.DevOps;
+using Eshopworld.ServiceFabric.DependencyInjection;
 using Eshopworld.Telemetry;
 using Eshopworld.Web;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -152,6 +153,7 @@ namespace Bullfrog.Api
         /// <param name="builder">The builder for an <see cref="Autofac.IContainer" /> from component registrations.</param>
         public void ConfigureContainer(ContainerBuilder builder)
         {
+            builder.RegisterModule<BullfrogCoreModule>();
             builder.RegisterModule<CoreModule>();
             builder.RegisterModule<AzureManagementFluentModule>();
             builder.RegisterModule<ServiceFabricModule>();

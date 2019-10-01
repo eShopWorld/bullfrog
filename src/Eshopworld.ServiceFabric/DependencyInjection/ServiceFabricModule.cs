@@ -1,19 +1,18 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using System.Fabric;
+﻿using System.Fabric;
 using Autofac;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.ApplicationInsights.ServiceFabric;
 using Microsoft.ApplicationInsights.ServiceFabric.Module;
-using Microsoft.ServiceFabric.Actors.Client;
 
-namespace Bullfrog.Common.DependencyInjection
+namespace Eshopworld.ServiceFabric.DependencyInjection
 {
-    [ExcludeFromCodeCoverage]
+    /// <summary>
+    /// Registers Service Fabric components of telemetry pipeline.
+    /// </summary>
     public class ServiceFabricModule : Module
     {
         protected override void Load(ContainerBuilder builder)
         {
-            builder.Register<IActorProxyFactory>(_ => new ActorProxyFactory());
             builder.Register(x =>
             {
                 var serviceContext = x.ResolveOptional<ServiceContext>();

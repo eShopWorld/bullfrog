@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Autofac;
 using Bullfrog.Common.DependencyInjection;
+using Eshopworld.ServiceFabric.DependencyInjection;
 using Microsoft.Azure.Cosmos;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Extensions.Configuration;

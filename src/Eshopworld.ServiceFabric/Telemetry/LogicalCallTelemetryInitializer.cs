@@ -4,7 +4,7 @@ using Microsoft.ApplicationInsights.Channel;
 using Microsoft.ApplicationInsights.DataContracts;
 using Microsoft.ApplicationInsights.Extensibility;
 
-namespace Bullfrog.Common.Telemetry
+namespace Eshopworld.ServiceFabric.Telemetry
 {
     public class LogicalCallTelemetryInitializer : ITelemetryInitializer
     {
@@ -18,6 +18,9 @@ namespace Bullfrog.Common.Telemetry
 
         public void Initialize(ITelemetry telemetry)
         {
+            if (telemetry == null)
+                return;
+
             var pr = _propertyValues.Value;
             if (pr is null)
                 return;

@@ -29,7 +29,6 @@
     <PackageReference Include="Autofac.ServiceFabric" Version="2.2.0" />
     <PackageReference Include="Eshopworld.Telemetry" Version="2.1.5" />
     <PackageReference Include="IdentityModel" Version="4.0.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.DependencyCollector" Version="2.10.0" />
     <PackageReference Include="Microsoft.Azure.KeyVault" Version="3.0.4" />
     <PackageReference Include="Microsoft.Azure.Management.Fluent" Version="1.26.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.AzureKeyVault" Version="2.2.0" />
@@ -41,6 +40,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Bullfrog.Actors.Interfaces\Bullfrog.Actors.Interfaces.csproj" />
     <ProjectReference Include="..\Bullfrog.Common\Bullfrog.Common.csproj" />
+    <ProjectReference Include="..\Eshopworld.ServiceFabric\Eshopworld.ServiceFabric.csproj" />
   </ItemGroup>
 
 </Project>

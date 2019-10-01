@@ -3,10 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models;
 using Microsoft.ServiceFabric.Actors;
-using Microsoft.ServiceFabric.Actors.Remoting.FabricTransport;
-using Microsoft.ServiceFabric.Services.Remoting;
 
-[assembly: FabricTransportActorRemotingProvider(RemotingListenerVersion = RemotingListenerVersion.V2, RemotingClientVersion = RemotingClientVersion.V2)]
 namespace Bullfrog.Actors.Interfaces
 {
     /// <summary>

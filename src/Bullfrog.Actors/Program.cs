@@ -8,6 +8,7 @@ using Autofac.Integration.ServiceFabric;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common.DependencyInjection;
 using Eshopworld.DevOps;
+using Eshopworld.ServiceFabric.DependencyInjection;
 using Eshopworld.Telemetry;
 using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.DependencyCollector;
@@ -27,9 +28,11 @@ namespace Bullfrog.Actors
             try
             {
                 var builder = new ContainerBuilder();
+                builder.RegisterModule<BullfrogCoreModule>();
                 builder.RegisterModule<CoreModule>();
                 builder.RegisterModule<AzureManagementFluentModule>();
                 builder.RegisterModule<ServiceFabricModule>();
+                builder.RegisterModule<ServiceFabricStatefulServicesModule>();
                 builder.RegisterModule<ThroughputClientModule>();
                 builder.RegisterType<ControlPlaneCosmosScaler>().AsSelf();
                 builder.RegisterType<CosmosScaler>().AsSelf();
@@ -39,6 +42,8 @@ namespace Bullfrog.Actors
                 builder.RegisterType<OperationCorrelationTelemetryInitializer>().As<ITelemetryInitializer>();
                 builder.RegisterType<HttpDependenciesParsingTelemetryInitializer>().As<ITelemetryInitializer>();
                 builder.RegisterType<DependencyTrackingTelemetryModule>().As<ITelemetryModule>();
+
+                builder.PublishDomainEventsToTopics();
 
                 builder.Register(c =>
                 {
@@ -74,9 +79,9 @@ namespace Bullfrog.Actors
 
                 builder.RegisterServiceFabricSupport();
 
-                builder.RegisterActor<ScaleManager>(typeof(MonitoredActorService));
-                builder.RegisterActor<ConfigurationManager>(typeof(MonitoredActorService));
-                builder.RegisterActor<ScaleEventStateReporter>(typeof(MonitoredActorService));
+                builder.RegisterActor<ScaleManager>();
+                builder.RegisterActor<ConfigurationManager>();
+                builder.RegisterActor<ScaleEventStateReporter>();
 
                 using (var container = builder.Build())
                 {
