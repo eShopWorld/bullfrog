@@ -32,7 +32,7 @@
     </PackageReference>
     <!-- Reference to ActiveDirectory nuget can be removed after the https://github.com/Azure/azure-sdk-for-net/issues/6458 issue is fixed. -->
     <!-- Conflict between Microsoft.Azure.Services.AppAuthentication 1.3.1 and Microsoft.Azure.Management.Fluent 1.24.1 (the later requires <4.0.0)-->
-    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.1" />
+    <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" Version="5.2.2" />
     <PackageReference Include="Microsoft.ServiceFabric.Actors" Version="3.4.664" />
     <PackageReference Include="Microsoft.ServiceFabric.Services.Remoting" Version="3.4.664" />
   </ItemGroup>
