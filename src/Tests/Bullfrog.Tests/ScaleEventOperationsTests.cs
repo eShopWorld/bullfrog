@@ -29,12 +29,18 @@ public class ScaleEventOperationsTests : BaseApiTests
     {
         CreateScaleGroup();
         var eventId = Guid.NewGuid();
-        await ApiClient.SaveScaleEventAsync("sg", eventId, NewScaleEvent());
+        await ApiClient.SaveScaleEventAsync("sg", eventId, NewScaleEvent(regions: new[] {("eu", 50)}));
 
-        var response = await ApiClient.SaveScaleEventWithHttpMessagesAsync("sg", eventId, NewScaleEvent());
+        var response = await ApiClient.SaveScaleEventWithHttpMessagesAsync("sg", eventId, NewScaleEvent(regions: new[] { ("eu", 60) }));
 
         response.Response.StatusCode.Should().Be(HttpStatusCode.NoContent);
         response.Response.Headers.Location.Should().BeNull();
+
+        var updatedEvent = await ApiClient.GetScheduledEventAsync("sg", eventId);
+        updatedEvent.Should().NotBeNull();
+        updatedEvent.RegionConfig.Should().HaveCount(1);
+        updatedEvent.RegionConfig[0].Scale.Should().Be(60);
+
         response.Dispose();
     }
 

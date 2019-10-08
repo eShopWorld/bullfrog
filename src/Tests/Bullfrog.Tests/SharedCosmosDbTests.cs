@@ -28,10 +28,16 @@ public class SharedCosmosDbTests : BaseApiTests
         CreateScaleGroup(scaleGroup);
 
         var created = ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), NewScaleEvent(10, 20, regions: new[] { ("eu1", 10), }));
+        var read = ApiClient.GetScheduledEvent("sg", created.Id.Value);
+        var list = ApiClient.ListScheduledEvents("sg");
 
         created.EstimatedScaleUpAt.Should().Be(UtcNow.AddHours(10).AddMinutes(-30));
         created.RegionConfig.Should().HaveCount(1);
         created.RegionConfig[0].Name.Should().Be("eu1");
+        read.EstimatedScaleUpAt.Should().Be(UtcNow.AddHours(10).AddMinutes(-30));
+        list.Should().Contain(x => x.Id == created.Id)
+            .Which.EstimatedScaleUpAt.Should().Be(UtcNow.AddHours(10).AddMinutes(-30));
+
     }
 
     [Fact, IsLayer0]

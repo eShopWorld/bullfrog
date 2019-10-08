@@ -108,17 +108,26 @@ namespace Bullfrog.Actors
             }
         }
 
-        async Task IScaleManager.DeleteScaleEvent(Guid id)
+        Task IScaleManager.DeleteScaleEvent(Guid id)
         {
-            var events = await _events.Get();
+            return ((IScaleManager)this).PurgeScaleEvents(new List<Guid> { id });
+        }
 
-            var eventToDelete = events.Find(e => e.Id == id);
-            if (eventToDelete != null)
-            {
-                events.Remove(eventToDelete);
-                await _events.Set(events);
+        async Task IScaleManager.PurgeScaleEvents(List<Guid> events)
+        {
+            var knownEvents = await _events.Get();
+            var toRemove = events.ToHashSet();
+            var removed = knownEvents.RemoveAll(x => toRemove.Contains(x.Id));
+            if (removed > 0)
+                await _events.Set(knownEvents);
+
+            var state = await _scaleState.Get();
+            var removedFromState = state.Changes.RemoveAll(x => toRemove.Contains(x.EventId));
+            if (removedFromState > 0)
+                await _scaleState.Set(state);
+
+            if (removed > 0 || removedFromState > 0)
                 await ScheduleStateUpdate();
-            }
         }
 
         async Task<ScaleState> IScaleManager.GetScaleSet()
