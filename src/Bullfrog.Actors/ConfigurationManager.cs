@@ -222,10 +222,17 @@ namespace Bullfrog.Actors
 
                 foreach (var region in scaleEvent.RegionConfig)
                 {
-                    registeredEvent.Regions.TryAdd(region.Name, new ScaleEventRegionState
+                    if (registeredEvent.Regions.TryGetValue(region.Name, out var regionState))
                     {
-                        Scale = region.Scale,
-                    });
+                        regionState.Scale = region.Scale;
+                    }
+                    else
+                    {
+                        registeredEvent.Regions.Add(region.Name, new ScaleEventRegionState
+                        {
+                            Scale = region.Scale,
+                        });
+                    }
                 }
             }
             else
