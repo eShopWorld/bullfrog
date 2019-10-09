@@ -128,7 +128,7 @@ public class MultiRegionScaleGroupTests : BaseApiTests
 
     private void CreateScaleGroup(ScaleGroupDefinition scaleGroupDefinition = null)
     {
-        ApiClient.SetDefinition("sg", scaleGroupDefinition ?? NewScaleGroupDefinition());
+        ApiClient.SetDefinition("sg", body: scaleGroupDefinition ?? NewScaleGroupDefinition());
     }
 
     private static ScaleGroupDefinition NewScaleGroupDefinition()

@@ -115,7 +115,7 @@ public class MaxScaleTests : BaseApiTests
 
     private async Task CreateScaleGroup()
     {
-        await ApiClient.SetDefinitionAsync("sg", NewScaleGroupDefinition());
+        await ApiClient.SetDefinitionAsync("sg", body: NewScaleGroupDefinition());
     }
 
     private static ScaleGroupDefinition NewScaleGroupDefinition()

@@ -60,6 +60,8 @@ namespace Client
 
         /// <param name='scaleGroup'>
         /// </param>
+        /// <param name='validateOnly'>
+        /// </param>
         /// <param name='body'>
         /// </param>
         /// <param name='customHeaders'>
@@ -68,7 +70,7 @@ namespace Client
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse> SetDefinitionWithHttpMessagesAsync(string scaleGroup, ScaleGroupDefinition body = default(ScaleGroupDefinition), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse> SetDefinitionWithHttpMessagesAsync(string scaleGroup, bool? validateOnly = default(bool?), ScaleGroupDefinition body = default(ScaleGroupDefinition), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <param name='scaleGroup'>
         /// </param>

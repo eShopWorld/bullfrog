@@ -584,6 +584,8 @@ namespace Client
 
         /// <param name='scaleGroup'>
         /// </param>
+        /// <param name='validateOnly'>
+        /// </param>
         /// <param name='body'>
         /// </param>
         /// <param name='customHeaders'>
@@ -604,7 +606,7 @@ namespace Client
         /// <return>
         /// A response object containing the response body and response headers.
         /// </return>
-        public async Task<HttpOperationResponse> SetDefinitionWithHttpMessagesAsync(string scaleGroup, ScaleGroupDefinition body = default(ScaleGroupDefinition), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
+        public async Task<HttpOperationResponse> SetDefinitionWithHttpMessagesAsync(string scaleGroup, bool? validateOnly = default(bool?), ScaleGroupDefinition body = default(ScaleGroupDefinition), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (scaleGroup == null)
             {
@@ -622,6 +624,7 @@ namespace Client
                 _invocationId = ServiceClientTracing.NextInvocationId.ToString();
                 Dictionary<string, object> tracingParameters = new Dictionary<string, object>();
                 tracingParameters.Add("scaleGroup", scaleGroup);
+                tracingParameters.Add("validateOnly", validateOnly);
                 tracingParameters.Add("body", body);
                 tracingParameters.Add("cancellationToken", cancellationToken);
                 ServiceClientTracing.Enter(_invocationId, this, "SetDefinition", tracingParameters);
@@ -630,6 +633,15 @@ namespace Client
             var _baseUrl = BaseUri.AbsoluteUri;
             var _url = new System.Uri(new System.Uri(_baseUrl + (_baseUrl.EndsWith("/") ? "" : "/")), "api/Configurations/{scaleGroup}").ToString();
             _url = _url.Replace("{scaleGroup}", System.Uri.EscapeDataString(scaleGroup));
+            List<string> _queryParameters = new List<string>();
+            if (validateOnly != null)
+            {
+                _queryParameters.Add(string.Format("validateOnly={0}", System.Uri.EscapeDataString(SafeJsonConvert.SerializeObject(validateOnly, SerializationSettings).Trim('"'))));
+            }
+            if (_queryParameters.Count > 0)
+            {
+                _url += "?" + string.Join("&", _queryParameters);
+            }
             // Create HTTP transport objects
             var _httpRequest = new HttpRequestMessage();
             HttpResponseMessage _httpResponse = null;

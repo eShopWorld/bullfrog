@@ -95,6 +95,11 @@
             "default": ""
           },
           {
+            "in": "query",
+            "name": "validateOnly",
+            "type": "boolean"
+          },
+          {
             "in": "body",
             "name": "body",
             "schema": {

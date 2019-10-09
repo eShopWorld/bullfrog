@@ -345,7 +345,7 @@ public class ScaleManagerTests : BaseApiTests
 
     private void CreateScaleGroup()
     {
-        ApiClient.SetDefinition("sg", new Client.Models.ScaleGroupDefinition
+        ApiClient.SetDefinition("sg", body: new Client.Models.ScaleGroupDefinition
         {
             Regions = new List<ScaleGroupRegion>
             {
