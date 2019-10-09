@@ -69,12 +69,16 @@ namespace Bullfrog.Api.Controllers
         /// </summary>
         /// <param name="scaleGroup">The name of the scale group to configure.</param>
         /// <param name="definition">The new or updated configuration of the scale group.</param>
+        /// <param name="validateOnly">When enabled only validates the new configuration but not saves it.</param>
         /// <returns></returns>
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesDefaultResponseType]
         [HttpPut("{scaleGroup}")]
-        public async Task<ActionResult> SetDefinition(string scaleGroup, ScaleGroupDefinition definition)
+        public async Task<ActionResult> SetDefinition(string scaleGroup, ScaleGroupDefinition definition, bool validateOnly)
         {
+            if (validateOnly)
+                return Ok(definition);
+
             try
             {
                 await GetConfigurationManager().ConfigureScaleGroup(scaleGroup, definition);
