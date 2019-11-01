@@ -57,6 +57,14 @@ namespace Bullfrog.Actors.Interfaces
         Task<List<ScheduledScaleEvent>> ListScaleEvents(string scaleGroup);
 
         /// <summary>
+        /// Lists scale events.
+        /// </summary>
+        /// <param name="scaleGroup">The name of the scale group</param>
+        /// <param name="parameters">The additional parameters</param>
+        /// <returns>The list of scale events.</returns>
+        Task<List<ScheduledScaleEvent>> ListScheduledScaleEvents(string scaleGroup, ListScaleEventsParameters parameters);
+
+        /// <summary>
         /// Removes the specified scale event.
         /// </summary>
         /// <param name="scaleGroup">The scale group name.</param>

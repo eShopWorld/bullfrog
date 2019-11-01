@@ -92,13 +92,17 @@ namespace Client
 
         /// <param name='scaleGroup'>
         /// </param>
+        /// <param name='activeOnly'>
+        /// </param>
+        /// <param name='fromRegion'>
+        /// </param>
         /// <param name='customHeaders'>
         /// The headers that will be added to request.
         /// </param>
         /// <param name='cancellationToken'>
         /// The cancellation token.
         /// </param>
-        Task<HttpOperationResponse<IList<ScheduledScaleEvent>>> ListScheduledEventsWithHttpMessagesAsync(string scaleGroup, Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
+        Task<HttpOperationResponse<IList<ScheduledScaleEvent>>> ListScheduledEventsWithHttpMessagesAsync(string scaleGroup, bool? activeOnly = false, string fromRegion = default(string), Dictionary<string, List<string>> customHeaders = null, CancellationToken cancellationToken = default(CancellationToken));
 
         /// <param name='scaleGroup'>
         /// </param>
