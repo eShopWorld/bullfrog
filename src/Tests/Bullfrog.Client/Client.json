@@ -95,6 +95,11 @@
             "default": ""
           },
           {
+            "in": "query",
+            "name": "validateOnly",
+            "type": "boolean"
+          },
+          {
             "in": "body",
             "name": "body",
             "schema": {
@@ -177,6 +182,17 @@
             "required": true,
             "type": "string",
             "default": ""
+          },
+          {
+            "in": "query",
+            "name": "activeOnly",
+            "type": "boolean",
+            "default": false
+          },
+          {
+            "in": "query",
+            "name": "fromRegion",
+            "type": "string"
           }
         ],
         "responses": {

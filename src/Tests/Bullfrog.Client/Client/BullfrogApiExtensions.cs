@@ -70,11 +70,13 @@ namespace Client
             /// </param>
             /// <param name='scaleGroup'>
             /// </param>
+            /// <param name='validateOnly'>
+            /// </param>
             /// <param name='body'>
             /// </param>
-            public static void SetDefinition(this IBullfrogApi operations, string scaleGroup, ScaleGroupDefinition body = default(ScaleGroupDefinition))
+            public static void SetDefinition(this IBullfrogApi operations, string scaleGroup, bool? validateOnly = default(bool?), ScaleGroupDefinition body = default(ScaleGroupDefinition))
             {
-                operations.SetDefinitionAsync(scaleGroup, body).GetAwaiter().GetResult();
+                operations.SetDefinitionAsync(scaleGroup, validateOnly, body).GetAwaiter().GetResult();
             }
 
             /// <param name='operations'>
@@ -82,14 +84,16 @@ namespace Client
             /// </param>
             /// <param name='scaleGroup'>
             /// </param>
+            /// <param name='validateOnly'>
+            /// </param>
             /// <param name='body'>
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task SetDefinitionAsync(this IBullfrogApi operations, string scaleGroup, ScaleGroupDefinition body = default(ScaleGroupDefinition), CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task SetDefinitionAsync(this IBullfrogApi operations, string scaleGroup, bool? validateOnly = default(bool?), ScaleGroupDefinition body = default(ScaleGroupDefinition), CancellationToken cancellationToken = default(CancellationToken))
             {
-                (await operations.SetDefinitionWithHttpMessagesAsync(scaleGroup, body, null, cancellationToken).ConfigureAwait(false)).Dispose();
+                (await operations.SetDefinitionWithHttpMessagesAsync(scaleGroup, validateOnly, body, null, cancellationToken).ConfigureAwait(false)).Dispose();
             }
 
             /// <param name='operations'>
@@ -139,9 +143,13 @@ namespace Client
             /// </param>
             /// <param name='scaleGroup'>
             /// </param>
-            public static IList<ScheduledScaleEvent> ListScheduledEvents(this IBullfrogApi operations, string scaleGroup)
+            /// <param name='activeOnly'>
+            /// </param>
+            /// <param name='fromRegion'>
+            /// </param>
+            public static IList<ScheduledScaleEvent> ListScheduledEvents(this IBullfrogApi operations, string scaleGroup, bool? activeOnly = false, string fromRegion = default(string))
             {
-                return operations.ListScheduledEventsAsync(scaleGroup).GetAwaiter().GetResult();
+                return operations.ListScheduledEventsAsync(scaleGroup, activeOnly, fromRegion).GetAwaiter().GetResult();
             }
 
             /// <param name='operations'>
@@ -149,12 +157,16 @@ namespace Client
             /// </param>
             /// <param name='scaleGroup'>
             /// </param>
+            /// <param name='activeOnly'>
+            /// </param>
+            /// <param name='fromRegion'>
+            /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
             /// </param>
-            public static async Task<IList<ScheduledScaleEvent>> ListScheduledEventsAsync(this IBullfrogApi operations, string scaleGroup, CancellationToken cancellationToken = default(CancellationToken))
+            public static async Task<IList<ScheduledScaleEvent>> ListScheduledEventsAsync(this IBullfrogApi operations, string scaleGroup, bool? activeOnly = false, string fromRegion = default(string), CancellationToken cancellationToken = default(CancellationToken))
             {
-                using (var _result = await operations.ListScheduledEventsWithHttpMessagesAsync(scaleGroup, null, cancellationToken).ConfigureAwait(false))
+                using (var _result = await operations.ListScheduledEventsWithHttpMessagesAsync(scaleGroup, activeOnly, fromRegion, null, cancellationToken).ConfigureAwait(false))
                 {
                     return _result.Body;
                 }

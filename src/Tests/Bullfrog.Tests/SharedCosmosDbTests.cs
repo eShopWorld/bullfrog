@@ -72,7 +72,7 @@ public class SharedCosmosDbTests : BaseApiTests
         ApiClient.SaveScaleEvent("sg", eventId, NewScaleEvent());
         var updatedConfiguration = NewScaleGroupDefinition();
         updatedConfiguration.Cosmos = null;
-        ApiClient.SetDefinition("sg", updatedConfiguration);
+        ApiClient.SetDefinition("sg", body: updatedConfiguration);
 
         await AdvanceTimeTo(UtcNow.AddHours(15));
 
@@ -110,7 +110,7 @@ public class SharedCosmosDbTests : BaseApiTests
     {
         if (scaleGroupDefinition == null)
             scaleGroupDefinition = NewScaleGroupDefinition();
-        ApiClient.SetDefinition("sg", scaleGroupDefinition);
+        ApiClient.SetDefinition("sg", body: scaleGroupDefinition);
         var allResources = scaleGroupDefinition.Cosmos.Select(x => x.Name)
             .Union(scaleGroupDefinition.Regions.SelectMany(r => r.ScaleSets).Select(x => x.Name));
         foreach (var resources in allResources)

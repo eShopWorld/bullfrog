@@ -22,6 +22,12 @@ namespace Bullfrog.Actors.Interfaces
         Task ScheduleScaleEvent(RegionScaleEvent scaleEvent);
 
         /// <summary>
+        /// Returns the list of events.
+        /// </summary>
+        /// <returns></returns>
+        Task<List<RegionScaleEvent>> ListEvents();
+
+        /// <summary>
         /// Removes the specified scale event.
         /// </summary>
         /// <param name="id">The scale event to remove.</param>

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.ServiceFabric.Actors.Client;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common;
+using System.Linq;
 
 namespace Bullfrog.Api.Controllers
 {
@@ -35,15 +36,34 @@ namespace Bullfrog.Api.Controllers
         /// Lists all scheduled events from the specified scale group.
         /// </summary>
         /// <param name="scaleGroup">The name of the scale group.</param>
+        /// <param name="activeOnly">If true only not completed events are returned.</param>
+        /// <param name="fromRegion">Returns events from the specified region.</param>
         /// <returns></returns>
         [HttpGet("{scaleGroup}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesDefaultResponseType]
-        public async Task<ActionResult<IEnumerable<ScheduledScaleEvent>>> ListScheduledEvents(string scaleGroup)
+        public async Task<ActionResult<IEnumerable<ScheduledScaleEvent>>> ListScheduledEvents(string scaleGroup, bool activeOnly = false, string fromRegion = null)
         {
             try
             {
-                return await GetConfigurationManager().ListScaleEvents(scaleGroup);
+                List<ScheduledScaleEvent> events;
+                if (activeOnly || fromRegion != null)
+                {
+                    events = await GetConfigurationManager().ListScheduledScaleEvents(scaleGroup, new ListScaleEventsParameters
+                    {
+                        ActiveOnly = activeOnly,
+                        FromRegion = fromRegion,
+                    });
+                }
+                else
+                {
+                    events = await GetConfigurationManager().ListScaleEvents(scaleGroup);
+                }
+
+                return Ok(events
+                    .OrderBy(ev => ev.RequiredScaleAt)
+                    .ThenBy(ev => ev.StartScaleDownAt));
+
             }
             catch (AggregateException agEx) when (agEx.InnerException is ScaleGroupNotFoundException)
             {
@@ -140,7 +160,7 @@ namespace Bullfrog.Api.Controllers
         {
             try
             {
-                var state  = await GetConfigurationManager().DeleteScaleEvent(scaleGroup, eventId);
+                var state = await GetConfigurationManager().DeleteScaleEvent(scaleGroup, eventId);
                 switch (state)
                 {
                     case ScaleEventState.Waiting:

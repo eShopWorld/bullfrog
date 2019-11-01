@@ -229,6 +229,21 @@ namespace Bullfrog.Actors
             await ScheduleStateUpdate();
         }
 
+        async Task<List<RegionScaleEvent>> IScaleManager.ListEvents()
+        {
+            var events = await _events.Get();
+            return events
+                .Select(ev => new RegionScaleEvent
+                {
+                    Id = ev.Id,
+                    Name = ev.Name,
+                    RequiredScaleAt = ev.RequiredScaleAt,
+                    Scale = ev.Scale,
+                    StartScaleDownAt = ev.StartScaleDownAt,
+                })
+                .ToList();
+        }
+
         async Task IScaleManager.Disable()
         {
             await _events.Set(new List<ManagedScaleEvent>());

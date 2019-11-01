@@ -26,7 +26,7 @@ public class ConfigurationControllerTests : BaseApiTests
     public async Task CreateNewScaleGroup()
     {
         //act
-        await ApiClient.SetDefinitionAsync("sg", new ScaleGroupDefinition
+        await ApiClient.SetDefinitionAsync("sg", body: new ScaleGroupDefinition
         {
             Regions = new List<ScaleGroupRegion>
             {
@@ -83,10 +83,10 @@ public class ConfigurationControllerTests : BaseApiTests
                 }
             },
         };
-        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        await ApiClient.SetDefinitionAsync("sg", body: scaleGroup);
 
         //act
-        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        await ApiClient.SetDefinitionAsync("sg", body: scaleGroup);
     }
 
     [Fact, IsLayer0]
@@ -110,7 +110,7 @@ public class ConfigurationControllerTests : BaseApiTests
                 },
             },
         };
-        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        await ApiClient.SetDefinitionAsync("sg", body: scaleGroup);
         await ApiClient.SaveScaleEventAsync("sg", Guid.NewGuid(), new ScaleEvent
         {
             Name = "n",
@@ -121,7 +121,7 @@ public class ConfigurationControllerTests : BaseApiTests
         scaleGroup.Regions.RemoveAt(1); // try to remove eu2
 
         //act
-        Func<Task> call = () => ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        Func<Task> call = () => ApiClient.SetDefinitionAsync("sg", body: scaleGroup);
 
         call.Should().Throw<ProblemDetailsException>();
     }
@@ -147,7 +147,7 @@ public class ConfigurationControllerTests : BaseApiTests
                 },
             },
         };
-        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        await ApiClient.SetDefinitionAsync("sg", body: scaleGroup);
         await ApiClient.SaveScaleEventAsync("sg", Guid.NewGuid(), new ScaleEvent
         {
             Name = "n",
@@ -158,7 +158,7 @@ public class ConfigurationControllerTests : BaseApiTests
         scaleGroup.Regions.RemoveAt(1); // try to remove eu2
 
         //act
-        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        await ApiClient.SetDefinitionAsync("sg", body: scaleGroup);
     }
 
     [Fact, IsLayer0]
@@ -176,7 +176,7 @@ public class ConfigurationControllerTests : BaseApiTests
                 }
             },
         };
-        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        await ApiClient.SetDefinitionAsync("sg", body: scaleGroup);
 
         //act
         await ApiClient.RemoveDefinitionAsync("sg");
@@ -201,7 +201,7 @@ public class ConfigurationControllerTests : BaseApiTests
                 }
             },
         };
-        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        await ApiClient.SetDefinitionAsync("sg", body: scaleGroup);
 
         //act
         Func<Task> func = () => ApiClient.GetDefinitionAsync("unkn");
@@ -225,7 +225,7 @@ public class ConfigurationControllerTests : BaseApiTests
                 }
             },
         };
-        await ApiClient.SetDefinitionAsync("sg", scaleGroup);
+        await ApiClient.SetDefinitionAsync("sg", body: scaleGroup);
 
         //act
         var returnedScaleGroup = await ApiClient.GetDefinitionAsync("sg");

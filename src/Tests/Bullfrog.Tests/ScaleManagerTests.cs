@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Client;
 using Client.Models;
@@ -112,6 +113,110 @@ public class ScaleManagerTests : BaseApiTests
         var actor = ScaleManagerActors[("sg", "eu")];
         var reminders = actor.GetActorReminders();
         reminders.Should().HaveCount(1);
+    }
+
+    [Fact, IsLayer0]
+    public void ListReturnsOrderedScaleEvents()
+    {
+        CreateScaleGroup();
+        var events = new (int start, int end)[] { (1, 2), (4, 6), (2, 8), (4, 5), };
+        foreach (var rng in events)
+        {
+            var scaleEvent = new ScaleEvent
+            {
+                Name = "aa",
+                RegionConfig = new List<RegionScaleValue>
+            {
+                new RegionScaleValue
+                {
+                    Name = "eu",
+                    Scale = 10,
+                }
+            },
+                RequiredScaleAt = UtcNow + TimeSpan.FromHours(rng.start),
+                StartScaleDownAt = UtcNow + TimeSpan.FromHours(rng.end),
+            };
+            ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
+        }
+
+        var allScaleEvents = ApiClient.ListScheduledEvents("sg");
+
+        var returnedEventStartEnds = allScaleEvents.Select(ev => ToStartEnd(ev));
+        var ordered = events.OrderBy(ev => ev.start).ThenBy(ev => ev.end);
+        returnedEventStartEnds.Should().ContainInOrder(ordered);
+
+        (int start, int end) ToStartEnd(ScheduledScaleEvent ev)
+            => ((int)(ev.RequiredScaleAt.Value - UtcNow).TotalHours, (int)(ev.StartScaleDownAt.Value - UtcNow).TotalHours);
+    }
+
+    [Fact, IsLayer0]
+    public async Task OnlyActiveEventsAreReturned()
+    {
+        CreateScaleGroup();
+        var events = new (int start, int end)[] { (2, 8), (4, 5), (3, 7), (6, 7) };
+        foreach (var rng in events)
+        {
+            var scaleEvent = new ScaleEvent
+            {
+                Name = "aa",
+                RegionConfig = new List<RegionScaleValue>
+                {
+                    new RegionScaleValue
+                    {
+                        Name = "eu",
+                        Scale = 10,
+                    }
+                },
+                RequiredScaleAt = UtcNow + TimeSpan.FromHours(rng.start),
+                StartScaleDownAt = UtcNow + TimeSpan.FromHours(rng.end),
+            };
+            ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
+        }
+        await AdvanceTimeTo(UtcNow.AddHours(4));
+
+        var allScaleEvents = ApiClient.ListScheduledEvents("sg", activeOnly: true);
+
+        var returnedEventStartEnds = allScaleEvents.Select(ev => ToStartEnd(ev));
+        var ordered = events
+            .Select(ev => (start: ev.start - 4, end: ev.end - 4))
+            .Where(ev => ev.end >= 0)
+            .OrderBy(ev => ev.start)
+            .ThenBy(ev => ev.end);
+        returnedEventStartEnds.Should().ContainInOrder(ordered);
+
+        (int start, int end) ToStartEnd(ScheduledScaleEvent ev)
+            => ((int)(ev.RequiredScaleAt.Value - UtcNow).TotalHours, (int)(ev.StartScaleDownAt.Value - UtcNow).TotalHours);
+    }
+
+    [Fact, IsLayer0]
+    public async Task ListReturnsEventsFromSelectedRegion()
+    {
+        CreateScaleGroup();
+        var events = new (int start, int end, string regions)[] { (2, 8, "eu"), (4, 5, "eu1,eu"), (3, 7, "eu1"), (6, 7, "eu") };
+        foreach (var rng in events)
+        {
+            var scaleEvent = new ScaleEvent
+            {
+                Name = "aa",
+                RegionConfig = rng.regions.Split(',')
+                    .Select(r => new RegionScaleValue { Name = r, Scale = 10 })
+                    .ToList(),
+                RequiredScaleAt = UtcNow + TimeSpan.FromHours(rng.start),
+                StartScaleDownAt = UtcNow + TimeSpan.FromHours(rng.end),
+            };
+            ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
+        }
+
+        var allScaleEvents = ApiClient.ListScheduledEvents("sg", fromRegion: "eu1");
+
+        var returnedEventStartEnds = allScaleEvents.Select(ev => ToStartEnd(ev));
+        var ordered = events.Where(ev => ev.regions.Contains("eu1"))
+            .Select(ev=>(ev.start, ev.end))
+            .OrderBy(ev => ev.start).ThenBy(ev => ev.end);
+        returnedEventStartEnds.Should().ContainInOrder(ordered);
+
+        (int start, int end) ToStartEnd(ScheduledScaleEvent ev)
+            => ((int)(ev.RequiredScaleAt.Value - UtcNow).TotalHours, (int)(ev.StartScaleDownAt.Value - UtcNow).TotalHours);
     }
 
     [Fact, IsLayer0]
@@ -345,7 +450,7 @@ public class ScaleManagerTests : BaseApiTests
 
     private void CreateScaleGroup()
     {
-        ApiClient.SetDefinition("sg", new Client.Models.ScaleGroupDefinition
+        ApiClient.SetDefinition("sg", body: new Client.Models.ScaleGroupDefinition
         {
             Regions = new List<ScaleGroupRegion>
             {
@@ -367,6 +472,24 @@ public class ScaleManagerTests : BaseApiTests
                             }
                         },
                     },
+                    ScaleSets = new List<ScaleSetConfiguration>
+                    {
+                        new ScaleSetConfiguration
+                        {
+                            Name = "s",
+                            AutoscaleSettingsResourceId = GetAutoscaleSettingResourceId(),
+                            ProfileName = "pr",
+                            LoadBalancerResourceId = GetLoadBalancerResourceId(),
+                            HealthPortPort = 9999,
+                            RequestsPerInstance = 100,
+                        },
+                    },
+                    CosmosDbPrescaleLeadTime = _cosmosDbPrescaleLeadTime.ToString(),
+                    ScaleSetPrescaleLeadTime = _scaleSetPrescaleLeadTime.ToString(),
+                },
+                new ScaleGroupRegion
+                {
+                    RegionName = "eu1",
                     ScaleSets = new List<ScaleSetConfiguration>
                     {
                         new ScaleSetConfiguration

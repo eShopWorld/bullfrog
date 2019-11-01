@@ -144,6 +144,44 @@ namespace Bullfrog.Actors
             return list.Select(r => r.Value.ToScheduledScaleEvent(r.Key, scaleGroupDefinition.MaxLeadTime(r.Value.Regions.Keys))).ToList();
         }
 
+        async Task<List<ScheduledScaleEvent>> IConfigurationManager.ListScheduledScaleEvents(string scaleGroup, ListScaleEventsParameters parameters)
+        {
+            IEnumerable<ScheduledScaleEvent> events;
+            var scaleGroupDefinition = await GetScaleGroupDefinition(scaleGroup);
+            if (parameters.FromRegion != null)
+            {
+                if (!scaleGroupDefinition.Regions.Any(r => r.RegionName == parameters.FromRegion))
+                    return new List<ScheduledScaleEvent>();
+                var scaler = _proxyFactory.GetActor<IScaleManager>(scaleGroup, parameters.FromRegion);
+                var storedEvents = await scaler.ListEvents();
+                events = storedEvents.Select(ev => new ScheduledScaleEvent
+                {
+                    Id = ev.Id,
+                    Name = ev.Name,
+                    RegionConfig = new List<RegionScaleValue>
+                    {
+                        new RegionScaleValue
+                        {
+                            Name = parameters.FromRegion,
+                            Scale    =  ev.Scale,
+                        },
+                    },
+                    RequiredScaleAt = ev.RequiredScaleAt,
+                    StartScaleDownAt = ev.StartScaleDownAt,
+                });
+            }
+            else
+            {
+                var scaleEventsState = GetScaleEventsStateItem(scaleGroup);
+                var list = await scaleEventsState.Get();
+                events = list.Select(r => r.Value.ToScheduledScaleEvent(r.Key, scaleGroupDefinition.MaxLeadTime(r.Value.Regions.Keys)));
+            }
+
+            if (parameters.ActiveOnly)
+                events = events.Where(ev => ev.StartScaleDownAt >= _dateTimeProvider.UtcNow);
+            return events.ToList();
+        }
+
         async Task<SaveScaleEventReturnValue> IConfigurationManager.SaveScaleEvent(string scaleGroup, Guid eventId, ScaleEvent scaleEvent)
         {
             var scaleGroupDefinition = await GetScaleGroupDefinition(scaleGroup);

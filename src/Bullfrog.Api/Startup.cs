@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using Autofac;
 using Bullfrog.Api.Helpers;
+using Bullfrog.Api.Models.EventModels;
 using Bullfrog.Common;
 using Bullfrog.Common.DependencyInjection;
 using Eshopworld.Core;
@@ -20,6 +21,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
 
 namespace Bullfrog.Api
 {
@@ -136,6 +138,20 @@ namespace Bullfrog.Api
                 });
 
                 services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+                services.PostConfigure<ApiBehaviorOptions>(options =>
+                {
+                    // Log model validation errors. It's a temporary workaround for short connection timeouts
+                    // and potentially long configuration validation times.
+                    var builtInFactory = options.InvalidModelStateResponseFactory;
+                    options.InvalidModelStateResponseFactory = context =>
+                    {
+                        var serializableModelState = new SerializableError(context.ModelState);
+                        var json = JsonConvert.SerializeObject(serializableModelState);
+                        var bb = context.HttpContext.RequestServices.GetService<IBigBrother>();
+                        bb.Publish(new ApiValidationFailed { ValidationError = json });
+                        return builtInFactory(context);
+                    };
+                });
             }
             catch (Exception e)
             {
