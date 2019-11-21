@@ -27,7 +27,7 @@
             }
           },
           "default": {
-            "description": "Unexpected Error",
+            "description": "Error",
             "schema": {
               "$ref": "#/definitions/ProblemDetails"
             }
@@ -51,8 +51,7 @@
             "in": "path",
             "name": "scaleGroup",
             "required": true,
-            "type": "string",
-            "default": ""
+            "type": "string"
           }
         ],
         "responses": {
@@ -63,7 +62,7 @@
             }
           },
           "default": {
-            "description": "Unexpected Error",
+            "description": "Error",
             "schema": {
               "$ref": "#/definitions/ProblemDetails"
             }
@@ -91,8 +90,7 @@
             "in": "path",
             "name": "scaleGroup",
             "required": true,
-            "type": "string",
-            "default": ""
+            "type": "string"
           },
           {
             "in": "query",
@@ -112,7 +110,7 @@
             "description": "Success"
           },
           "default": {
-            "description": "Unexpected Error",
+            "description": "Error",
             "schema": {
               "$ref": "#/definitions/ProblemDetails"
             }
@@ -134,8 +132,7 @@
             "in": "path",
             "name": "scaleGroup",
             "required": true,
-            "type": "string",
-            "default": ""
+            "type": "string"
           }
         ],
         "responses": {
@@ -143,7 +140,7 @@
             "description": "Success"
           },
           "default": {
-            "description": "Unexpected Error",
+            "description": "Error",
             "schema": {
               "$ref": "#/definitions/ProblemDetails"
             }
@@ -180,8 +177,7 @@
             "in": "path",
             "name": "scaleGroup",
             "required": true,
-            "type": "string",
-            "default": ""
+            "type": "string"
           },
           {
             "in": "query",
@@ -206,7 +202,7 @@
             }
           },
           "default": {
-            "description": "Unexpected Error",
+            "description": "Error",
             "schema": {
               "$ref": "#/definitions/ProblemDetails"
             }
@@ -230,16 +226,14 @@
             "in": "path",
             "name": "scaleGroup",
             "required": true,
-            "type": "string",
-            "default": ""
+            "type": "string"
           },
           {
             "in": "path",
             "name": "eventId",
             "required": true,
             "type": "string",
-            "format": "uuid",
-            "default": ""
+            "format": "uuid"
           }
         ],
         "responses": {
@@ -250,7 +244,7 @@
             }
           },
           "default": {
-            "description": "Unexpected Error",
+            "description": "Error",
             "schema": {
               "$ref": "#/definitions/ProblemDetails"
             }
@@ -278,16 +272,14 @@
             "in": "path",
             "name": "scaleGroup",
             "required": true,
-            "type": "string",
-            "default": ""
+            "type": "string"
           },
           {
             "in": "path",
             "name": "eventId",
             "required": true,
             "type": "string",
-            "format": "uuid",
-            "default": ""
+            "format": "uuid"
           },
           {
             "in": "body",
@@ -311,7 +303,7 @@
             "description": "Success"
           },
           "default": {
-            "description": "Unexpected Error",
+            "description": "Error",
             "schema": {
               "$ref": "#/definitions/ProblemDetails"
             }
@@ -333,16 +325,14 @@
             "in": "path",
             "name": "scaleGroup",
             "required": true,
-            "type": "string",
-            "default": ""
+            "type": "string"
           },
           {
             "in": "path",
             "name": "eventId",
             "required": true,
             "type": "string",
-            "format": "uuid",
-            "default": ""
+            "format": "uuid"
           }
         ],
         "responses": {
@@ -353,7 +343,7 @@
             "description": "Success"
           },
           "default": {
-            "description": "Unexpected Error",
+            "description": "Error",
             "schema": {
               "$ref": "#/definitions/ProblemDetails"
             }
@@ -377,8 +367,7 @@
             "in": "path",
             "name": "scaleGroup",
             "required": true,
-            "type": "string",
-            "default": ""
+            "type": "string"
           }
         ],
         "responses": {
@@ -389,7 +378,7 @@
             }
           },
           "default": {
-            "description": "Unexpected Error",
+            "description": "Error",
             "schema": {
               "$ref": "#/definitions/ProblemDetails"
             }
@@ -557,9 +546,11 @@
           }
         },
         "scaleSetPrescaleLeadTime": {
+          "format": "date-span",
           "type": "string"
         },
         "cosmosDbPrescaleLeadTime": {
+          "format": "date-span",
           "type": "string"
         },
         "maxScale": {
@@ -588,9 +579,11 @@
           }
         },
         "cosmosDbPrescaleLeadTime": {
+          "format": "date-span",
           "type": "string"
         },
         "oldEventsAge": {
+          "format": "date-span",
           "type": "string"
         }
       }
