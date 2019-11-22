@@ -412,6 +412,24 @@
         "type": "object"
       }
     },
+    "ScaleSetRunbookConfiguration": {
+      "required": [
+        "automationAccountName",
+        "runbookName"
+      ],
+      "type": "object",
+      "properties": {
+        "automationAccountName": {
+          "type": "string"
+        },
+        "runbookName": {
+          "type": "string"
+        },
+        "scaleSetName": {
+          "type": "string"
+        }
+      }
+    },
     "ScaleSetConfiguration": {
       "required": [
         "autoscaleSettingsResourceId",
@@ -454,6 +472,9 @@
         "reservedInstances": {
           "format": "double",
           "type": "number"
+        },
+        "runbook": {
+          "$ref": "#/definitions/ScaleSetRunbookConfiguration"
         }
       }
     },
@@ -559,6 +580,21 @@
         }
       }
     },
+    "AutomationAccount": {
+      "required": [
+        "name",
+        "resourceId"
+      ],
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "resourceId": {
+          "type": "string"
+        }
+      }
+    },
     "ScaleGroupDefinition": {
       "required": [
         "regions"
@@ -581,6 +617,12 @@
         "cosmosDbPrescaleLeadTime": {
           "format": "date-span",
           "type": "string"
+        },
+        "automationAccounts": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AutomationAccount"
+          }
         },
         "oldEventsAge": {
           "format": "date-span",

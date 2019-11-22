@@ -68,6 +68,11 @@ namespace Bullfrog.Actors.Interfaces.Models
         [ValueIs(ValueComparison.LessThanOrEqualTo, PropertyValue = nameof(MinInstanceCount))]
         public decimal ReservedInstances { get; set; }
 
+        /// <summary>
+        /// The optional configuration of runbook used to change the scale of the scale set.
+        /// </summary>
+        public ScaleSetRunbookConfiguration Runbook { get; set; }
+
         #region Validation
 
         IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)

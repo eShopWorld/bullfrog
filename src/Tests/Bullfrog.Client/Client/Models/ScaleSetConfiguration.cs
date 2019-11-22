@@ -23,7 +23,7 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleSetConfiguration class.
         /// </summary>
-        public ScaleSetConfiguration(string name, string autoscaleSettingsResourceId, string profileName, string loadBalancerResourceId, int? healthPortPort = default(int?), int? requestsPerInstance = default(int?), int? minInstanceCount = default(int?), double? reservedInstances = default(double?))
+        public ScaleSetConfiguration(string name, string autoscaleSettingsResourceId, string profileName, string loadBalancerResourceId, int? healthPortPort = default(int?), int? requestsPerInstance = default(int?), int? minInstanceCount = default(int?), double? reservedInstances = default(double?), ScaleSetRunbookConfiguration runbook = default(ScaleSetRunbookConfiguration))
         {
             Name = name;
             AutoscaleSettingsResourceId = autoscaleSettingsResourceId;
@@ -33,6 +33,7 @@ namespace Client.Models
             RequestsPerInstance = requestsPerInstance;
             MinInstanceCount = minInstanceCount;
             ReservedInstances = reservedInstances;
+            Runbook = runbook;
             CustomInit();
         }
 
@@ -82,6 +83,11 @@ namespace Client.Models
         public double? ReservedInstances { get; set; }
 
         /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "runbook")]
+        public ScaleSetRunbookConfiguration Runbook { get; set; }
+
+        /// <summary>
         /// Validate the object.
         /// </summary>
         /// <exception cref="ValidationException">
@@ -128,6 +134,10 @@ namespace Client.Models
             if (MinInstanceCount < 1)
             {
                 throw new ValidationException(ValidationRules.InclusiveMinimum, "MinInstanceCount", 1);
+            }
+            if (Runbook != null)
+            {
+                Runbook.Validate();
             }
         }
     }

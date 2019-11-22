@@ -7,7 +7,7 @@ namespace Bullfrog.Actors.Interfaces.Models.Validation
     /// <summary>
     /// Validates tthat the property contains a list of items with distinct values.
     /// </summary>
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
     public class ElementsHaveDistinctValuesAttribute : ValidationAttribute
     {
         /// <summary>
