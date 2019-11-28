@@ -12,7 +12,7 @@ namespace Bullfrog.Actors.Interfaces.Models
     /// Defines the configuration of a scale group.
     /// </summary>
     [DataContract]
-    public class ScaleGroupDefinition
+    public class ScaleGroupDefinition : IValidatableObject
     {
         /// <summary>
         /// The name of an special region which handles shared Cosmos databases.
@@ -71,6 +71,14 @@ namespace Bullfrog.Actors.Interfaces.Models
         public TimeSpan CosmosDbPrescaleLeadTime { get; set; }
 
         /// <summary>
+        /// Maps names to resource ids of automation accounts used to start runbooks
+        /// </summary>
+        [DataMember]
+        [ElementsHaveDistinctValues(nameof(AutomationAccount.Name))]
+        [ElementsHaveDistinctValues(nameof(AutomationAccount.ResourceId))]
+        public List<AutomationAccount> AutomationAccounts { get; set; }
+
+        /// <summary>
         /// Defines how long after completion time a scale event can be purged.
         /// </summary>
         [ValueIs(ValueComparison.GreaterThanOrEqualTo, PropertyValue = nameof(ZeroTimeSpan))]
@@ -108,6 +116,17 @@ namespace Bullfrog.Actors.Interfaces.Models
             regions.Select(r => this[r].MaxLeadTime)
                 .Union(Enumerable.Repeat(CosmosDbPrescaleLeadTime, 1))
                 .Max();
+        IEnumerable<ValidationResult> IValidatableObject.Validate(ValidationContext validationContext)
+        {
+            var knownAutomationAccounts = new HashSet<string>(
+                AutomationAccounts?.Select(x => x.Name) ?? Enumerable.Empty<string>());
+
+            foreach(var region in Regions)
+                foreach(var scaleSet in region.ScaleSets)
+                    if (scaleSet.Runbook != null && !knownAutomationAccounts.Contains(scaleSet.Runbook.AutomationAccountName))
+                        yield return new ValidationResult($"The automation account '{scaleSet.Runbook.AutomationAccountName}' not registered.");
+            yield return ValidationResult.Success;
+        }
 
         private static TimeSpan ZeroTimeSpan => TimeSpan.Zero;
     }

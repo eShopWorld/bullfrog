@@ -25,11 +25,12 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleGroupDefinition class.
         /// </summary>
-        public ScaleGroupDefinition(IList<ScaleGroupRegion> regions, IList<CosmosConfiguration> cosmos = default(IList<CosmosConfiguration>), string cosmosDbPrescaleLeadTime = default(string), string oldEventsAge = default(string))
+        public ScaleGroupDefinition(IList<ScaleGroupRegion> regions, IList<CosmosConfiguration> cosmos = default(IList<CosmosConfiguration>), string cosmosDbPrescaleLeadTime = default(string), IList<AutomationAccount> automationAccounts = default(IList<AutomationAccount>), string oldEventsAge = default(string))
         {
             Regions = regions;
             Cosmos = cosmos;
             CosmosDbPrescaleLeadTime = cosmosDbPrescaleLeadTime;
+            AutomationAccounts = automationAccounts;
             OldEventsAge = oldEventsAge;
             CustomInit();
         }
@@ -53,6 +54,11 @@ namespace Client.Models
         /// </summary>
         [JsonProperty(PropertyName = "cosmosDbPrescaleLeadTime")]
         public string CosmosDbPrescaleLeadTime { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "automationAccounts")]
+        public IList<AutomationAccount> AutomationAccounts { get; set; }
 
         /// <summary>
         /// </summary>
@@ -88,6 +94,16 @@ namespace Client.Models
                     if (element1 != null)
                     {
                         element1.Validate();
+                    }
+                }
+            }
+            if (AutomationAccounts != null)
+            {
+                foreach (var element2 in AutomationAccounts)
+                {
+                    if (element2 != null)
+                    {
+                        element2.Validate();
                     }
                 }
             }
