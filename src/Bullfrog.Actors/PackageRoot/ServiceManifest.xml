@@ -43,6 +43,20 @@
         </Extension>
       </Extensions>
     </StatefulServiceType>
+    <StatefulServiceType ServiceTypeName="RunbookVmssScalingManagerActorServiceType">
+      <Extensions>
+        <Extension Name="__GeneratedServiceType__" GeneratedId="28393d19-54d6-4da0-beda-6117adffd7e2|None">
+          <GeneratedNames xmlns="http://schemas.microsoft.com/2015/03/fabact-no-schema">
+            <DefaultService Name="RunbookVmssScalingManagerActorService" />
+            <ReplicatorEndpoint Name="RunbookVmssScalingManagerActorServiceReplicatorEndpoint" />
+            <ReplicatorConfigSection Name="RunbookVmssScalingManagerActorServiceReplicatorConfig" />
+            <ReplicatorSecurityConfigSection Name="RunbookVmssScalingManagerActorServiceReplicatorSecurityConfig" />
+            <StoreConfigSection Name="RunbookVmssScalingManagerActorServiceLocalStoreConfig" />
+            <ServiceEndpointV2 Name="RunbookVmssScalingManagerActorServiceEndpointV2" />
+          </GeneratedNames>
+        </Extension>
+      </Extensions>
+    </StatefulServiceType>
   </ServiceTypes>
   <CodePackage Name="Code" Version="1.0.0">
     <EntryPoint>
@@ -64,6 +78,9 @@
       <Endpoint Name="ConfigurationManagerActorServiceReplicatorEndpoint" />
       <Endpoint Name="ScaleEventStateReporterActorServiceEndpointV2" />
       <Endpoint Name="ScaleEventStateReporterActorServiceReplicatorEndpoint" />
+      <Endpoint Name="RunbookJobManagerActorServiceEndpointV2" />
+      <Endpoint Name="RunbookVmssScalingManagerActorServiceEndpointV2" />
+      <Endpoint Name="RunbookVmssScalingManagerActorServiceReplicatorEndpoint" />
     </Endpoints>
   </Resources>
   <!-- The content will be generated during build -->

@@ -33,5 +33,20 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// Defines how long after completion time a scale event can be purged.
         /// </summary>
         public TimeSpan? OldEventsAge { get; set; }
+
+        /// <summary>
+        /// Maps names to resource ids of automation accounts used to start runbooks
+        /// </summary>
+        public List<AutomationAccount> AutomationAccounts { get; set; }
+
+        /// <summary>
+        /// The name of the scale group handled by the scale manager.
+        /// </summary>
+        public string ScaleGroup { get; set; }
+
+        /// <summary>
+        /// The name of the region handled by the scale manager.
+        /// </summary>
+        public string Region { get; set; }
     }
 }

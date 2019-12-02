@@ -110,7 +110,15 @@ namespace Bullfrog.Actors
 
         Task IScaleManager.DeleteScaleEvent(Guid id)
         {
-            return ((IScaleManager)this).PurgeScaleEvents(new List<Guid> { id });
+            try
+            {
+                return ((IScaleManager)this).PurgeScaleEvents(new List<Guid> { id });
+            }
+            catch (Exception ex)
+            {
+                BigBrother.Publish(ex.ToExceptionEvent());
+                throw;
+            }
         }
 
         async Task IScaleManager.PurgeScaleEvents(List<Guid> events)
@@ -195,38 +203,46 @@ namespace Bullfrog.Actors
 
         async Task IScaleManager.ScheduleScaleEvent(RegionScaleEvent scaleEvent)
         {
-            var configuration = await _configuration.TryGet();
-            if (!configuration.HasValue)
+            try
             {
-                throw new BullfrogException($"The scale manager {Id} is not active");
+                var configuration = await _configuration.TryGet();
+                if (!configuration.HasValue)
+                {
+                    throw new BullfrogException($"The scale manager {Id} is not active");
+                }
+
+                var events = await _events.Get();
+
+                var modifiedEvent = events.Find(e => e.Id == scaleEvent.Id);
+                if (modifiedEvent == null)
+                {
+                    modifiedEvent = new ManagedScaleEvent { Id = scaleEvent.Id };
+                    events.Add(modifiedEvent);
+                }
+
+                modifiedEvent.Name = scaleEvent.Name;
+                modifiedEvent.RequiredScaleAt = scaleEvent.RequiredScaleAt;
+                modifiedEvent.Scale = scaleEvent.Scale;
+                modifiedEvent.StartScaleDownAt = scaleEvent.StartScaleDownAt;
+                var estimatedScaleTime = TimeSpan.FromTicks(Math.Max(configuration.Value.CosmosDbPrescaleLeadTime.Ticks,
+                    configuration.Value.ScaleSetPrescaleLeadTime.Ticks));
+                modifiedEvent.EstimatedScaleUpAt = modifiedEvent.RequiredScaleAt - estimatedScaleTime;
+
+                if (configuration.Value.OldEventsAge.HasValue)
+                {
+                    var completedBefore = _dateTimeProvider.UtcNow.Add(-configuration.Value.OldEventsAge.Value);
+                    events.RemoveAll(e => e.StartScaleDownAt < completedBefore);
+                }
+
+                await _events.Set(events);
+
+                await ScheduleStateUpdate();
             }
-
-            var events = await _events.Get();
-
-            var modifiedEvent = events.Find(e => e.Id == scaleEvent.Id);
-            if (modifiedEvent == null)
+            catch (Exception ex)
             {
-                modifiedEvent = new ManagedScaleEvent { Id = scaleEvent.Id };
-                events.Add(modifiedEvent);
+                BigBrother.Publish(ex.ToExceptionEvent());
+                throw;
             }
-
-            modifiedEvent.Name = scaleEvent.Name;
-            modifiedEvent.RequiredScaleAt = scaleEvent.RequiredScaleAt;
-            modifiedEvent.Scale = scaleEvent.Scale;
-            modifiedEvent.StartScaleDownAt = scaleEvent.StartScaleDownAt;
-            var estimatedScaleTime = TimeSpan.FromTicks(Math.Max(configuration.Value.CosmosDbPrescaleLeadTime.Ticks,
-                configuration.Value.ScaleSetPrescaleLeadTime.Ticks));
-            modifiedEvent.EstimatedScaleUpAt = modifiedEvent.RequiredScaleAt - estimatedScaleTime;
-
-            if (configuration.Value.OldEventsAge.HasValue)
-            {
-                var completedBefore = _dateTimeProvider.UtcNow.Add(-configuration.Value.OldEventsAge.Value);
-                events.RemoveAll(e => e.StartScaleDownAt < completedBefore);
-            }
-
-            await _events.Set(events);
-
-            await ScheduleStateUpdate();
         }
 
         async Task<List<RegionScaleEvent>> IScaleManager.ListEvents()
@@ -246,27 +262,53 @@ namespace Bullfrog.Actors
 
         async Task IScaleManager.Disable()
         {
-            await _events.Set(new List<ManagedScaleEvent>());
-            await _configuration.TryRemove();
-            await _scaleState.Set(new ScalingState());
-            await _reportedEventStates.TryRemove();
-            await WakeMeAt(null);
+            try
+            {
+                var configuration = await _configuration.TryGet();
+                await ConfigureRunbookVmssScalingManagers(configuration.Value, null);
+
+                await _events.Set(new List<ManagedScaleEvent>());
+                await _configuration.TryRemove();
+                await _scaleState.Set(new ScalingState());
+                await _reportedEventStates.TryRemove();
+                await WakeMeAt(null);
+
+            }
+            catch (Exception ex)
+            {
+                BigBrother.Publish(ex.ToExceptionEvent());
+                throw;
+            }
         }
 
         async Task IScaleManager.Configure(ScaleManagerConfiguration configuration)
         {
-            await _configuration.Set(configuration);
-
-            var estimatedScaleTime = TimeSpan.FromTicks(Math.Max(configuration.CosmosDbPrescaleLeadTime.Ticks,
-                configuration.ScaleSetPrescaleLeadTime.Ticks));
-            var events = await _events.Get();
-            foreach (var ev in events)
+            try
             {
-                ev.EstimatedScaleUpAt = ev.RequiredScaleAt - estimatedScaleTime;
-            }
-            await _events.Set(events);
+                var oldConfiguration = await _configuration.TryGet();
 
-            await ScheduleStateUpdate();
+                configuration.ScaleGroup = _scaleGroupName;
+                configuration.Region = _regionName;
+                await _configuration.Set(configuration);
+
+                var estimatedScaleTime = TimeSpan.FromTicks(Math.Max(configuration.CosmosDbPrescaleLeadTime.Ticks,
+                    configuration.ScaleSetPrescaleLeadTime.Ticks));
+                var events = await _events.Get();
+                foreach (var ev in events)
+                {
+                    ev.EstimatedScaleUpAt = ev.RequiredScaleAt - estimatedScaleTime;
+                }
+                await _events.Set(events);
+
+                await ConfigureRunbookVmssScalingManagers(oldConfiguration.Value, configuration);
+
+                await ScheduleStateUpdate();
+            }
+            catch (Exception ex)
+            {
+                BigBrother.Publish(ex.ToExceptionEvent());
+                throw;
+            }
         }
 
         async Task IRemindable.ReceiveReminderAsync(string reminderName, byte[] state, TimeSpan dueTime, TimeSpan period)
@@ -280,6 +322,33 @@ namespace Bullfrog.Actors
                 BigBrother.Publish(ex.ToExceptionEvent());
                 await WakeMeAt(_dateTimeProvider.UtcNow.AddMinutes(2));
             }
+        }
+
+        async Task ConfigureRunbookVmssScalingManagers(ScaleManagerConfiguration oldConfiguration, ScaleManagerConfiguration newConfiguration)
+        {
+            var existingVmssConfigurations = oldConfiguration?.ScaleSetConfigurations
+                .Where(x => x.Runbook != null)
+                .ToDictionary(vmss => vmss.Name);
+            if (newConfiguration != null)
+                foreach (var vmss in newConfiguration.ScaleSetConfigurations.Where(x => x.Runbook != null))
+                {
+                    existingVmssConfigurations?.Remove(vmss.Name);
+                    var vmssManger = _proxyFactory.GetRunbookVmssScalingManager(_scaleGroupName, _regionName, vmss.Name);
+                    await vmssManger.Configure(new RunbookVmssScalingManagerConfiguration
+                    {
+                        VmssConfiguration = vmss,
+                        AutomationAccountResourceId = newConfiguration.AutomationAccounts
+                            .First(x => x.Name == vmss.Runbook.AutomationAccountName)
+                            .ResourceId,
+                    });
+                }
+
+            if (existingVmssConfigurations != null)
+                foreach (var vmss in existingVmssConfigurations.Values)
+                {
+                    var vmssManger = _proxyFactory.GetRunbookVmssScalingManager(_scaleGroupName, _regionName, vmss.Name);
+                    await vmssManger.Configure(null);
+                }
         }
 
         private Task ScheduleStateUpdate()

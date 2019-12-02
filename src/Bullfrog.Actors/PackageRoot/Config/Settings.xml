@@ -21,5 +21,12 @@
   <Section Name="ScaleEventStateReporterActorServiceReplicatorSecurityConfig">
     <Parameter Name="CredentialType" Value="None" />
   </Section>
+  <Section Name="RunbookVmssScalingManagerActorServiceReplicatorConfig">
+    <Parameter Name="ReplicatorEndpoint" Value="RunbookVmssScalingManagerActorServiceReplicatorEndpoint" />
+    <Parameter Name="BatchAcknowledgementInterval" Value="0.005" />
+  </Section>
+  <Section Name="RunbookVmssScalingManagerActorServiceReplicatorSecurityConfig">
+    <Parameter Name="CredentialType" Value="None" />
+  </Section>
   <!-- The content will be generated during build -->
 </Settings>

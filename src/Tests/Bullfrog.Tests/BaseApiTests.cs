@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Bullfrog.Actors;
+using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common;
@@ -36,6 +37,9 @@ public class BaseApiTests : IDisposable
     protected readonly DateTimeOffset StartTime = new DateTimeOffset(2019, 2, 22, 0, 0, 0, 0,
        System.Globalization.CultureInfo.InvariantCulture.Calendar, TimeSpan.Zero);
     private readonly TestServer _server;
+
+    private readonly Dictionary<Type, Func<Type, ActorId, IActor>> _actorFactory
+        = new Dictionary<Type, Func<Type, ActorId, IActor>>();
 
     protected HttpClient HttpClient { get; }
 
@@ -82,6 +86,7 @@ public class BaseApiTests : IDisposable
 
         services.AddTransient(_ => MockStatelessServiceContextFactory.Default);
         var actorProxyFactory = new MockActorProxyFactory();
+
         actorProxyFactory.MissingActor += ActoryProxyFactory_MissingActor;
         services.AddSingleton<IActorProxyFactory>(new BullfrogMockActorProxyFactory(actorProxyFactory));
 
@@ -112,6 +117,8 @@ public class BaseApiTests : IDisposable
 
         RegisterScaleEventStateReporterActor("sg", actorProxyFactory, bigBrother);
 
+        _actorFactory.Add(typeof(IRunbookVmssScalingManager), (type, actorId) => CreateRunbookVmssScalingManagerActor(actorId, bigBrother));
+
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
         autoscaleProfile.SetupGet(p => p.MaxInstanceCount).Returns(10);
         autoscaleProfile.SetupGet(p => p.MinInstanceCount).Returns(2);
@@ -138,6 +145,17 @@ public class BaseApiTests : IDisposable
             .AddInMemoryCollection(configurationValues)
             .Build();
         services.AddSingleton(configuration);
+    }
+
+    private IRunbookVmssScalingManager CreateRunbookVmssScalingManagerActor(ActorId actorId , BigBrotherLogger bigBrother)
+    {
+        ActorBase actorFactory(ActorService service, ActorId id)
+            => new RunbookVmssScalingManager(service, id, bigBrother);
+        var stateProvider = new MyActorStateProvider(_dateTimeProviderMoq.Object);
+        var scaleManagerSvc = MockActorServiceFactory.CreateActorServiceForActor<RunbookVmssScalingManager>(actorFactory, stateProvider);
+        var actor = scaleManagerSvc.Activate(actorId);
+        actor.InvokeOnActivateAsync().GetAwaiter().GetResult();
+        return actor;
     }
 
     private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IResourceScalerFactory> scalerFactoryMoq, Mock<ScaleSetMonitor> scaleSetMonitor, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
@@ -178,7 +196,12 @@ public class BaseApiTests : IDisposable
 
     private void ActoryProxyFactory_MissingActor(object sender, MissingActorEventArgs e)
     {
-        throw new NotImplementedException(e.Id.ToString());
+        if (_actorFactory.TryGetValue(e.ActorType, out var factory))
+        {
+            e.ActorInstance = factory(e.ActorType, e.Id);
+        }
+        if (e.ActorInstance == null)
+            throw new NotSupportedException($"Cannot create an actor {e.Id} ({e.ActorType.FullName}");
     }
 
     private static long Round(long value, long multiple, long offset = 0)
