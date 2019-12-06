@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces;
+using Bullfrog.Actors.Interfaces.Models;
 
 namespace Bullfrog.Actors.ResourceScalers
 {
@@ -13,9 +14,15 @@ namespace Bullfrog.Actors.ResourceScalers
             _resourceScalingActor = resourceScalingActor;
         }
 
-        public override Task<bool> ScaleIn() => _resourceScalingActor.ScaleIn();
-        
-        public override Task<int?> ScaleOut(int throughput, DateTimeOffset endsAt)
-            => _resourceScalingActor.ScaleOut(throughput, endsAt);
+        public override async Task<bool> ScaleIn()
+            => GetResult(await _resourceScalingActor.ScaleIn());
+
+        public override async Task<int?> ScaleOut(int throughput, DateTimeOffset endsAt)
+            => GetResult(await _resourceScalingActor.ScaleOut(throughput, endsAt));
+
+        private T GetResult<T>(ScalingResult<T> scalingResult)
+            => scalingResult.ExceptionMessage == null
+            ? scalingResult.Value
+            : throw new ResourceScalingException(scalingResult.ExceptionMessage);
     }
 }

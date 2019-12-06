@@ -4,19 +4,11 @@ namespace Bullfrog.Actors.Models
 {
     internal sealed class ResourceScalingActorState
     {
-        //public ResourceThroughput? Requested { get; set; }
-
-        //public ResourceThroughput? Configured { get; set; }
-
-        //public DateTimeOffset NextCheck { get; set; }
-
         public int? RequestedThroughput { get; set; }
 
         public DateTimeOffset? RequestedEndsAt { get; set; }
 
-        //public int ConfiguredThroughput { get; set; }
-
-        //public DateTimeOffset? ConfiguredEndsAt { get; set; }
+        public string ExceptionMessaage { get; set; }
 
         public bool OperationCompleted { get; set; }
 

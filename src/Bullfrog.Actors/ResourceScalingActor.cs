@@ -21,6 +21,8 @@ namespace Bullfrog.Actors
 
         internal static TimeSpan OperationPeriod { get; set; } = TimeSpan.FromSeconds(130);
 
+        internal static TimeSpan ErrorDelay { get; set; } = TimeSpan.FromMinutes(5);
+
         /// <summary>
         /// Enables delay randomness (disabling is usefull for testing).
         /// </summary>
@@ -59,19 +61,19 @@ namespace Bullfrog.Actors
             await _state.TryAdd(new ResourceScalingActorState { RequestedThroughput = -1, OperationCompleted = true });
         }
 
-        async Task<bool> IResourceScalingActor.ScaleIn()
+        async Task<ScalingResult<bool>> IResourceScalingActor.ScaleIn()
         {
             var state = await _state.Get();
             if (state == null)
             {
                 BigBrother.Publish(new BullfrogException("The actor {Id} is not enabled and the ScaleIn operation cannot be performed.").ToExceptionEvent());
                 // Pretend that the operation completed to prevent repeating calls.
-                return true;
+                return ScalingResult.FromValue(true);
             }
 
             if (state.RequestedThroughput == null)
             {
-                return state.OperationCompleted;
+                return ScalingResult.FromValue(state.OperationCompleted, state.ExceptionMessaage);
             }
 
             state.RequestedThroughput = null;
@@ -82,22 +84,22 @@ namespace Bullfrog.Actors
 
             await WakeMe(OperationStartDelay);
 
-            return false;
+            return ScalingResult.FromValue(state.OperationCompleted);
         }
 
-        async Task<int?> IResourceScalingActor.ScaleOut(int throughput, DateTimeOffset endsAt)
+        async Task<ScalingResult<int?>> IResourceScalingActor.ScaleOut(int throughput, DateTimeOffset endsAt)
         {
             var state = await _state.Get();
             if (state == null)
             {
                 BigBrother.Publish(new BullfrogException("The actor {Id} is not enabled and the ScaleOut operation cannot be performed.").ToExceptionEvent());
                 // Pretend that the operation completed to prevent repeating calls.
-                return 0;
+                return ScalingResult.FromValue<int?>(0);
             }
 
             if (state.RequestedThroughput == throughput && state.RequestedEndsAt == endsAt)
             {
-                return state.FinalThroughput;
+                return ScalingResult.FromValue(state.FinalThroughput, state.ExceptionMessaage);
             }
 
             state.RequestedThroughput = throughput;
@@ -108,7 +110,7 @@ namespace Bullfrog.Actors
 
             await WakeMe(OperationStartDelay);
 
-            return null;
+            return ScalingResult.FromValue(state.FinalThroughput);
         }
 
         async Task IRemindable.ReceiveReminderAsync(string reminderName, byte[] state, TimeSpan dueTime, TimeSpan period)
@@ -116,42 +118,50 @@ namespace Bullfrog.Actors
             try
             {
                 var actorState = await _state.Get();
-                if (actorState == null || actorState.OperationCompleted)
-                    return;
-
-                var resourceScaler = await CreateResourceScaler();
-                resourceScaler.SerializedState = actorState.ResourceScalerState;
-                if (actorState.RequestedThroughput.HasValue)
+                try
                 {
-                    var result = await resourceScaler.ScaleOut(actorState.RequestedThroughput.Value, actorState.RequestedEndsAt.Value);
-                    if (result.HasValue)
+                    if (actorState == null || actorState.OperationCompleted)
+                        return;
+
+                    actorState.ExceptionMessaage = null;
+                    var resourceScaler = await CreateResourceScaler();
+                    resourceScaler.SerializedState = actorState.ResourceScalerState;
+                    if (actorState.RequestedThroughput.HasValue)
                     {
-                        actorState.OperationCompleted = true;
-                        actorState.FinalThroughput = result.Value;
-                        actorState.ResourceScalerState = resourceScaler.SerializedState;
+                        var result = await resourceScaler.ScaleOut(actorState.RequestedThroughput.Value, actorState.RequestedEndsAt.Value);
+                        if (result.HasValue)
+                        {
+                            actorState.OperationCompleted = true;
+                            actorState.FinalThroughput = result.Value;
+                            actorState.ResourceScalerState = resourceScaler.SerializedState;
+                        }
                     }
+                    else
+                    {
+                        var completed = await resourceScaler.ScaleIn();
+                        if (completed)
+                        {
+                            actorState.OperationCompleted = true;
+                        }
+                    }
+
+                    actorState.ResourceScalerState = resourceScaler.SerializedState;
+                    await _state.Set(actorState);
+
+                    if (!actorState.OperationCompleted)
+                        await WakeMe(OperationPeriod);
                 }
-                else
+                catch(Exception ex)
                 {
-                    var completed = await resourceScaler.ScaleIn();
-                    if (completed)
-                    {
-                        actorState.OperationCompleted = true;
-                    }
+                    actorState.ExceptionMessaage = ex.Message;
+                    await _state.Set(actorState);
+                    throw;
                 }
-
-                actorState.ResourceScalerState = resourceScaler.SerializedState;
-                await _state.Set(actorState);
-
-                if (!actorState.OperationCompleted)
-                    await WakeMe(OperationPeriod);
             }
             catch
             {
-
-                await WakeMe(TimeSpan.FromMinutes(5));
+                await WakeMe(ErrorDelay);
             }
-
         }
 
         private async Task<ResourceScaler> CreateResourceScaler()

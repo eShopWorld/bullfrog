@@ -74,6 +74,7 @@ public class BaseApiTests : IDisposable
     {
         ResourceScalingActor.OperationStartDelay = TimeSpan.FromSeconds(10);
         ResourceScalingActor.OperationPeriod = TimeSpan.FromSeconds(20);
+        ResourceScalingActor.ErrorDelay = TimeSpan.FromSeconds(25);
         ResourceScalingActor.UseDelayJitter = false;
 
         var builder = new WebHostBuilder()

@@ -21,7 +21,7 @@ namespace Bullfrog.Actors.Interfaces
         /// Scales in the VMSS to minimal number of instances.
         /// </summary>
         /// <returns></returns>
-        Task<bool> ScaleIn();
+        Task<ScalingResult<bool>> ScaleIn();
 
         /// <summary>
         /// Scales out the VMSS to the level necessary to handle requested throughput.
@@ -29,6 +29,6 @@ namespace Bullfrog.Actors.Interfaces
         /// <param name="throughput">The predicted throughput.</param>
         /// <param name="endsAt">The end of period of requested throughput.</param>
         /// <returns></returns>
-        Task<int?> ScaleOut(int throughput, DateTimeOffset endsAt);
+        Task<ScalingResult<int?>> ScaleOut(int throughput, DateTimeOffset endsAt);
     }
 }
