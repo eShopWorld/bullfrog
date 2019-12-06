@@ -21,5 +21,10 @@ namespace Bullfrog.Actors.ResourceScalers
         /// </summary>
         /// <returns>Returns true if operation has completed or false if the request should be repeated after some delay.</returns>
         public abstract Task<bool> ScaleIn();
+
+        /// <summary>
+        /// Optional state of the scaler.
+        /// </summary>
+        public virtual string SerializedState { get; set; }
     }
 }

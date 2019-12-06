@@ -20,6 +20,8 @@ namespace Helpers
 
         public DateTimeOffset NextExecution => _reminderData.Created + _reminderData.DueTime;
 
+        public bool IsCompleted { get; set; }
+
         public MyActorReminderState(MyActorReminderData reminder, DateTimeOffset utcNow)
         {
             _reminderData = reminder;

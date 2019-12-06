@@ -301,7 +301,7 @@ public class ScaleManagerTests : BaseApiTests
 
         //act
         ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
-        await AdvanceTimeTo(UtcNow);
+        await AdvanceTimeTo(UtcNow.AddMinutes(5));
 
         ScaleHistory["c"].Should().NotBeEmpty();
         ScaleHistory["s"].Should().NotBeEmpty();

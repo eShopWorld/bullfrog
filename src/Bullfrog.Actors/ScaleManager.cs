@@ -265,7 +265,10 @@ namespace Bullfrog.Actors
             try
             {
                 var configuration = await _configuration.TryGet();
-                await ConfigureRunbookVmssScalingManagers(configuration.Value, null);
+                if (!configuration.HasValue)
+                    return;
+
+                await ConfigureResourceScalingActors(configuration.Value, null);
 
                 await _events.Set(new List<ManagedScaleEvent>());
                 await _configuration.TryRemove();
@@ -287,8 +290,11 @@ namespace Bullfrog.Actors
             {
                 var oldConfiguration = await _configuration.TryGet();
 
+                await ConfigureResourceScalingActors(oldConfiguration.Value, configuration);
+
                 configuration.ScaleGroup = _scaleGroupName;
                 configuration.Region = _regionName;
+                configuration.UseScalingActors = true;
                 await _configuration.Set(configuration);
 
                 var estimatedScaleTime = TimeSpan.FromTicks(Math.Max(configuration.CosmosDbPrescaleLeadTime.Ticks,
@@ -300,7 +306,6 @@ namespace Bullfrog.Actors
                 }
                 await _events.Set(events);
 
-                await ConfigureRunbookVmssScalingManagers(oldConfiguration.Value, configuration);
 
                 await ScheduleStateUpdate();
             }
@@ -308,6 +313,58 @@ namespace Bullfrog.Actors
             {
                 BigBrother.Publish(ex.ToExceptionEvent());
                 throw;
+            }
+        }
+
+        private async Task ConfigureResourceScalingActors(ScaleManagerConfiguration oldConfiguration, ScaleManagerConfiguration newConfiguration)
+        {
+            var oldResources = GetResources(oldConfiguration);
+            var newResources = GetResources(newConfiguration);
+            await Configure(oldResources, newResources);
+
+            Dictionary<string, ResourceScalingActorConfiguration> GetResources(ScaleManagerConfiguration configuration)
+            {
+                var resources = new Dictionary<string, ResourceScalingActorConfiguration>();
+                if (configuration != null)
+                {
+                    foreach (var vmssConfiguration in configuration.ScaleSetConfigurations)
+                    {
+                        resources.Add(vmssConfiguration.Name, new ResourceScalingActorConfiguration
+                        {
+                            AutomationAccounts = configuration.AutomationAccounts,
+                            ScaleSetConfiguration = vmssConfiguration,
+                        });
+                    }
+
+                    if (configuration.CosmosConfigurations != null)
+                        foreach (var cosmosConfiguration in configuration.CosmosConfigurations)
+                        {
+                            resources.Add(cosmosConfiguration.Name, new ResourceScalingActorConfiguration
+                            {
+                                AutomationAccounts = configuration.AutomationAccounts,
+                                CosmosConfiguration = cosmosConfiguration,
+                            });
+                        }
+                }
+
+                return resources;
+            }
+
+            async Task Configure(Dictionary<string, ResourceScalingActorConfiguration> oldActors,
+                Dictionary<string, ResourceScalingActorConfiguration> newActors)
+            {
+                foreach (var kv in newActors)
+                {
+                    oldActors.Remove(kv.Key);
+                    var resourceScalingActor = _proxyFactory.GetResourceScalingActor(_scaleGroupName, _regionName, kv.Key);
+                    await resourceScalingActor.Configure(kv.Value);
+                }
+
+                foreach (var kv in oldActors)
+                {
+                    var resourceScalingActor = _proxyFactory.GetResourceScalingActor(_scaleGroupName, _regionName, kv.Key);
+                    await resourceScalingActor.Configure(null);
+                }
             }
         }
 
@@ -651,7 +708,16 @@ namespace Bullfrog.Actors
         {
             if (!_scalers.TryGetValue(name, out var scaler))
             {
-                scaler = _scalerFactory.CreateScaler(name, configuration);
+                if (configuration.UseScalingActors)
+                {
+                    var resourceScalingActor = _proxyFactory.GetResourceScalingActor(_scaleGroupName, _regionName, name);
+                    scaler = new ActorProxyResourceScaler(resourceScalingActor);
+                }
+                else
+                {
+                    scaler = _scalerFactory.CreateScaler(name, configuration);
+                }
+
                 System.Diagnostics.Debug.Assert(scaler != null);
                 _scalers.Add(name, scaler);
             }

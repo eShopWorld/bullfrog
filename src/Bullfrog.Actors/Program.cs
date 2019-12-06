@@ -36,6 +36,7 @@ namespace Bullfrog.Actors
                 builder.RegisterType<ScaleSetScaler>();
                 builder.RegisterType<ResourceScalerFactory>().As<IResourceScalerFactory>();
                 builder.RegisterType<RunbookVmssScaler>();
+                builder.RegisterType<ResourceScalingActor>();
 
                 builder.RegisterType<OperationCorrelationTelemetryInitializer>().As<ITelemetryInitializer>();
                 builder.RegisterType<HttpDependenciesParsingTelemetryInitializer>().As<ITelemetryInitializer>();

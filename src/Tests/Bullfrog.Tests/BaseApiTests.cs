@@ -47,6 +47,8 @@ public class BaseApiTests : IDisposable
 
     protected ConfigurationManager ConfigurationManagerActor { get; private set; }
 
+    protected List<ActorBase> RemindableActors { get; } = new List<ActorBase>();
+
     protected Dictionary<(string scaleGroup, string region), ScaleManager> ScaleManagerActors { get; }
         = new Dictionary<(string scaleGroup, string region), ScaleManager>();
 
@@ -70,6 +72,10 @@ public class BaseApiTests : IDisposable
         => "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg/providers/microsoft.insights/autoscalesettings/as";
     public BaseApiTests()
     {
+        ResourceScalingActor.OperationStartDelay = TimeSpan.FromSeconds(10);
+        ResourceScalingActor.OperationPeriod = TimeSpan.FromSeconds(20);
+        ResourceScalingActor.UseDelayJitter = false;
+
         var builder = new WebHostBuilder()
             .ConfigureServices(ConfigureServices)
             .UseStartup<TestServerStartup>();
@@ -118,6 +124,7 @@ public class BaseApiTests : IDisposable
         RegisterScaleEventStateReporterActor("sg", actorProxyFactory, bigBrother);
 
         _actorFactory.Add(typeof(IRunbookVmssScalingManager), (type, actorId) => CreateRunbookVmssScalingManagerActor(actorId, bigBrother));
+        _actorFactory.Add(typeof(IResourceScalingActor), (type, actorId) => CreateResourceScalingActor(actorId, bigBrother, ScalerFactoryMoq.Object));
 
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
         autoscaleProfile.SetupGet(p => p.MaxInstanceCount).Returns(10);
@@ -147,7 +154,7 @@ public class BaseApiTests : IDisposable
         services.AddSingleton(configuration);
     }
 
-    private IRunbookVmssScalingManager CreateRunbookVmssScalingManagerActor(ActorId actorId , BigBrotherLogger bigBrother)
+    private IRunbookVmssScalingManager CreateRunbookVmssScalingManagerActor(ActorId actorId, BigBrotherLogger bigBrother)
     {
         ActorBase actorFactory(ActorService service, ActorId id)
             => new RunbookVmssScalingManager(service, id, bigBrother);
@@ -158,6 +165,18 @@ public class BaseApiTests : IDisposable
         return actor;
     }
 
+    private IResourceScalingActor CreateResourceScalingActor(ActorId actorId, BigBrotherLogger bigBrother, IResourceScalerFactory scalerFactory)
+    {
+        ActorBase actorFactory(ActorService service, ActorId id)
+            => new ResourceScalingActor(service, id, bigBrother, scalerFactory);
+        var stateProvider = new MyActorStateProvider(_dateTimeProviderMoq.Object);
+        var scaleManagerSvc = MockActorServiceFactory.CreateActorServiceForActor<ResourceScalingActor>(actorFactory, stateProvider);
+        var actor = scaleManagerSvc.Activate(actorId);
+        actor.InvokeOnActivateAsync().GetAwaiter().GetResult();
+        return actor;
+    }
+
+
     private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IResourceScalerFactory> scalerFactoryMoq, Mock<ScaleSetMonitor> scaleSetMonitor, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
     {
         ActorBase scaleManagerActorFactory(ActorService service, ActorId id)
@@ -167,6 +186,7 @@ public class BaseApiTests : IDisposable
         var scaleManagerActor = scaleManagerSvc.Activate(new ActorId($"ScaleManager:{scaleGroup}/{region}"));
         scaleManagerActor.InvokeOnActivateAsync().GetAwaiter().GetResult();
         actorProxyFactory.RegisterActor(scaleManagerActor);
+        RegisterActor(scaleManagerActor);
         ScaleManagerActors.Add((scaleGroup, region), scaleManagerActor);
     }
 
@@ -180,6 +200,7 @@ public class BaseApiTests : IDisposable
         ConfigurationManagerActor = svc.Activate(id);
         ConfigurationManagerActor.InvokeOnActivateAsync().GetAwaiter().GetResult();
         actoryProxyFactory.RegisterActor(ConfigurationManagerActor);
+        RegisterActor(ConfigurationManagerActor);
     }
 
     private void RegisterScaleEventStateReporterActor(string scaleGrup, MockActorProxyFactory actoryProxyFactory, IBigBrother bigBrother)
@@ -192,6 +213,7 @@ public class BaseApiTests : IDisposable
         var reporter = svc.Activate(id);
         reporter.InvokeOnActivateAsync().GetAwaiter().GetResult();
         actoryProxyFactory.RegisterActor(reporter);
+        RegisterActor(reporter);
     }
 
     private void ActoryProxyFactory_MissingActor(object sender, MissingActorEventArgs e)
@@ -199,9 +221,16 @@ public class BaseApiTests : IDisposable
         if (_actorFactory.TryGetValue(e.ActorType, out var factory))
         {
             e.ActorInstance = factory(e.ActorType, e.Id);
+            RegisterActor(e.ActorInstance);
         }
         if (e.ActorInstance == null)
             throw new NotSupportedException($"Cannot create an actor {e.Id} ({e.ActorType.FullName}");
+    }
+
+    private void RegisterActor(IActor actor)
+    {
+        if (actor is IRemindable && actor is ActorBase actorBase)
+            RemindableActors.Add(actorBase);
     }
 
     private static long Round(long value, long multiple, long offset = 0)
@@ -281,9 +310,10 @@ public class BaseApiTests : IDisposable
     {
         while (true)
         {
-            var reminders = ScaleManagerActors
-                .SelectMany(a => a.Value.GetActorReminders())
+            var reminders = RemindableActors
+                .SelectMany(a => a.GetActorReminders())
                 .Cast<MyActorReminderState>()
+                .Where(r => !r.IsCompleted)
                 .ToList();
 
             if (reminders.Count == 0)
@@ -306,13 +336,15 @@ public class BaseApiTests : IDisposable
 
     private async Task RunSingleReminder(DateTimeOffset nextExecution)
     {
-        foreach (var actor in ScaleManagerActors.Values)
+        foreach (var actor in RemindableActors)
         {
             var reminders = actor.GetActorReminders()
-                .Cast<MyActorReminderState>();
+                .Cast<MyActorReminderState>()
+                .Where(r => !r.IsCompleted);
             var reminder = reminders.FirstOrDefault(r => r.NextExecution == nextExecution);
             if (reminder != null)
             {
+                reminder.IsCompleted = true;
                 await ((IRemindable)actor).ReceiveReminderAsync(reminder.Name, reminder.State, reminder.DueTime, reminder.Period);
                 return;
             }

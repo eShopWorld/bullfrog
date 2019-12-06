@@ -14,10 +14,9 @@ namespace Bullfrog.Actors.Interfaces.Models
         public List<ScaleSetConfiguration> ScaleSetConfigurations { get; set; }
 
         /// <summary>
-        /// Defines the managed Cosmos DB configuration.
+        /// Defines the managed Cosmos DB configurations.
         /// </summary>
         public List<CosmosConfiguration> CosmosConfigurations { get; set; }
-
 
         /// <summary>
         /// VM scale sets prescale lead time.
@@ -48,5 +47,10 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// The name of the region handled by the scale manager.
         /// </summary>
         public string Region { get; set; }
+
+        /// <summary>
+        /// Controls whether ResouceScaler is used directly or through the resource scaling actors.
+        /// </summary>
+        public bool UseScalingActors { get; set; }
     }
 }

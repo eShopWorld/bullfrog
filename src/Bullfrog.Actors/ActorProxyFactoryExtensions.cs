@@ -25,5 +25,10 @@ namespace Bullfrog.Actors
         {
             return proxyFactory.CreateActorProxy<IRunbookVmssScalingManager>(new ActorId($"runbook:{scaleGroup}/{region}/{name}"));
         }
+
+        public static IResourceScalingActor GetResourceScalingActor(this IActorProxyFactory proxyFactory, string scaleGroup, string region, string name)
+        {
+            return proxyFactory.CreateActorProxy<IResourceScalingActor>(new ActorId($"scaler:{scaleGroup}/{region}/{name}"));
+        }
     }
 }
