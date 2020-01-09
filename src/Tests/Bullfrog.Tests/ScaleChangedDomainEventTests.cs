@@ -60,9 +60,10 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
             (StartTime.AddMinutes(30).Add(-MaxLeadTime), eventId, ScaleChangeType.ScaleOutStarted),
-            (StartTime.AddMinutes(30), eventId, ScaleChangeType.ScaleIssue),
+            (StartTime.AddMinutes(32), eventId, ScaleChangeType.ScaleIssue),
+            (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleOutStarted),
             (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleInStarted),
-            (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleInComplete),
+            (StartTime.AddMinutes(42), eventId, ScaleChangeType.ScaleInComplete),
         };
         events.Should().BeEquivalentTo(expected);
     }
