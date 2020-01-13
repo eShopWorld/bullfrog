@@ -8,16 +8,17 @@ namespace Bullfrog.Actors.Helpers
 {
     internal class AutoscaleSettingsHandlerFactory : IAutoscaleSettingsHandlerFactory
     {
-        private readonly IAzure _azure;
+        private readonly Azure.IAuthenticated _authenticated;
 
-        public AutoscaleSettingsHandlerFactory(IAzure azure)
+        public AutoscaleSettingsHandlerFactory(Azure.IAuthenticated authenticated)
         {
-            _azure = azure;
+            _authenticated = authenticated;
         }
 
         public IAutoscaleSettingsHandler CreateHandler(string autoscaleSettingsResourceId, string defaultProfileName)
         {
-            return new AutoscaleSettingsHandler(_azure, autoscaleSettingsResourceId, defaultProfileName);
+            var azure = _authenticated.WithSubscriptionFor(autoscaleSettingsResourceId);
+            return new AutoscaleSettingsHandler(azure, autoscaleSettingsResourceId, defaultProfileName);
         }
     }
 

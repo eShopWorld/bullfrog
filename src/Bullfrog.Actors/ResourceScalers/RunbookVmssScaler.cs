@@ -4,7 +4,6 @@ using Bullfrog.Actors.EventModels;
 using Bullfrog.Actors.Helpers;
 using Bullfrog.Common;
 using Bullfrog.Common.Helpers;
-using Eshopworld.Telemetry;
 using Bullfrog.Common.Telemetry;
 using Eshopworld.Core;
 
@@ -61,57 +60,57 @@ namespace Bullfrog.Actors.ResourceScalers
             endsAt = endsAt.Subtract(TimeSpan.FromTicks(endsAt.Ticks % TimeSpan.TicksPerSecond));
 
             return await PerformOperationWithState<State, int?>(async state =>
-            {
-                if (!await HasPreviousJobCompleted(state))
-                    return null;
+             {
+                 if (!await HasPreviousJobCompleted(state))
+                     return null;
 
                 // Calculate the number of required instances to handle the requested throughput.
                 var scaleSetConfig = _configuration.ScaleSet;
 
-                var instances = (int)(throughput + (scaleSetConfig.ReservedInstances + 1) * scaleSetConfig.RequestsPerInstance - 1)
-                     / scaleSetConfig.RequestsPerInstance;
+                 var instances = (int)(throughput + (scaleSetConfig.ReservedInstances + 1) * scaleSetConfig.RequestsPerInstance - 1)
+                      / scaleSetConfig.RequestsPerInstance;
 
-                if (instances < scaleSetConfig.MinInstanceCount)
-                    instances = scaleSetConfig.MinInstanceCount.Value;
+                 if (instances < scaleSetConfig.MinInstanceCount)
+                     instances = scaleSetConfig.MinInstanceCount.Value;
 
                 // Make sure the required number of instances is not out of valid range defined by the default profile.
                 var autoscale = await _autoscaleSettingsHandler.Read();
-                if (instances > autoscale.DefaultMaximum)
-                    instances = autoscale.DefaultMaximum;
-                if (instances < autoscale.DefaultMinimum)
-                    instances = autoscale.DefaultMinimum;
+                 if (instances > autoscale.DefaultMaximum)
+                     instances = autoscale.DefaultMaximum;
+                 if (instances < autoscale.DefaultMinimum)
+                     instances = autoscale.DefaultMinimum;
 
                 // Start the runbook if Bullfrog's profile needs to be created or updated.
                 if (autoscale.BullfrogProfile?.Minimum != instances || autoscale.BullfrogProfile?.Ends != endsAt)
-                {
-                    state.Job = await StartJob(instances, endsAt);
-                    return null;
-                }
+                 {
+                     state.Job = await StartJob(instances, endsAt);
+                     return null;
+                 }
 
                 // Check the number of instances that resonds to the load balancer's probes.
                 var workingInstances = await _bigBrother.LogAzureCallDuration("GetNumberOfInstances", scaleSetConfig.LoadBalancerResourceId,
-                    async () => await _scaleSetMonitor.GetNumberOfWorkingInstances(
-                        scaleSetConfig.LoadBalancerResourceId, scaleSetConfig.HealthPortPort));
+                     async () => await _scaleSetMonitor.GetNumberOfWorkingInstances(
+                         scaleSetConfig.LoadBalancerResourceId, scaleSetConfig.HealthPortPort));
 
-                var usableInstances = Math.Max(workingInstances - scaleSetConfig.ReservedInstances, 0);
-                var availableThroughput = (int)(usableInstances * scaleSetConfig.RequestsPerInstance);
+                 var usableInstances = Math.Max(workingInstances - scaleSetConfig.ReservedInstances, 0);
+                 var availableThroughput = (int)(usableInstances * scaleSetConfig.RequestsPerInstance);
 
-                _bigBrother.Publish(new ScaleSetThroughput
-                {
-                    ScalerName = scaleSetConfig.Name,
-                    RequestedThroughput = throughput,
-                    RequiredInstances = instances,
-                    ConfiguredInstances = autoscale.BullfrogProfile.Minimum,
-                    WorkingInstances = workingInstances,
-                    AvailableThroughput = availableThroughput,
-                });
+                 _bigBrother.Publish(new ScaleSetThroughput
+                 {
+                     ScalerName = scaleSetConfig.Name,
+                     RequestedThroughput = throughput,
+                     RequiredInstances = instances,
+                     ConfiguredInstances = autoscale.BullfrogProfile.Minimum,
+                     WorkingInstances = workingInstances,
+                     AvailableThroughput = availableThroughput,
+                 });
 
                 // return the final available throughput or a notification that the scaling out has not yet completed.
                 if (instances <= workingInstances)
-                    return availableThroughput;
-                else
-                    return null;
-            });
+                     return availableThroughput;
+                 else
+                     return null;
+             });
         }
 
         private async Task<JobDetails> StartJob(int instancesCount, DateTimeOffset tillWhen)
@@ -120,7 +119,7 @@ namespace Bullfrog.Actors.ResourceScalers
             var parameters = new RunbookJobCreationParameters
             {
                 RunbookName = scaleSetConf.Runbook.RunbookName,
-                AutomationAccountResourceId = scaleSetConf.AutoscaleSettingsResourceId,
+                AutomationAccountResourceId = _configuration.AutomationAccountResourceId,
             };
 
             parameters.RunbookParameters.Add("InstanceName", scaleSetConf.Runbook.ScaleSetName ?? scaleSetConf.Name);

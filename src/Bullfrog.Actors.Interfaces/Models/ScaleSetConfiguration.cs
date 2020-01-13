@@ -109,6 +109,13 @@ namespace Bullfrog.Actors.Interfaces.Models
                 return new ValidationResult(message, new[] { nameof(ProfileName) });
             }
 
+            if (Runbook != null)
+            {
+                // When runbook is used to change autoscale setting Bullfrog only needs a read access (validated above).
+                return ValidationResult.Success;
+            }
+
+            // If scaling is not done using a runbook ensure Bullfrog can update and save the autoscale settings.
             try
             {
                 await autoscale.Update().ApplyAsync();
