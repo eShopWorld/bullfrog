@@ -11,16 +11,24 @@ using Microsoft.ServiceFabric.Actors.Runtime;
 
 namespace Bullfrog.Actors
 {
+    /// <summary>
+    /// The actor responsible for scaling a single resource.
+    /// </summary>
     public class ResourceScalingActor : BullfrogActorBase, IResourceScalingActor, IRemindable
     {
         /// <summary>
-        /// Defines the delay after which the requested operation is performed.
+        /// The delay after which the requested operation is started.
         /// </summary>
         internal static TimeSpan OperationStartDelay { get; set; } = TimeSpan.FromSeconds(20);
 
-
+        /// <summary>
+        /// The delay before another attempt to check the status of the started operation.
+        /// </summary>
         internal static TimeSpan OperationPeriod { get; set; } = TimeSpan.FromSeconds(130);
 
+        /// <summary>
+        /// The dalay before next reminder execution if the current one ended with an exception
+        /// </summary>
         internal static TimeSpan ErrorDelay { get; set; } = TimeSpan.FromMinutes(5);
 
         /// <summary>
@@ -171,6 +179,7 @@ namespace Bullfrog.Actors
             {
                 CosmosConfigurations = new System.Collections.Generic.List<CosmosConfiguration>(),
                 ScaleSetConfigurations = new System.Collections.Generic.List<ScaleSetConfiguration>(),
+                AutomationAccounts = configuration.AutomationAccounts,
             };
             if (configuration.CosmosConfiguration != null)
             {

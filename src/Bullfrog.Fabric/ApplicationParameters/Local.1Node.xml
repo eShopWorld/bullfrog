@@ -12,9 +12,6 @@
     <Parameter Name="ScaleEventStateReporterActorService_PartitionCount" Value="1" />
     <Parameter Name="ScaleEventStateReporterActorService_TargetReplicaSetSize" Value="1" />
     <Parameter Name="ScaleEventStateReporterActorService_MinReplicaSetSize" Value="1" />
-    <Parameter Name="RunbookVmssScalingManagerActorService_PartitionCount" Value="1" />
-    <Parameter Name="RunbookVmssScalingManagerActorService_TargetReplicaSetSize" Value="1" />
-    <Parameter Name="RunbookVmssScalingManagerActorService_MinReplicaSetSize" Value="1" />
     <Parameter Name="ResourceScalingActorService_PartitionCount" Value="1" />
     <Parameter Name="ResourceScalingActorService_TargetReplicaSetSize" Value="1" />
     <Parameter Name="ResourceScalingActorService_MinReplicaSetSize" Value="1" />

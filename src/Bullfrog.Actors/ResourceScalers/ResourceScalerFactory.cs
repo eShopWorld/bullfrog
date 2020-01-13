@@ -55,6 +55,8 @@ namespace Bullfrog.Actors.ResourceScalers
                         Region = configuration.Region,
                         ScaleGroup = configuration.ScaleGroup,
                         ScaleSet = scaleSetConfiguration,
+                        AutomationAccountResourceId = configuration.AutomationAccounts
+                            .First(x=>x.Name == scaleSetConfiguration.Runbook.AutomationAccountName).ResourceId,
                     });
 
             throw new BullfrogException($"Configuration for {name} not found.");

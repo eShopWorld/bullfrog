@@ -124,7 +124,6 @@ public class BaseApiTests : IDisposable
 
         RegisterScaleEventStateReporterActor("sg", actorProxyFactory, bigBrother);
 
-        _actorFactory.Add(typeof(IRunbookVmssScalingManager), (type, actorId) => CreateRunbookVmssScalingManagerActor(actorId, bigBrother));
         _actorFactory.Add(typeof(IResourceScalingActor), (type, actorId) => CreateResourceScalingActor(actorId, bigBrother, ScalerFactoryMoq.Object));
 
         var autoscaleProfile = new Mock<IAutoscaleProfile>();
@@ -155,17 +154,6 @@ public class BaseApiTests : IDisposable
         services.AddSingleton(configuration);
     }
 
-    private IRunbookVmssScalingManager CreateRunbookVmssScalingManagerActor(ActorId actorId, BigBrotherLogger bigBrother)
-    {
-        ActorBase actorFactory(ActorService service, ActorId id)
-            => new RunbookVmssScalingManager(service, id, bigBrother);
-        var stateProvider = new MyActorStateProvider(_dateTimeProviderMoq.Object);
-        var scaleManagerSvc = MockActorServiceFactory.CreateActorServiceForActor<RunbookVmssScalingManager>(actorFactory, stateProvider);
-        var actor = scaleManagerSvc.Activate(actorId);
-        actor.InvokeOnActivateAsync().GetAwaiter().GetResult();
-        return actor;
-    }
-
     private IResourceScalingActor CreateResourceScalingActor(ActorId actorId, BigBrotherLogger bigBrother, IResourceScalerFactory scalerFactory)
     {
         ActorBase actorFactory(ActorService service, ActorId id)
@@ -176,7 +164,6 @@ public class BaseApiTests : IDisposable
         actor.InvokeOnActivateAsync().GetAwaiter().GetResult();
         return actor;
     }
-
 
     private void RegisterScaleManagerActor(string scaleGroup, string region, Mock<IResourceScalerFactory> scalerFactoryMoq, Mock<ScaleSetMonitor> scaleSetMonitor, IDateTimeProvider dateTimeProvider, IBigBrother bigBrother, MockActorProxyFactory actorProxyFactory)
     {

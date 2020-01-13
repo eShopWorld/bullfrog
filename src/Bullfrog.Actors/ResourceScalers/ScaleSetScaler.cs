@@ -8,6 +8,7 @@ using Bullfrog.Common.Telemetry;
 using Eshopworld.Core;
 using Microsoft.Azure.Management.Fluent;
 
+
 namespace Bullfrog.Actors.ResourceScalers
 {
     public class ScaleSetScaler : ResourceScaler
@@ -29,7 +30,7 @@ namespace Bullfrog.Actors.ResourceScalers
 
         public override async Task<bool> ScaleIn()
         {
-            var profile = await _bigBrother.LogAzureCallDuration("RemoveBullfrogProfile", _configuration.AutoscaleSettingsResourceId, async () =>
+            var result = await _bigBrother.LogAzureCallDuration("RemoveBullfrogProfile", _configuration.AutoscaleSettingsResourceId, async () =>
             {
                 var azure = _authenticated.WithSubscriptionFor(_configuration.AutoscaleSettingsResourceId);
                 return await azure.RemoveBullfrogProfile(_configuration.AutoscaleSettingsResourceId);
@@ -38,7 +39,7 @@ namespace Bullfrog.Actors.ResourceScalers
             _bigBrother.Publish(new ScaleSetReset
             {
                 ScalerName = _configuration.Name,
-                ConfiguredInstances = profile.Profiles[_configuration.ProfileName].MinInstanceCount,
+                ConfiguredInstances = result.autoscaleSettings.Profiles[_configuration.ProfileName].MinInstanceCount,
             });
 
             return true;
@@ -55,7 +56,7 @@ namespace Bullfrog.Actors.ResourceScalers
             var ssConfiguredInstances = await _bigBrother.LogAzureCallDuration("SaveBullfrogProfile", _configuration.AutoscaleSettingsResourceId, async () =>
             {
                 var azure = _authenticated.WithSubscriptionFor(_configuration.AutoscaleSettingsResourceId);
-                var (configuredInstances, profileChanged) = await azure.SaveBullfrogProfile(_configuration.AutoscaleSettingsResourceId, _configuration.ProfileName, instances,
+                var (configuredInstances, profileChanged, _) = await azure.SaveBullfrogProfile(_configuration.AutoscaleSettingsResourceId, _configuration.ProfileName, instances,
                       _dateTime.UtcNow, endsAt);
 
                 if (profileChanged)

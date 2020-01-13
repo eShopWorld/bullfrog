@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Bullfrog.Actors.Interfaces.Models;
+﻿using Bullfrog.Actors.Interfaces.Models;
 
 namespace Bullfrog.Actors.ResourceScalers
 {
@@ -12,5 +9,7 @@ namespace Bullfrog.Actors.ResourceScalers
         public string ScaleGroup { get; set; }
 
         public string Region { get; set; }
+
+        public string AutomationAccountResourceId { get; set; }
     }
 }
