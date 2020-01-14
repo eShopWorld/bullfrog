@@ -14,7 +14,7 @@ namespace Bullfrog.Actors.Helpers
         /// </summary>
         /// <param name="parameters">The details of the job.</param>
         /// <returns>The identifier of the job.</returns>
-        public Task<Guid> CreateJob(RunbookJobCreationParameters parameters);
+        Task<Guid> CreateJob(RunbookJobCreationParameters parameters);
 
         /// <summary>
         /// Checks the status of the automation job.
@@ -22,7 +22,7 @@ namespace Bullfrog.Actors.Helpers
         /// <param name="resourceId">The automation account's resource id.</param>
         /// <param name="jobId">The job id.</param>
         /// <returns>The status of the job.</returns>
-        public Task<RunbookJobExecutionStatus> GetJobStatus(string resourceId, Guid jobId);
+        Task<RunbookJobExecutionStatus> GetJobStatus(string resourceId, Guid jobId);
     }
 
     /// <summary>
