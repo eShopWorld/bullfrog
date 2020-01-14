@@ -35,20 +35,20 @@ namespace Bullfrog.Actors.Helpers
             _defaultProfileName = defaultProfileName;
         }
 
-        public async Task<AutoscaleSettingsView> Read()
+        public async Task<AutoscaleSettingsSummary> Read()
         {
             var autoscale = await _azure.AutoscaleSettings.ValidateAccessAsync(_autoscaleSettingsResourceId);
             return CreateView(autoscale);
         }
 
-        public async Task<(AutoscaleSettingsView autoscaleSettings, bool chaged)> RemoveBullfrogProfile()
+        public async Task<(AutoscaleSettingsSummary autoscaleSettings, bool chaged)> RemoveBullfrogProfile()
         {
             var result = await _azure.RemoveBullfrogProfile(_autoscaleSettingsResourceId);
 
             return (CreateView(result.autoscaleSettings), result.chagned);
         }
 
-        public async Task<(AutoscaleSettingsView autoscaleSettings, bool chaged)> UpdateBullfrogProfile(BullfrogChange bullfrogProfile)
+        public async Task<(AutoscaleSettingsSummary autoscaleSettings, bool chaged)> UpdateBullfrogProfile(BullfrogChange bullfrogProfile)
         {
             var (_, profileChanged, updatedSettings) = await _azure.SaveBullfrogProfile(
                  _autoscaleSettingsResourceId,
@@ -60,18 +60,18 @@ namespace Bullfrog.Actors.Helpers
             return (CreateView(updatedSettings), profileChanged);
         }
 
-        private AutoscaleSettingsView CreateView(IAutoscaleSetting autoscale)
+        private AutoscaleSettingsSummary CreateView(IAutoscaleSetting autoscale)
         {
             if (!autoscale.Profiles.TryGetValue(_defaultProfileName, out var defaultProfile))
                 throw new BullfrogException($"Cannot find {_defaultProfileName} profile in autoscale settings {_autoscaleSettingsResourceId}.");
 
             autoscale.Profiles.TryGetValue(AzureFluentExtensions.BullfrogProfileName, out var bullfrogProfile);
 
-            return new AutoscaleSettingsView
+            return new AutoscaleSettingsSummary
             {
                 DefaultMinimum = defaultProfile.MinInstanceCount,
                 DefaultMaximum = defaultProfile.MaxInstanceCount,
-                BullfrogProfile = bullfrogProfile == null ? null : new BullfrogProfileView
+                BullfrogProfile = bullfrogProfile == null ? null : new BullfrogProfileSummary
                 {
                     Minimum = bullfrogProfile.MinInstanceCount,
                     Maximum = bullfrogProfile.MaxInstanceCount,

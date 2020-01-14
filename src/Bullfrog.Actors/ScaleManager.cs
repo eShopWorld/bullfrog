@@ -88,24 +88,8 @@ namespace Bullfrog.Actors
             // For more information, see https://aka.ms/servicefabricactorsstateserialization
 
             await _events.TryAdd(new List<ManagedScaleEvent>());
-            await FixStateModelSchameChange();
             await _scaleState.TryAdd(new ScalingState());
             await StateManager.TryRemoveStateAsync("scaleOutStarted"); // no longer used
-
-            // The temporary way of dealing with incompatible schame change.
-            async Task FixStateModelSchameChange()
-            {
-                try
-                {
-                    await _scaleState.TryGet();
-                }
-                catch (Exception ex)
-                {
-                    var descriptionEx = new Exception($"Failed to read scale set. Resetting it.", ex);
-                    BigBrother.Publish(descriptionEx.ToExceptionEvent());
-                    await _scaleState.TryRemove();
-                }
-            }
         }
 
         Task IScaleManager.DeleteScaleEvent(Guid id)
@@ -318,10 +302,25 @@ namespace Bullfrog.Actors
 
         private async Task ConfigureResourceScalingActors(ScaleManagerConfiguration oldConfiguration, ScaleManagerConfiguration newConfiguration)
         {
-            var oldResources = GetResources(oldConfiguration);
             var newResources = GetResources(newConfiguration);
-            await Configure(oldResources, newResources);
+            var oldResources = GetResources(oldConfiguration);
 
+            // Update configuration of existing actors or configure new ones.
+            foreach (var kv in newResources)
+            {
+                oldResources.Remove(kv.Key);
+                var resourceScalingActor = _proxyFactory.GetResourceScalingActor(_scaleGroupName, _regionName, kv.Key);
+                await resourceScalingActor.Configure(kv.Value);
+            }
+
+            // Disable previously used actors not longer configured.
+            foreach (var kv in oldResources)
+            {
+                var resourceScalingActor = _proxyFactory.GetResourceScalingActor(_scaleGroupName, _regionName, kv.Key);
+                await resourceScalingActor.Configure(null);
+            }
+
+            // A helper method which lists all configured resources (scale sets and Cosmos dbs)
             Dictionary<string, ResourceScalingActorConfiguration> GetResources(ScaleManagerConfiguration configuration)
             {
                 var resources = new Dictionary<string, ResourceScalingActorConfiguration>();
@@ -349,23 +348,6 @@ namespace Bullfrog.Actors
 
                 return resources;
             }
-
-            async Task Configure(Dictionary<string, ResourceScalingActorConfiguration> oldActors,
-                Dictionary<string, ResourceScalingActorConfiguration> newActors)
-            {
-                foreach (var kv in newActors)
-                {
-                    oldActors.Remove(kv.Key);
-                    var resourceScalingActor = _proxyFactory.GetResourceScalingActor(_scaleGroupName, _regionName, kv.Key);
-                    await resourceScalingActor.Configure(kv.Value);
-                }
-
-                foreach (var kv in oldActors)
-                {
-                    var resourceScalingActor = _proxyFactory.GetResourceScalingActor(_scaleGroupName, _regionName, kv.Key);
-                    await resourceScalingActor.Configure(null);
-                }
-            }
         }
 
         async Task IRemindable.ReceiveReminderAsync(string reminderName, byte[] state, TimeSpan dueTime, TimeSpan period)
@@ -381,33 +363,6 @@ namespace Bullfrog.Actors
             }
         }
 
-        async Task ConfigureRunbookVmssScalingManagers(ScaleManagerConfiguration oldConfiguration, ScaleManagerConfiguration newConfiguration)
-        {
-            var existingVmssConfigurations = oldConfiguration?.ScaleSetConfigurations
-                .Where(x => x.Runbook != null)
-                .ToDictionary(vmss => vmss.Name);
-            if (newConfiguration != null)
-                foreach (var vmss in newConfiguration.ScaleSetConfigurations.Where(x => x.Runbook != null))
-                {
-                    existingVmssConfigurations?.Remove(vmss.Name);
-                    var vmssManger = _proxyFactory.GetRunbookVmssScalingManager(_scaleGroupName, _regionName, vmss.Name);
-                    await vmssManger.Configure(new RunbookVmssScalingManagerConfiguration
-                    {
-                        VmssConfiguration = vmss,
-                        AutomationAccountResourceId = newConfiguration.AutomationAccounts
-                            .First(x => x.Name == vmss.Runbook.AutomationAccountName)
-                            .ResourceId,
-                    });
-                }
-
-            if (existingVmssConfigurations != null)
-                foreach (var vmss in existingVmssConfigurations.Values)
-                {
-                    var vmssManger = _proxyFactory.GetRunbookVmssScalingManager(_scaleGroupName, _regionName, vmss.Name);
-                    await vmssManger.Configure(null);
-                }
-        }
-
         private Task ScheduleStateUpdate()
         {
             return WakeMeAt(_dateTimeProvider.UtcNow);
@@ -420,6 +375,14 @@ namespace Bullfrog.Actors
         void AddScaleInRequests(Dictionary<string, ScaleRequest> scaleRequests, string resourceType, IEnumerable<string> names)
             => AddScaleRequest(null, scaleRequests, () => new ScaleInRequest(_dateTimeProvider.UtcNow), resourceType, names);
 
+        /// <summary>
+        /// Adds a scale operation to perfom on a resource.
+        /// </summary>
+        /// <param name="requestedThroughput">The requested throughput or null for scale in</param>
+        /// <param name="scaleRequests">All current scale operations for each resource.</param>
+        /// <param name="scaleRequestFactory">The factory of the scale operation class instances.</param>
+        /// <param name="resourceType">The type of the resource (a scale set or cosmos db) for telemetry</param>
+        /// <param name="names">The names of all resources that should be scaled.</param>
         private void AddScaleRequest(int? requestedThroughput, Dictionary<string, ScaleRequest> scaleRequests,
             Func<ScaleRequest> scaleRequestFactory, string resourceType, IEnumerable<string> names)
         {
@@ -459,7 +422,7 @@ namespace Bullfrog.Actors
                     }
                     else
                     {
-                        AddScaleInRequests(scaleRequests, "scalesets", resources);
+                        AddScaleInRequests(scaleRequests, resourceType, resources);
                     }
                 }
 
@@ -469,6 +432,12 @@ namespace Bullfrog.Actors
             return null;
         }
 
+        /// <summary>
+        /// The main periodically executed method which checkes the current state of actor, its list of events and
+        /// performes required operations.
+        /// </summary>
+        /// <param name="cancellationToken">The cancellation token</param>
+        /// <returns>Task</returns>
         private async Task UpdateState(CancellationToken cancellationToken = default)
         {
             var configuration = await _configuration.Get(cancellationToken);
@@ -476,6 +445,7 @@ namespace Bullfrog.Actors
             var state = await _scaleState.Get();
             var now = _dateTimeProvider.UtcNow;
 
+            // Calculate the current requested throughput updating the state of scale requests for each resource at the same time.
             state.RequestedScaleSetThroughput = CreateScaleRequests(state.RequestedScaleSetThroughput, state.ScaleRequests, events,
                 configuration.ScaleSetConfigurations.Select(x => x.Name), configuration.ScaleSetPrescaleLeadTime, "scalesets", now);
             state.RequestedCosmosThroughput = CreateScaleRequests(state.RequestedCosmosThroughput, state.ScaleRequests, events,
@@ -489,6 +459,7 @@ namespace Bullfrog.Actors
                 await scaleRequest.Process(_dateTimeProvider.UtcNow, () => GetScaler(name, configuration), BigBrother, name);
             }
 
+            // If the scaling operation has just started update state variables used for reporting.
             var isScaledOut = state.RequestedScaleSetThroughput.HasValue || state.RequestedCosmosThroughput.HasValue;
             if (isScaledOut)
             {
@@ -501,7 +472,7 @@ namespace Bullfrog.Actors
                     state.ScalingOutStartTime = null;
             }
 
-            // Report state of each scaling event. 
+            // Find all scale events which execution status has just changed and details about them to ScaleEventStateReporter actor.
             var maxLeadTime = configuration.ScaleSetPrescaleLeadTime < configuration.CosmosDbPrescaleLeadTime
                 ? configuration.CosmosDbPrescaleLeadTime
                 : configuration.ScaleSetPrescaleLeadTime;
@@ -516,18 +487,20 @@ namespace Bullfrog.Actors
 
             // Find out when to wake up the next time.
             var nextWakeUpTime = state.IsRefreshRequired
-                ? _dateTimeProvider.UtcNow.Add(ScanPeriod)
+                ? _dateTimeProvider.UtcNow.Add(ScanPeriod) // some operations are in progress. Wake up to monitor and report their state.
                 : FindNextWakeUpTime(
                     events,
                     now,
                     configuration.ScaleSetPrescaleLeadTime,
-                    configuration.CosmosDbPrescaleLeadTime);
+                    configuration.CosmosDbPrescaleLeadTime); // no operations are in progress, so look for next time something must happen.
             await WakeMeAt(nextWakeUpTime);
 
+            // Clear and save state.
             if (!isScaledOut && state.ScaleRequests.All(x => !x.Value.IsExecuting))
                 state.ScaleRequests.Clear();
             await _scaleState.Set(state);
 
+            // Publish the current state of the actor.
             var states = state.ScaleRequests.Values.Select(o => o.Status).ToList();
             BigBrother.Publish(new ScaleAgentStatus
             {
@@ -542,20 +515,36 @@ namespace Bullfrog.Actors
             });
         }
 
+        /// <summary>
+        /// Compares the previous and current state of events to look for and report their changes.
+        /// </summary>
+        /// <param name="events">The list of events.</param>
+        /// <param name="changes">The list of changes which should be send to <see cref="ScaleEventStateReporter"/> actor.</param>
+        /// <param name="now">The current time.</param>
+        /// <param name="leadTime">The scaling lead time.</param>
+        /// <param name="finalScale">The throughput available afeter completion of scaling or null if scaling is still in progress.</param>
+        /// <param name="issuesReported">Specifies whether any scaler reported issues recently.</param>
+        /// <returns>Task</returns>
         private async Task ReportEventState(List<ManagedScaleEvent> events, List<ScaleEventStateChange> changes, DateTimeOffset now,
             TimeSpan leadTime, int? finalScale, bool issuesReported)
         {
+            // The scale events which starts soon or are already executing.
             var activeEvents = events.Where(e => e.IsActive(now, leadTime)).ToHashSet();
+
+            // The scale events which are currently executing.
             var executingEvents = events.Where(e => e.IsActive(now, TimeSpan.Zero)).ToHashSet();
+
+            // a dictionary with reported state for each scale event.
             var reportedEventStates = (await _reportedEventStates.TryGet()).Value ?? new Dictionary<Guid, ScaleChangeType>();
 
-            void ChangeState(Guid id, ScaleChangeType type, bool temporaryIssue = false)
+            // The helper method to update details about status of each scale event
+            void ChangeState(Guid id, ScaleChangeType type, bool isIssueTemporary = false)
             {
                 reportedEventStates[id] = type;
                 changes.Add(new ScaleEventStateChange { EventId = id, State = type });
                 string details = null;
                 if (type == ScaleChangeType.ScaleIssue)
-                    details = temporaryIssue ? "temporary" : "permanent";
+                    details = isIssueTemporary ? "temporary" : "permanent";
                 BigBrother.Publish(new EventRegionScaleChange
                 {
                     Id = id,
@@ -566,12 +555,15 @@ namespace Bullfrog.Actors
                 });
             }
 
+            // The helper method to handle all scale events which completed scaling out.
             void HandleScaleOutCompleted(IEnumerable<ManagedScaleEvent> eventsGroup)
             {
+                // Calculate how big total throughput is requested by scale events from the events group
                 var scaleCompletedState = eventsGroup.Sum(e => e.Scale) <= finalScale
                     ? ScaleChangeType.ScaleOutComplete
                     : ScaleChangeType.ScaleIssue;
 
+                // Only update status of events which are in the middle of scalling out (possibly with issues)
                 var startingEvents = from e in eventsGroup
                                      let state = reportedEventStates[e.Id]
                                      where state == ScaleChangeType.ScaleOutStarted || state == ScaleChangeType.ScaleIssue
@@ -579,10 +571,11 @@ namespace Bullfrog.Actors
 
                 foreach (var evId in startingEvents)
                 {
-                    ChangeState(evId, scaleCompletedState, temporaryIssue: false);
+                    ChangeState(evId, scaleCompletedState, isIssueTemporary: false);
                 }
             }
 
+            // Look for new events which have just started being processed
             foreach (var ev in activeEvents.Where(e => !reportedEventStates.ContainsKey(e.Id)))
             {
                 ChangeState(ev.Id, ScaleChangeType.ScaleOutStarted);
@@ -590,20 +583,25 @@ namespace Bullfrog.Actors
 
             if (issuesReported)
             {
+                // In case of errors mark all events which currently scaling out as problematic.
                 foreach (var ev in reportedEventStates.Where(e => e.Value == ScaleChangeType.ScaleOutStarted).ToList())
-                    ChangeState(ev.Key, ScaleChangeType.ScaleIssue, temporaryIssue: true);
+                    ChangeState(ev.Key, ScaleChangeType.ScaleIssue, isIssueTemporary: true);
             }
             else if (finalScale.HasValue)
             {
+                // The scaling out completed. Depending on the available throughput mark all or only some events as completed
+                // (potentially with issues)
                 HandleScaleOutCompleted(executingEvents);
                 HandleScaleOutCompleted(activeEvents);
             }
             else
             {
+                // The scaling out is still in progress and no errors have been reported so previous warnings can be removed.
                 foreach (var ev in reportedEventStates.Where(e => e.Value == ScaleChangeType.ScaleIssue).ToList())
                     ChangeState(ev.Key, ScaleChangeType.ScaleOutStarted);
             }
 
+            // Report start of scale in for each no longer active event.
             foreach (var key in reportedEventStates.Keys.Except(activeEvents.Select(e => e.Id)).ToList())
             {
                 if (reportedEventStates[key] != ScaleChangeType.ScaleInStarted)
@@ -612,6 +610,7 @@ namespace Bullfrog.Actors
 
             if (finalScale.HasValue)
             {
+                // Scaling operation has completed so not active events can be moved to the ScaleInComplete phase and be forgotten
                 foreach (var ev in reportedEventStates.Where(e => e.Value == ScaleChangeType.ScaleInStarted).ToList())
                 {
                     ChangeState(ev.Key, ScaleChangeType.ScaleInComplete);
@@ -623,6 +622,7 @@ namespace Bullfrog.Actors
             {
                 try
                 {
+                    // send all changes of scale event statuses (if any) and clear the list if the send is successful.
                     await _proxyFactory.GetScaleEventStateReporter(_scaleGroupName).ReportScaleEventState(_regionName, changes);
                     changes.Clear();
                 }
@@ -635,6 +635,11 @@ namespace Bullfrog.Actors
             }
         }
 
+        /// <summary>
+        /// Sets up a reminder to wake up the actor at the specified time or removes a wake up reminder.
+        /// </summary>
+        /// <param name="time">The time when the actor should be woken up or null if there's no reason to wake up the actor.</param>
+        /// <returns></returns>
         protected virtual async Task WakeMeAt(DateTimeOffset? time)
         {
             TimeSpan dueTime;
@@ -676,6 +681,13 @@ namespace Bullfrog.Actors
             return scaleSetStates;
         }
 
+        /// <summary>
+        /// Calculates the total thoughput required to handle all active scale events 
+        /// </summary>
+        /// <param name="events">The list of events.</param>
+        /// <param name="now">The currrent time.</param>
+        /// <param name="leadTime">The scaling lead time.</param>
+        /// <returns>The total throughput requested or null if there's no active events.</returns>
         private static int? CalculateTotalThroughput(IEnumerable<ManagedScaleEvent> events, DateTimeOffset now, TimeSpan leadTime)
         {
             int? total = null;
@@ -687,6 +699,13 @@ namespace Bullfrog.Actors
             return total;
         }
 
+        /// <summary>
+        /// Calculates the date when the last currently active event ends.
+        /// </summary>
+        /// <param name="events">The list of events.</param>
+        /// <param name="now">The currrent time.</param>
+        /// <param name="leadTime">The scaling lead time.</param>
+        /// <returns>The end of the last active event or null if there's no active events.</returns>
         private static DateTimeOffset? FindEndOfActiveEvents(IEnumerable<ManagedScaleEvent> events, DateTimeOffset now, TimeSpan leadTime)
         {
             return events
@@ -694,6 +713,14 @@ namespace Bullfrog.Actors
                 .Max(x => (DateTimeOffset?)x.StartScaleDownAt);
         }
 
+        /// <summary>
+        /// Calculates the time when the actor should wake up to handle some kind of state change.
+        /// </summary>
+        /// <param name="events">The list of events.</param>
+        /// <param name="now">The currrent time.</param>
+        /// <param name="scaleSetLeadTime">The scale set scaling lead time.</param>
+        /// <param name="cosmosDbLeadTime">The Cosmos scaling lead time.</param>
+        /// <returns>The time of the nearest state change or null if there's no mo events to handle.</returns>
         private static DateTimeOffset? FindNextWakeUpTime(IEnumerable<ManagedScaleEvent> events, DateTimeOffset now, TimeSpan scaleSetLeadTime, TimeSpan cosmosDbLeadTime)
         {
             var nextTime = events.SelectMany(ev => new[] { ev.StartScaleDownAt, ev.RequiredScaleAt, ev.RequiredScaleAt - cosmosDbLeadTime, ev.RequiredScaleAt - scaleSetLeadTime })
@@ -704,6 +731,12 @@ namespace Bullfrog.Actors
             return nextTime;
         }
 
+        /// <summary>
+        /// Finds a scaler resposible for handling scaling of the named resource.
+        /// </summary>
+        /// <param name="name">The name of the resource (scale set or cosmos)</param>
+        /// <param name="configuration">The scale manager configuration.</param>
+        /// <returns></returns>
         private ResourceScaler GetScaler(string name, ScaleManagerConfiguration configuration)
         {
             if (!_scalers.TryGetValue(name, out var scaler))
@@ -725,23 +758,44 @@ namespace Bullfrog.Actors
             return scaler;
         }
 
+        /// <summary>
+        /// The state of the scaling actor.
+        /// </summary>
         [DataContract]
         private class ScalingState
         {
+            /// <summary>
+            /// When the latest scaling out operation started (or null if there's no active events currently).
+            /// </summary>
             [DataMember]
             public DateTimeOffset? ScalingOutStartTime { get; set; }
 
+            /// <summary>
+            /// The scaling state of each resource.
+            /// </summary>
             [DataMember]
             public Dictionary<string, ScaleRequest> ScaleRequests { get; set; }
                 = new Dictionary<string, ScaleRequest>();
 
+            /// <summary>
+            /// The recent state transitions of scale events.
+            /// </summary>
+            /// <remarks>
+            /// This list is cleared after passign this data to <see cref="ScaleEventStateReporter"/> actor.
+            /// </remarks>
             [DataMember]
             public List<ScaleEventStateChange> Changes { get; set; }
                 = new List<ScaleEventStateChange>();
 
+            /// <summary>
+            /// The throughput requested currently from scale sets (null if none).
+            /// </summary>
             [DataMember]
             public int? RequestedScaleSetThroughput { get; set; }
 
+            /// <summary>
+            /// The throughput requested currently from Cosmos (null if none).
+            /// </summary>
             [DataMember]
             public int? RequestedCosmosThroughput { get; set; }
 
@@ -751,37 +805,89 @@ namespace Bullfrog.Actors
             public bool IsRefreshRequired => ScaleRequests.Any(o => o.Value.IsExecuting) || Changes.Any();
         }
 
+        /// <summary>
+        /// The status of a scaled resource.
+        /// </summary>
         private enum ScaleRequestStatus
         {
+            /// <summary>
+            /// The scaling has been started and has not yet completed.
+            /// </summary>
             InProgress,
+
+            /// <summary>
+            /// Some issues has been reported but the scaling is still in progress.
+            /// </summary>
             Failing,
+
+            /// <summary>
+            /// The scaling has completed but it hasn't reached the requested throughput
+            /// </summary>
             Limited,
+
+            /// <summary>
+            /// The scaling has completed reaching the requested throughput.
+            /// </summary>
             Completed,
         }
 
+        /// <summary>
+        /// Represents the resources scaling operations.
+        /// </summary>
+        /// <remarks>
+        /// It's a state machine which keeps track and manages scale in and scale out operations.
+        /// </remarks>
         [DataContract]
         [KnownType(typeof(ScaleOutRequest))]
         [KnownType(typeof(ScaleInRequest))]
         private abstract class ScaleRequest
         {
+            /// <summary>
+            /// The default delay after an error is reported for the first time. 
+            /// </summary>
             private static readonly TimeSpan DefaultErrorDelay = TimeSpan.FromMinutes(1);
+
+            /// <summary>
+            /// The longest interval between checks when errors are reported.
+            /// </summary>
             private static readonly TimeSpan MaxErrorDelay = TimeSpan.FromMinutes(5);
 
+            /// <summary>
+            /// The next time the resource state should be checked.
+            /// </summary>
             [DataMember]
             public DateTimeOffset? TryAfter { get; set; }
 
+            /// <summary>
+            /// The current delay after the previous error report (or null if no error has been recently reported)
+            /// </summary>
             [DataMember]
             public TimeSpan? ErrorDelay { get; set; }
 
+            /// <summary>
+            /// The time when the scaling operation has started.
+            /// </summary>
             [DataMember]
             public DateTimeOffset OperationStarted { get; set; }
 
+            /// <summary>
+            /// Informs whether scaling operation is still in progress.
+            /// </summary>
             public abstract bool IsExecuting { get; }
 
+            /// <summary>
+            /// The throughput reached after the operation completed.
+            /// </summary>
             public abstract int? CompletedThroughput { get; }
 
+            /// <summary>
+            /// Returns the status of the completed operation.
+            /// </summary>
             protected abstract ScaleRequestStatus CompletionStatus { get; }
 
+            /// <summary>
+            /// The current status of the resource scaler.
+            /// </summary>
             public ScaleRequestStatus Status
             {
                 get
@@ -793,11 +899,23 @@ namespace Bullfrog.Actors
                 }
             }
 
+            /// <summary>
+            /// Creates an instance of the scale request.
+            /// </summary>
+            /// <param name="now">The current time.</param>
             protected ScaleRequest(DateTimeOffset now)
             {
                 OperationStarted = now;
             }
 
+            /// <summary>
+            /// Performs a single step in processing scaling operation.
+            /// </summary>
+            /// <param name="now">The current time.</param>
+            /// <param name="getScaler">The scaler factory.</param>
+            /// <param name="bigBrother">The telemetry.</param>
+            /// <param name="resourceName">The scaled resource name</param>
+            /// <returns></returns>
             public async Task Process(DateTimeOffset now, Func<ResourceScaler> getScaler, IBigBrother bigBrother, string resourceName)
             {
                 if (!IsExecuting)
@@ -830,25 +948,49 @@ namespace Bullfrog.Actors
                 }
             }
 
+            /// <summary>
+            /// Updates the telemetry event if necessary.
+            /// </summary>
+            /// <param name="ev"></param>
             protected abstract void UpdateCompletionEvent(ResourceScalingCompleted ev);
 
+            /// <summary>
+            /// Returns the scaling operation description used in telemetry.
+            /// </summary>
+            /// <param name="resourceName">The resource name</param>
+            /// <returns>The description of the scaling operation.</returns>
             protected abstract string OperationDescription(string resourceName);
 
+            /// <summary>
+            /// Executes operation type specific action (e.g. calls Azure Managment API).
+            /// </summary>
+            /// <param name="scaler">The scaler.</param>
+            /// <returns>Task.</returns>
             protected abstract Task ProcessRequest(ResourceScaler scaler);
 
+            /// <summary>
+            /// Sets the time of the next attempt to scale a resource after receiving an error.
+            /// </summary>
+            /// <param name="now">The current time.</param>
             private void RegisterError(DateTimeOffset now)
             {
                 if (!ErrorDelay.HasValue)
                 {
                     ErrorDelay = DefaultErrorDelay;
                 }
+                else
+                {
+                    ErrorDelay = ErrorDelay.Value * 2;
+                    if (ErrorDelay > MaxErrorDelay)
+                        ErrorDelay = MaxErrorDelay;
+                }
 
-                TryAfter = now + (ErrorDelay ?? DefaultErrorDelay);
-                ErrorDelay = ErrorDelay.HasValue ? ErrorDelay.Value * 2 : DefaultErrorDelay;
-                if (ErrorDelay > MaxErrorDelay)
-                    ErrorDelay = MaxErrorDelay;
+                TryAfter = now + ErrorDelay;
             }
 
+            /// <summary>
+            /// Returns to normal processing of the scaling operation after previously reported error has been fixed.
+            /// </summary>
             private void ResetError()
             {
                 ErrorDelay = null;
@@ -856,9 +998,19 @@ namespace Bullfrog.Actors
             }
         }
 
+        /// <summary>
+        /// Handles the scaling out of a resource.
+        /// </summary>
         [DataContract]
-        private class ScaleOutRequest : ScaleRequest
+        private sealed class ScaleOutRequest : ScaleRequest
         {
+            /// <summary>
+            /// Defines how much longer than necessary the resource should be scaled out.
+            /// </summary>
+            /// <remarks>
+            /// This is used only by fixed time profiles of autoscaling settings. The scale in still can happen
+            /// ealrier and delete/update this profile.
+            /// </remarks>
             private static readonly TimeSpan EndsAtHintDelay = TimeSpan.FromMinutes(3);
 
             [DataMember]
@@ -900,8 +1052,11 @@ namespace Bullfrog.Actors
                 => $"scale out {resourceName} to {RequestedThroughput}";
         }
 
+        /// <summary>
+        /// Handles the scaling in of a resource.
+        /// </summary>
         [DataContract]
-        private class ScaleInRequest : ScaleRequest
+        private sealed class ScaleInRequest : ScaleRequest
         {
             [DataMember]
             public bool Completed { get; set; }

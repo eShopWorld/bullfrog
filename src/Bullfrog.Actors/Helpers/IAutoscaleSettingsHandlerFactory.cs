@@ -4,12 +4,12 @@ using System.Threading.Tasks;
 namespace Bullfrog.Actors.Helpers
 {
     /// <summary>
-    /// Creates an autoscale settings handler for the specified resource.
+    /// Creates an autoscale settings handlers.
     /// </summary>
     public interface IAutoscaleSettingsHandlerFactory
     {
         /// <summary>
-        /// Creates an autoscale settings handler.
+        /// Creates an autoscale settings handler for the specified recource.
         /// </summary>
         /// <param name="autoscaleSettingsResourceId">The autoscale settings' resource id.</param>
         /// <param name="defaultProfileName">The name of the default profile.</param>
@@ -18,7 +18,7 @@ namespace Bullfrog.Actors.Helpers
     }
 
     /// <summary>
-    /// Enables reading and modifications of autoscale settings.
+    /// Reads and modifies autoscale settings.
     /// </summary>
     public interface IAutoscaleSettingsHandler
     {
@@ -26,26 +26,26 @@ namespace Bullfrog.Actors.Helpers
         /// Reads the autoscale settings.
         /// </summary>
         /// <returns></returns>
-        Task<AutoscaleSettingsView> Read();
+        Task<AutoscaleSettingsSummary> Read();
 
         /// <summary>
         /// Removes Bullfrog's profile
         /// </summary>
-        /// <returns>Returns new settings and a flag whether modification were necessary</returns>
-        Task<(AutoscaleSettingsView autoscaleSettings, bool chaged)> RemoveBullfrogProfile();
+        /// <returns>Returns new settings and a flag stating whether the resource has been modified.</returns>
+        Task<(AutoscaleSettingsSummary autoscaleSettings, bool chaged)> RemoveBullfrogProfile();
 
         /// <summary>
         /// Creates or updates Bullfrog's profile
         /// </summary>
-        /// <param name="bullfrogProfile">The parameters of Bullfrog's profile.</param>
-        /// <returns>Returns new settings and a flag whether modification were necessary</returns>
-        Task<(AutoscaleSettingsView autoscaleSettings, bool chaged)> UpdateBullfrogProfile(BullfrogChange bullfrogProfile);
+        /// <param name="bullfrogProfile">The new values of the Bullfrog's profile.</param>
+        /// <returns>Returns new settings and a flag stating whether the resource has been modified</returns>
+        Task<(AutoscaleSettingsSummary autoscaleSettings, bool chaged)> UpdateBullfrogProfile(BullfrogChange bullfrogProfile);
     }
 
     /// <summary>
-    /// Represents the autoscale settings.
+    /// The autoscale settings' features used by scalers.
     /// </summary>
-    public class AutoscaleSettingsView
+    public class AutoscaleSettingsSummary
     {
         /// <summary>
         /// The minimum number of instances defined in the default profile.
@@ -60,13 +60,13 @@ namespace Bullfrog.Actors.Helpers
         /// <summary>
         /// The optional details about Bullfrog's profile.
         /// </summary>
-        public BullfrogProfileView BullfrogProfile { get; set; }
+        public BullfrogProfileSummary BullfrogProfile { get; set; }
     }
 
     /// <summary>
     /// Represents Bullfrog's profile.
     /// </summary>
-    public class BullfrogProfileView
+    public class BullfrogProfileSummary
     {
         /// <summary>
         /// The minimum number of instances.

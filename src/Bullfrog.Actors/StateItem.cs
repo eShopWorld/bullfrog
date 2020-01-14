@@ -5,6 +5,10 @@ using Microsoft.ServiceFabric.Data;
 
 namespace Bullfrog.Actors
 {
+    /// <summary>
+    /// Helps with reading and writing items to the Actor State Manger.
+    /// </summary>
+    /// <typeparam name="T">The type of the item.</typeparam>
     public struct StateItem<T>
     {
         private readonly IActorStateManager _stateManager;

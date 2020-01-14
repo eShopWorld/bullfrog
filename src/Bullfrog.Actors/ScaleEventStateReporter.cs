@@ -15,6 +15,9 @@ using Microsoft.ServiceFabric.Actors.Runtime;
 
 namespace Bullfrog.Actors
 {
+    /// <summary>
+    /// Reports changes of status of scale events by sending domain events.
+    /// </summary>
     [StatePersistence(StatePersistence.Persisted)]
     public class ScaleEventStateReporter : BullfrogActorBase, IScaleEventStateReporter
     {

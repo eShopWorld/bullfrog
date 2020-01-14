@@ -113,6 +113,12 @@ namespace Bullfrog.Actors.ResourceScalers
              });
         }
 
+        /// <summary>
+        /// Runs a runbook to update the autoscale settings.
+        /// </summary>
+        /// <param name="instancesCount">The number of instances or 0 for scale in.</param>
+        /// <param name="tillWhen">The date till when Bullfrog profile should be active. Ignored when <paramref name="instancesCount"/> is equal to 0.
+        /// <returns>The job details later used to monitor job status.</returns>
         private async Task<JobDetails> StartJob(int instancesCount, DateTimeOffset tillWhen)
         {
             var scaleSetConf = _configuration.ScaleSet;
@@ -127,6 +133,17 @@ namespace Bullfrog.Actors.ResourceScalers
             parameters.RunbookParameters.Add("UntilDateTime", tillWhen);
 
             var jobId = await _runbookClient.CreateJob(parameters);
+
+            _bigBrother.Publish(new JobStarted
+            {
+                AutomationAccountResourceId = _configuration.AutomationAccountResourceId,
+                InstancesRequested = instancesCount,
+                Ends = instancesCount == 0 ? (DateTimeOffset?)null : tillWhen,
+                JobId = jobId,
+                RunbookName = scaleSetConf.Runbook.RunbookName,
+                Vmss = scaleSetConf.Runbook.ScaleSetName ?? scaleSetConf.Name,
+            });
+
             return new JobDetails
             {
                 Id = jobId,
@@ -142,60 +159,72 @@ namespace Bullfrog.Actors.ResourceScalers
         /// <returns>Returns true if the job has compled, false if it is still executing and the resources might be soon changed.</returns>
         private async Task<bool> HasPreviousJobCompleted(State state)
         {
-            if (state.Job != null)
+            if (state.Job == null)
             {
-                // A job has been started.
-                var jobState = await _runbookClient.GetJobStatus(_configuration.AutomationAccountResourceId, state.Job.Id);
-                if (jobState.Status == RunbookJobStatus.Processing)
-                {
-                    var expectedCompletionTime = state.Job.StartedAt.Add(JobProcessingTimeout);
-                    if (expectedCompletionTime < _dateTimeProvider.UtcNow)
-                    {
-                        // Job should have completed by now. Log the issue and proceed as if the runbook completed (hoping that the job won't mess anything later).
-                        _bigBrother.Publish(new JobProcessingTimeout
-                        {
-                            AutomationAccountResourceId = _configuration.AutomationAccountResourceId,
-                            JobId = state.Job.Id,
-                            JobStartTime = state.Job.StartedAt,
-                            JobExpectedCompletionTime = expectedCompletionTime,
-                            RunbookName = _configuration.ScaleSet.Runbook.RunbookName,
-                            Vmss = _configuration.ScaleSet.Runbook.ScaleSetName ?? _configuration.ScaleSet.Name,
-                        });
-                        state.Job = null;
-                    }
-                    else
-                    {
-                        _bigBrother.Publish(new JobProcessingInProgress
-                        {
-                            AutomationAccountResourceId = _configuration.AutomationAccountResourceId,
-                            JobId = state.Job.Id,
-                            JobStartTime = state.Job.StartedAt,
-                            JobExpectedCompletionTime = expectedCompletionTime,
-                            RunbookName = _configuration.ScaleSet.Runbook.RunbookName,
-                            Vmss = _configuration.ScaleSet.Runbook.ScaleSetName ?? _configuration.ScaleSet.Name,
-                        });
+                return true;
+            }
 
-                        return false;
-                    }
-                }
-                else if (jobState.Status != RunbookJobStatus.Succeeded)
+            var jobState = await _runbookClient.GetJobStatus(_configuration.AutomationAccountResourceId, state.Job.Id);
+            if (jobState.Status == RunbookJobStatus.Processing)
+            {
+                var expectedCompletionTime = state.Job.StartedAt.Add(JobProcessingTimeout);
+                if (expectedCompletionTime < _dateTimeProvider.UtcNow)
                 {
-                    _bigBrother.Publish(new JobFailed
+                    // Job should have completed by now. Log the issue and proceed as if the runbook completed
+                    // (hoping that the job doesn't run anymore and it won't mess up anything later).
+                    _bigBrother.Publish(new JobProcessingTimeout
                     {
                         AutomationAccountResourceId = _configuration.AutomationAccountResourceId,
                         JobId = state.Job.Id,
+                        JobStartTime = state.Job.StartedAt,
+                        JobExpectedCompletionTime = expectedCompletionTime,
                         RunbookName = _configuration.ScaleSet.Runbook.RunbookName,
                         Vmss = _configuration.ScaleSet.Runbook.ScaleSetName ?? _configuration.ScaleSet.Name,
-                        Exception = jobState.Exception,
-                        Status = jobState.ReportedStatus,
-                        ProvisioningState = jobState.ProvisioningState,
                     });
                     state.Job = null;
                     return true;
                 }
-            }
+                else
+                {
+                    _bigBrother.Publish(new JobProcessingInProgress
+                    {
+                        AutomationAccountResourceId = _configuration.AutomationAccountResourceId,
+                        JobId = state.Job.Id,
+                        JobStartTime = state.Job.StartedAt,
+                        JobExpectedCompletionTime = expectedCompletionTime,
+                        RunbookName = _configuration.ScaleSet.Runbook.RunbookName,
+                        Vmss = _configuration.ScaleSet.Runbook.ScaleSetName ?? _configuration.ScaleSet.Name,
+                    });
 
-            return true;
+                    return false;
+                }
+            }
+            else if (jobState.Status != RunbookJobStatus.Succeeded)
+            {
+                _bigBrother.Publish(new JobFailed
+                {
+                    AutomationAccountResourceId = _configuration.AutomationAccountResourceId,
+                    JobId = state.Job.Id,
+                    RunbookName = _configuration.ScaleSet.Runbook.RunbookName,
+                    Vmss = _configuration.ScaleSet.Runbook.ScaleSetName ?? _configuration.ScaleSet.Name,
+                    Exception = jobState.Exception,
+                    Status = jobState.ReportedStatus,
+                    ProvisioningState = jobState.ProvisioningState,
+                });
+                state.Job = null;
+                return true;
+            }
+            else
+            {
+                _bigBrother.Publish(new JobCompleted
+                {
+                    AutomationAccountResourceId = _configuration.AutomationAccountResourceId,
+                    JobId = state.Job.Id,
+                    RunbookName = _configuration.ScaleSet.Runbook.RunbookName,
+                    Vmss = _configuration.ScaleSet.Runbook.ScaleSetName ?? _configuration.ScaleSet.Name,
+                });
+                return true;
+            }
         }
 
         private class State
