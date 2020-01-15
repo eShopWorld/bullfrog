@@ -51,7 +51,7 @@ namespace Bullfrog.Actors.ResourceScalers
                 }
 
                 return true;
-            });
+            }, _bigBrother);
         }
 
         public override async Task<int?> ScaleOut(int throughput, DateTimeOffset endsAt)
@@ -110,7 +110,7 @@ namespace Bullfrog.Actors.ResourceScalers
                      return availableThroughput;
                  else
                      return null;
-             });
+             }, _bigBrother);
         }
 
         /// <summary>

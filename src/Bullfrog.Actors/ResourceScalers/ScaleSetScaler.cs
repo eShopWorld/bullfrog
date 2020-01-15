@@ -30,7 +30,7 @@ namespace Bullfrog.Actors.ResourceScalers
 
         public override async Task<bool> ScaleIn()
         {
-            var result = await _bigBrother.LogAzureCallDuration("RemoveBullfrogProfile", _configuration.AutoscaleSettingsResourceId, async () =>
+            var (autoscaleSettings, _) = await _bigBrother.LogAzureCallDuration("RemoveBullfrogProfile", _configuration.AutoscaleSettingsResourceId, async () =>
             {
                 var azure = _authenticated.WithSubscriptionFor(_configuration.AutoscaleSettingsResourceId);
                 return await azure.RemoveBullfrogProfile(_configuration.AutoscaleSettingsResourceId);
@@ -39,7 +39,7 @@ namespace Bullfrog.Actors.ResourceScalers
             _bigBrother.Publish(new ScaleSetReset
             {
                 ScalerName = _configuration.Name,
-                ConfiguredInstances = result.autoscaleSettings.Profiles[_configuration.ProfileName].MinInstanceCount,
+                ConfiguredInstances = autoscaleSettings.Profiles[_configuration.ProfileName].MinInstanceCount,
             });
 
             return true;

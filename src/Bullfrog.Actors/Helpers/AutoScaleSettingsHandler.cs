@@ -41,14 +41,14 @@ namespace Bullfrog.Actors.Helpers
             return CreateView(autoscale);
         }
 
-        public async Task<(AutoscaleSettingsSummary autoscaleSettings, bool chaged)> RemoveBullfrogProfile()
+        public async Task<(AutoscaleSettingsSummary autoscaleSettings, bool changed)> RemoveBullfrogProfile()
         {
-            var result = await _azure.RemoveBullfrogProfile(_autoscaleSettingsResourceId);
+            var (autoscaleSettings, changed) = await _azure.RemoveBullfrogProfile(_autoscaleSettingsResourceId);
 
-            return (CreateView(result.autoscaleSettings), result.chagned);
+            return (CreateView(autoscaleSettings), changed);
         }
 
-        public async Task<(AutoscaleSettingsSummary autoscaleSettings, bool chaged)> UpdateBullfrogProfile(BullfrogChange bullfrogProfile)
+        public async Task<(AutoscaleSettingsSummary autoscaleSettings, bool changed)> UpdateBullfrogProfile(BullfrogChange bullfrogProfile)
         {
             var (_, profileChanged, updatedSettings) = await _azure.SaveBullfrogProfile(
                  _autoscaleSettingsResourceId,

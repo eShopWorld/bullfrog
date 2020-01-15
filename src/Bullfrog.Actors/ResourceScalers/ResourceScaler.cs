@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Bullfrog.Common;
+using Eshopworld.Core;
 
 namespace Bullfrog.Actors.ResourceScalers
 {
@@ -34,7 +36,7 @@ namespace Bullfrog.Actors.ResourceScalers
         /// <typeparam name="TResult">The type of the operation's result.</typeparam>
         /// <param name="operation">The operation to perform.</param>
         /// <returns>Returns a result of operation.</returns>
-        protected async Task<TResult> PerformOperationWithState<TState, TResult>(Func<TState, Task<TResult>> operation)
+        protected async Task<TResult> PerformOperationWithState<TState, TResult>(Func<TState, Task<TResult>> operation, IBigBrother bigBrother)
             where TState : class
         {
             TState state = null;
@@ -47,22 +49,15 @@ namespace Bullfrog.Actors.ResourceScalers
             {
                 state = Newtonsoft.Json.JsonConvert.DeserializeObject<TState>(SerializedState);
             }
-            catch
+            catch(Exception ex)
             {
-                // log
+                var descriptionException = new BullfrogException($"Failed to deserialize the resource scaler's state: {SerializedState}.", ex);
+                bigBrother.Publish(descriptionException.ToExceptionEvent());
             }
 
-            try
-            {
-                var result = await operation(state);
-                SerializedState = Newtonsoft.Json.JsonConvert.SerializeObject(state);
-                return result;
-            }
-            catch
-            {
-                // log
-                throw;
-            }
+            var result = await operation(state);
+            SerializedState = Newtonsoft.Json.JsonConvert.SerializeObject(state);
+            return result;
         }
     }
 }

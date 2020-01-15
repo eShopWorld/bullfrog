@@ -67,7 +67,7 @@ namespace Bullfrog.Common
             return (minInstances, profileModified, autoscale);
         }
 
-        public static async Task<(IAutoscaleSetting autoscaleSettings, bool chagned)> RemoveBullfrogProfile(
+        public static async Task<(IAutoscaleSetting autoscaleSettings, bool changed)> RemoveBullfrogProfile(
             this IAzure azure,
             string autoscaleSettingsResourceId,
             CancellationToken cancellationToken = default)

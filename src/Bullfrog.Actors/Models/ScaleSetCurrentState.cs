@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Bullfrog.Actors.Models
+﻿namespace Bullfrog.Actors.Models
 {
     public class ScaleSetCurrentState
     {

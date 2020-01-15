@@ -32,14 +32,14 @@ namespace Bullfrog.Actors.Helpers
         /// Removes Bullfrog's profile
         /// </summary>
         /// <returns>Returns new settings and a flag stating whether the resource has been modified.</returns>
-        Task<(AutoscaleSettingsSummary autoscaleSettings, bool chaged)> RemoveBullfrogProfile();
+        Task<(AutoscaleSettingsSummary autoscaleSettings, bool changed)> RemoveBullfrogProfile();
 
         /// <summary>
         /// Creates or updates Bullfrog's profile
         /// </summary>
         /// <param name="bullfrogProfile">The new values of the Bullfrog's profile.</param>
         /// <returns>Returns new settings and a flag stating whether the resource has been modified</returns>
-        Task<(AutoscaleSettingsSummary autoscaleSettings, bool chaged)> UpdateBullfrogProfile(BullfrogChange bullfrogProfile);
+        Task<(AutoscaleSettingsSummary autoscaleSettings, bool changed)> UpdateBullfrogProfile(BullfrogChange bullfrogProfile);
     }
 
     /// <summary>
