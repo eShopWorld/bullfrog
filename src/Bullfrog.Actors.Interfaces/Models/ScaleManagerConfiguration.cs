@@ -14,10 +14,9 @@ namespace Bullfrog.Actors.Interfaces.Models
         public List<ScaleSetConfiguration> ScaleSetConfigurations { get; set; }
 
         /// <summary>
-        /// Defines the managed Cosmos DB configuration.
+        /// Defines the managed Cosmos DB configurations.
         /// </summary>
         public List<CosmosConfiguration> CosmosConfigurations { get; set; }
-
 
         /// <summary>
         /// VM scale sets prescale lead time.
@@ -33,5 +32,25 @@ namespace Bullfrog.Actors.Interfaces.Models
         /// Defines how long after completion time a scale event can be purged.
         /// </summary>
         public TimeSpan? OldEventsAge { get; set; }
+
+        /// <summary>
+        /// Maps names to resource ids of automation accounts used to start runbooks
+        /// </summary>
+        public List<AutomationAccount> AutomationAccounts { get; set; }
+
+        /// <summary>
+        /// The name of the scale group handled by the scale manager.
+        /// </summary>
+        public string ScaleGroup { get; set; }
+
+        /// <summary>
+        /// The name of the region handled by the scale manager.
+        /// </summary>
+        public string Region { get; set; }
+
+        /// <summary>
+        /// Controls whether ResouceScaler is used directly or through the resource scaling actors.
+        /// </summary>
+        public bool UseScalingActors { get; set; }
     }
 }

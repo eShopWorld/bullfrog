@@ -1,6 +1,4 @@
-﻿using Microsoft.Azure.Management.AppService.Fluent.Models;
-
-namespace Bullfrog.Actors.Interfaces.Models
+﻿namespace Bullfrog.Actors.Interfaces.Models
 {
     /// <summary>
     /// Defines the ListScaleEvents parameters.

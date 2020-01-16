@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Tracing;
 using System.Fabric;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Microsoft.ServiceFabric.Services.Runtime;
 
 namespace Bullfrog.Api
 {
@@ -15,6 +11,7 @@ namespace Bullfrog.Api
     internal sealed class ServiceEventSource : EventSource
     {
         public static readonly ServiceEventSource Current = new ServiceEventSource();
+        private const int MessageEventId = 1;
 
         static ServiceEventSource()
         {
@@ -56,7 +53,6 @@ namespace Bullfrog.Api
             }
         }
 
-        private const int MessageEventId = 1;
         [Event(MessageEventId, Level = EventLevel.Informational, Message = "{0}")]
         public void Message(string message)
         {

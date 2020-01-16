@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Bullfrog.Actors.Interfaces.Models;
 
 namespace Bullfrog.Actors.Interfaces.Models
 {

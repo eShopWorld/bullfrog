@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Bullfrog.Common;
+﻿using Bullfrog.Common;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Runtime;
-using ServiceFabric.Mocks;
 
 namespace Helpers
 {
@@ -22,6 +18,5 @@ namespace Helpers
             var utcNow = _dateTimeProvider.UtcNow;
             return new MyActorReminderState(new MyActorReminderData(actorId, reminder, utcNow), utcNow);
         }
-
     }
 }

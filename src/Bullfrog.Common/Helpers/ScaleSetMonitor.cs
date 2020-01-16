@@ -9,6 +9,9 @@ using Microsoft.Azure.Management.Monitor.Fluent;
 
 namespace Bullfrog.Common.Helpers
 {
+    /// <summary>
+    /// Estimates the size of VM scale set using its load balancer.
+    /// </summary>
     public class ScaleSetMonitor
     {
         private readonly Azure.IAuthenticated _authenticated;
@@ -21,6 +24,11 @@ namespace Bullfrog.Common.Helpers
             _bigBrother = bigBrother;
         }
 
+        /// <summary>
+        /// Checks whether the necessary load balancer metrics exists and can be retrieved.
+        /// </summary>
+        /// <param name="configuration">The load balancer details.</param>
+        /// <returns>Validation results.</returns>
         public virtual async Task<ValidationResult> ValidateAccess(LoadBalancerConfiguration configuration)
         {
             System.Collections.Generic.IReadOnlyList<IMetricDefinition> definitons;
@@ -54,6 +62,13 @@ namespace Bullfrog.Common.Helpers
 
             return ValidationResult.Success;
         }
+
+        /// <summary>
+        /// Gets the number of active VMs in a VM scale set based on metrics of its load balancer.
+        /// </summary>
+        /// <param name="loadBalancerResourceId">The resource id of the load balancer.</param>
+        /// <param name="healthProbePort">The port used by health probe.</param>
+        /// <returns>Number of VM instances which responds at given port.</returns>
 
         public virtual async Task<int> GetNumberOfWorkingInstances(string loadBalancerResourceId, int healthProbePort)
         {

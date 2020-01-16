@@ -466,6 +466,7 @@ namespace Bullfrog.Actors
                     CosmosConfigurations = region.Cosmos,
                     CosmosDbPrescaleLeadTime = region.CosmosDbPrescaleLeadTime,
                     ScaleSetPrescaleLeadTime = region.ScaleSetPrescaleLeadTime,
+                    AutomationAccounts = definition.AutomationAccounts,
                 };
                 await actor.Configure(configuration);
             }

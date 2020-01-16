@@ -120,21 +120,21 @@ public class ScaleManagerTests : BaseApiTests
     {
         CreateScaleGroup();
         var events = new (int start, int end)[] { (1, 2), (4, 6), (2, 8), (4, 5), };
-        foreach (var rng in events)
+        foreach (var (start, end) in events)
         {
             var scaleEvent = new ScaleEvent
             {
                 Name = "aa",
                 RegionConfig = new List<RegionScaleValue>
-            {
-                new RegionScaleValue
                 {
-                    Name = "eu",
-                    Scale = 10,
-                }
-            },
-                RequiredScaleAt = UtcNow + TimeSpan.FromHours(rng.start),
-                StartScaleDownAt = UtcNow + TimeSpan.FromHours(rng.end),
+                    new RegionScaleValue
+                    {
+                        Name = "eu",
+                        Scale = 10,
+                    }
+                },
+                RequiredScaleAt = UtcNow + TimeSpan.FromHours(start),
+                StartScaleDownAt = UtcNow + TimeSpan.FromHours(end),
             };
             ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
         }
@@ -154,7 +154,7 @@ public class ScaleManagerTests : BaseApiTests
     {
         CreateScaleGroup();
         var events = new (int start, int end)[] { (2, 8), (4, 5), (3, 7), (6, 7) };
-        foreach (var rng in events)
+        foreach (var (start, end) in events)
         {
             var scaleEvent = new ScaleEvent
             {
@@ -167,8 +167,8 @@ public class ScaleManagerTests : BaseApiTests
                         Scale = 10,
                     }
                 },
-                RequiredScaleAt = UtcNow + TimeSpan.FromHours(rng.start),
-                StartScaleDownAt = UtcNow + TimeSpan.FromHours(rng.end),
+                RequiredScaleAt = UtcNow + TimeSpan.FromHours(start),
+                StartScaleDownAt = UtcNow + TimeSpan.FromHours(end),
             };
             ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
         }
@@ -189,20 +189,20 @@ public class ScaleManagerTests : BaseApiTests
     }
 
     [Fact, IsLayer0]
-    public async Task ListReturnsEventsFromSelectedRegion()
+    public void ListReturnsEventsFromSelectedRegion()
     {
         CreateScaleGroup();
         var events = new (int start, int end, string regions)[] { (2, 8, "eu"), (4, 5, "eu1,eu"), (3, 7, "eu1"), (6, 7, "eu") };
-        foreach (var rng in events)
+        foreach (var (start, end, regions) in events)
         {
             var scaleEvent = new ScaleEvent
             {
                 Name = "aa",
-                RegionConfig = rng.regions.Split(',')
+                RegionConfig = regions.Split(',')
                     .Select(r => new RegionScaleValue { Name = r, Scale = 10 })
                     .ToList(),
-                RequiredScaleAt = UtcNow + TimeSpan.FromHours(rng.start),
-                StartScaleDownAt = UtcNow + TimeSpan.FromHours(rng.end),
+                RequiredScaleAt = UtcNow + TimeSpan.FromHours(start),
+                StartScaleDownAt = UtcNow + TimeSpan.FromHours(end),
             };
             ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
         }
@@ -301,7 +301,7 @@ public class ScaleManagerTests : BaseApiTests
 
         //act
         ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), scaleEvent);
-        await AdvanceTimeTo(UtcNow);
+        await AdvanceTimeTo(UtcNow.AddMinutes(5));
 
         ScaleHistory["c"].Should().NotBeEmpty();
         ScaleHistory["s"].Should().NotBeEmpty();

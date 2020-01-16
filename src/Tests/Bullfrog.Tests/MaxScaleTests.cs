@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net;
 using System.Threading.Tasks;
 using Client;
 using Client.Models;
 using Eshopworld.Tests.Core;
-using FluentAssertions;
-using Newtonsoft.Json;
 using Xunit;
 
 public class MaxScaleTests : BaseApiTests
@@ -97,6 +94,11 @@ public class MaxScaleTests : BaseApiTests
         await SaveScaleEvent(start, end, regionScales);
     }
 
+    private async Task SaveScaleEvent(int scaleOut, int scaleIn, IEnumerable<(string regionName, int scale)> regions, Guid? id = default)
+    {
+        await ApiClient.SaveScaleEventAsync("sg", id ?? Guid.NewGuid(), NewScaleEvent(scaleOut, scaleIn, regions));
+    }
+
     private ScaleEvent NewScaleEvent(int scaleOut, int scaleIn, IEnumerable<(string regionName, int scale)> regions)
     {
         return new ScaleEvent
@@ -106,11 +108,6 @@ public class MaxScaleTests : BaseApiTests
             RequiredScaleAt = UtcNow + TimeSpan.FromHours(scaleOut),
             StartScaleDownAt = UtcNow + TimeSpan.FromHours(scaleIn),
         };
-    }
-
-    private async Task SaveScaleEvent(int scaleOut, int scaleIn, IEnumerable<(string regionName, int scale)> regions, Guid? id = default)
-    {
-        await ApiClient.SaveScaleEventAsync("sg", id ?? Guid.NewGuid(), NewScaleEvent(scaleOut, scaleIn, regions));
     }
 
     private async Task CreateScaleGroup()

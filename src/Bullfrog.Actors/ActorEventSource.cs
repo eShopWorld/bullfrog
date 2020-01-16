@@ -11,6 +11,7 @@
     internal sealed class ActorEventSource : EventSource
     {
         public static readonly ActorEventSource Current = new ActorEventSource();
+        private const int MessageEventId = 1;
 
         static ActorEventSource()
         {
@@ -51,7 +52,6 @@
             }
         }
 
-        private const int MessageEventId = 1;
         [Event(MessageEventId, Level = EventLevel.Informational, Message = "{0}")]
         public void Message(string message)
         {

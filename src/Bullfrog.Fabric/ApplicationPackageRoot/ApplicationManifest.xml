@@ -12,6 +12,9 @@
     <Parameter Name="ScaleEventStateReporterActorService_PartitionCount" DefaultValue="10" />
     <Parameter Name="ScaleEventStateReporterActorService_MinReplicaSetSize" DefaultValue="3" />
     <Parameter Name="ScaleEventStateReporterActorService_TargetReplicaSetSize" DefaultValue="3" />
+    <Parameter Name="ResourceScalingActorService_PartitionCount" DefaultValue="10" />
+    <Parameter Name="ResourceScalingActorService_MinReplicaSetSize" DefaultValue="1" />
+    <Parameter Name="ResourceScalingActorService_TargetReplicaSetSize" DefaultValue="1" />
   </Parameters>
   <!-- Import the ServiceManifest from the ServicePackage. The ServiceManifestName and ServiceManifestVersion 
        should match the Name and Version attributes of the ServiceManifest element defined in the 
@@ -48,6 +51,11 @@
     <Service Name="ScaleEventStateReporterActorService" GeneratedIdRef="031c3807-a16e-4d5e-a8f2-38303cb9ee60|Persisted">
       <StatefulService ServiceTypeName="ScaleEventStateReporterActorServiceType" TargetReplicaSetSize="[ScaleEventStateReporterActorService_TargetReplicaSetSize]" MinReplicaSetSize="[ScaleEventStateReporterActorService_MinReplicaSetSize]">
         <UniformInt64Partition PartitionCount="[ScaleEventStateReporterActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+      </StatefulService>
+    </Service>
+    <Service Name="ResourceScalingActorService" GeneratedIdRef="83e3f52b-df5a-435e-9462-1d6ec191544c|None">
+      <StatefulService ServiceTypeName="ResourceScalingActorServiceType" TargetReplicaSetSize="[ResourceScalingActorService_TargetReplicaSetSize]" MinReplicaSetSize="[ResourceScalingActorService_MinReplicaSetSize]">
+        <UniformInt64Partition PartitionCount="[ResourceScalingActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
       </StatefulService>
     </Service>
     <!-- The section below creates instances of service types, when an instance of this 

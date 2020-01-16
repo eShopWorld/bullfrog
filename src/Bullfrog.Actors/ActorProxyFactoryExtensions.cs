@@ -20,5 +20,10 @@ namespace Bullfrog.Actors
             var actorId = new ActorId($"{actorName}:{scaleGroup}/{region}");
             return proxyFactory.CreateActorProxy<TActor>(actorId);
         }
+
+        public static IResourceScalingActor GetResourceScalingActor(this IActorProxyFactory proxyFactory, string scaleGroup, string region, string name)
+        {
+            return proxyFactory.CreateActorProxy<IResourceScalingActor>(new ActorId($"scaler:{scaleGroup}/{region}/{name}"));
+        }
     }
 }

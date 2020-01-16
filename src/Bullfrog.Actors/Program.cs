@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Integration.ServiceFabric;
+using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common.DependencyInjection;
 using Eshopworld.DevOps;
@@ -31,10 +32,13 @@ namespace Bullfrog.Actors
                 builder.RegisterModule<AzureManagementFluentModule>();
                 builder.RegisterModule<ServiceFabricModule>();
                 builder.RegisterModule<ThroughputClientModule>();
-                builder.RegisterType<ControlPlaneCosmosScaler>().AsSelf();
-                builder.RegisterType<CosmosScaler>().AsSelf();
-                builder.RegisterType<ScaleSetScaler>().AsSelf();
+                builder.RegisterType<ControlPlaneCosmosScaler>();
+                builder.RegisterType<CosmosScaler>();
+                builder.RegisterType<ScaleSetScaler>();
                 builder.RegisterType<ResourceScalerFactory>().As<IResourceScalerFactory>();
+                builder.RegisterType<RunbookVmssScaler>();
+                builder.RegisterType<RunbookClient>().As<IRunbookClient>();
+                builder.RegisterType<AutoscaleSettingsHandlerFactory>().As<IAutoscaleSettingsHandlerFactory>();
 
                 builder.RegisterType<OperationCorrelationTelemetryInitializer>().As<ITelemetryInitializer>();
                 builder.RegisterType<HttpDependenciesParsingTelemetryInitializer>().As<ITelemetryInitializer>();
@@ -77,6 +81,7 @@ namespace Bullfrog.Actors
                 builder.RegisterActor<ScaleManager>(typeof(MonitoredActorService));
                 builder.RegisterActor<ConfigurationManager>(typeof(MonitoredActorService));
                 builder.RegisterActor<ScaleEventStateReporter>(typeof(MonitoredActorService));
+                builder.RegisterActor<ResourceScalingActor>(typeof(MonitoredActorService));
 
                 using (var container = builder.Build())
                 {

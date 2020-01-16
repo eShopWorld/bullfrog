@@ -14,9 +14,9 @@ namespace Bullfrog.Common
     /// </summary>
     public static class AzureFluentExtensions
     {
-        private const string BullfrogProfileName = "BullfrogProfile";
+        public const string BullfrogProfileName = "BullfrogProfile";
 
-        public static async Task<(int Instances, bool ProfileChanged)> SaveBullfrogProfile(
+        public static async Task<(int Instances, bool ProfileChanged, IAutoscaleSetting autoscaleSetting)> SaveBullfrogProfile(
             this IAzure azure,
             string autoscaleSettingsResourceId,
             string defaultProfileName,
@@ -43,7 +43,7 @@ namespace Bullfrog.Common
                     || bullfrogProfile.FixedDateSchedule == null
                     || bullfrogProfile.FixedDateSchedule.End != end.UtcDateTime )
                 {
-                    await autoscale.Update()
+                    autoscale = await autoscale.Update()
                          .UpdateAutoscaleProfile(BullfrogProfileName)
                          .WithMetricBasedScale(minInstances, defaultProfile.MaxInstanceCount, defaultInstances)
                          .WithFixedDateSchedule("UTC", start.UtcDateTime, end.UtcDateTime)
@@ -54,7 +54,7 @@ namespace Bullfrog.Common
             }
             else
             {
-                await autoscale.Update()
+                autoscale = await autoscale.Update()
                     .DefineAutoscaleProfile(BullfrogProfileName)
                     .WithMetricBasedScale(minInstances, defaultProfile.MaxInstanceCount, defaultInstances)
                     .AddRules(defaultProfile.Rules)
@@ -64,10 +64,10 @@ namespace Bullfrog.Common
                     profileModified = true;
             }
 
-            return (minInstances, profileModified);
+            return (minInstances, profileModified, autoscale);
         }
 
-        public static async Task<IAutoscaleSetting> RemoveBullfrogProfile(
+        public static async Task<(IAutoscaleSetting autoscaleSettings, bool changed)> RemoveBullfrogProfile(
             this IAzure azure,
             string autoscaleSettingsResourceId,
             CancellationToken cancellationToken = default)
@@ -75,12 +75,13 @@ namespace Bullfrog.Common
             var autoscale = await azure.AutoscaleSettings.ValidateAccessAsync(autoscaleSettingsResourceId, cancellationToken);
             if (autoscale.Profiles.ContainsKey(BullfrogProfileName))
             {
-                return await autoscale.Update()
+                var updated = await autoscale.Update()
                     .WithoutAutoscaleProfile(BullfrogProfileName)
                     .ApplyAsync();
+                return (updated, true);
             }
 
-            return autoscale;
+            return (autoscale, false);
         }
 
         /// <summary>
@@ -99,8 +100,8 @@ namespace Bullfrog.Common
             catch (ErrorResponseException ex)
             {
                 var message = ex.Response != null && ex.Response.StatusCode == System.Net.HttpStatusCode.NotFound
-                    ? $"The autoscale settings {resourceId} has not been found"
-                    : $"Failed to access autoscale settings {resourceId}: {ex.Message}";
+                    ? $"The autoscale settings {resourceId} has not been found ({ex.Response?.Content})"
+                    : $"Failed to access autoscale settings {resourceId}: {ex.Message} ({ex.Response?.Content})";
                 throw new BullfrogException(message);
             }
             catch (Exception ex)

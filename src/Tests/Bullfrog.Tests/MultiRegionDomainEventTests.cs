@@ -34,7 +34,7 @@ public class MultiRegionDomainEventTests : BaseApiTests
             (start.AddHours(7), eventId, ScaleChangeType.ScaleOutStarted),
             (RoundToScan(start.AddHours(9.75)), eventId, ScaleChangeType.ScaleOutComplete),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted),
-            (start.AddHours(20), eventId, ScaleChangeType.ScaleInComplete),
+            (start.AddHours(20).AddMinutes(2), eventId, ScaleChangeType.ScaleInComplete),
         };
         events.Should().BeEquivalentTo(expected);
     }
@@ -75,18 +75,18 @@ public class MultiRegionDomainEventTests : BaseApiTests
             (start.AddHours(8), eventId, ScaleChangeType.ScaleOutStarted, "eu2"),
             (start.AddHours(7), eventId, ScaleChangeType.ScaleOutStarted, "eu3"),
             (start.AddHours(9.5), eventId, ScaleChangeType.ScaleOutStarted,  SharedCosmosRegion),
-            (start.AddHours(9.5), eventId, ScaleChangeType.ScaleOutComplete, "eu1"),
-            (start.AddHours(9), eventId, ScaleChangeType.ScaleOutComplete, "eu2"),
-            (start.AddHours(8.5), eventId, ScaleChangeType.ScaleOutComplete, "eu3"),
+            (start.AddHours(9.5).AddMinutes(2), eventId, ScaleChangeType.ScaleOutComplete, "eu1"),
+            (start.AddHours(9).AddMinutes(2), eventId, ScaleChangeType.ScaleOutComplete, "eu2"),
+            (start.AddHours(8.5).AddMinutes(2), eventId, ScaleChangeType.ScaleOutComplete, "eu3"),
             (RoundToScan(start.AddHours(9.75)), eventId, ScaleChangeType.ScaleOutComplete, SharedCosmosRegion),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted, "eu1"),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted, "eu2"),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted, "eu3"),
             (start.AddHours(20), eventId, ScaleChangeType.ScaleInStarted, SharedCosmosRegion),
-            (start.AddHours(20), eventId, ScaleChangeType.ScaleInComplete, "eu1"),
-            (start.AddHours(20), eventId, ScaleChangeType.ScaleInComplete, "eu2"),
-            (start.AddHours(20), eventId, ScaleChangeType.ScaleInComplete, "eu3"),
-            (start.AddHours(20), eventId, ScaleChangeType.ScaleInComplete, SharedCosmosRegion),
+            (start.AddHours(20).AddMinutes(2), eventId, ScaleChangeType.ScaleInComplete, "eu1"),
+            (start.AddHours(20).AddMinutes(2), eventId, ScaleChangeType.ScaleInComplete, "eu2"),
+            (start.AddHours(20).AddMinutes(2), eventId, ScaleChangeType.ScaleInComplete, "eu3"),
+            (start.AddHours(20).AddMinutes(2), eventId, ScaleChangeType.ScaleInComplete, SharedCosmosRegion),
         };
         events.Should().BeEquivalentTo(expected);
     }

@@ -37,9 +37,9 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
             (StartTime.AddMinutes(30).Add(-MaxLeadTime), eventId, ScaleChangeType.ScaleOutStarted),
-            (StartTime.AddMinutes(30), eventId, ScaleChangeType.ScaleOutComplete),
+            (StartTime.AddMinutes(32), eventId, ScaleChangeType.ScaleOutComplete),
             (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleInStarted),
-            (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleInComplete),
+            (StartTime.AddMinutes(42), eventId, ScaleChangeType.ScaleInComplete),
         };
         events.Should().BeEquivalentTo(expected);
     }
@@ -60,9 +60,10 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
             (StartTime.AddMinutes(30).Add(-MaxLeadTime), eventId, ScaleChangeType.ScaleOutStarted),
-            (StartTime.AddMinutes(30), eventId, ScaleChangeType.ScaleIssue),
+            (StartTime.AddMinutes(32), eventId, ScaleChangeType.ScaleIssue),
+            (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleOutStarted),
             (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleInStarted),
-            (StartTime.AddMinutes(40), eventId, ScaleChangeType.ScaleInComplete),
+            (StartTime.AddMinutes(42), eventId, ScaleChangeType.ScaleInComplete),
         };
         events.Should().BeEquivalentTo(expected);
     }
@@ -77,17 +78,17 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         RegisterResourceScaler("s", x => UtcNow >= StartTime.AddMinutes(24) ? 10 : throw new BullfrogException());
         var eventId = AddEvent(StartTime.AddMinutes(30), StartTime.AddMinutes(60), 10);
 
-        await AdvanceTimeTo(StartTime + TimeSpan.FromHours(1));
+        await AdvanceTimeTo(StartTime + TimeSpan.FromHours(2));
 
         var events = GetPublishedEvents<ScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type));
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
             (StartTime.AddMinutes(14), eventId, ScaleChangeType.ScaleOutStarted),
-            (StartTime.AddMinutes(18), eventId, ScaleChangeType.ScaleIssue),
-            (StartTime.AddMinutes(26), eventId, ScaleChangeType.ScaleOutStarted),
-            (StartTime.AddMinutes(30), eventId, ScaleChangeType.ScaleOutComplete),
+            (StartTime.AddMinutes(20), eventId, ScaleChangeType.ScaleIssue),
+            (StartTime.AddMinutes(28), eventId, ScaleChangeType.ScaleOutStarted),
+            (StartTime.AddMinutes(32), eventId, ScaleChangeType.ScaleOutComplete),
             (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInStarted),
-            (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInComplete),
+            (StartTime.AddMinutes(62), eventId, ScaleChangeType.ScaleInComplete),
         };
         events.Should().BeEquivalentTo(expected);
     }
@@ -102,16 +103,16 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         RegisterResourceScaler("s", x => UtcNow >= StartTime.AddMinutes(22) ? 10 : (int?)null);
         var eventId = AddEvent(StartTime.AddMinutes(30), StartTime.AddMinutes(60), 10);
 
-        await AdvanceTimeTo(StartTime + TimeSpan.FromHours(1));
+        await AdvanceTimeTo(StartTime + TimeSpan.FromHours(2));
 
         var events = GetPublishedEvents<ScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type));
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
             (StartTime.AddMinutes(14), eventId, ScaleChangeType.ScaleOutStarted),
-            (StartTime.AddMinutes(14), eventId, ScaleChangeType.ScaleIssue),
-            (StartTime.AddMinutes(28), eventId, ScaleChangeType.ScaleOutComplete),
+            (StartTime.AddMinutes(16), eventId, ScaleChangeType.ScaleIssue),
+            (StartTime.AddMinutes(30), eventId, ScaleChangeType.ScaleOutComplete),
             (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInStarted),
-            (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInComplete),
+            (StartTime.AddMinutes(62), eventId, ScaleChangeType.ScaleInComplete),
         };
         events.Should().BeEquivalentTo(expected);
     }
@@ -126,16 +127,16 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         RegisterResourceScaler("s", x => UtcNow >= StartTime.AddMinutes(34) ? 10 : throw new BullfrogException());
         var eventId = AddEvent(StartTime.AddMinutes(30), StartTime.AddMinutes(60), 10);
 
-        await AdvanceTimeTo(StartTime + TimeSpan.FromHours(1));
+        await AdvanceTimeTo(StartTime + TimeSpan.FromHours(2));
 
         var events = GetPublishedEvents<ScaleChange>().Select(x => (x.Time, x.Event.Id, x.Event.Type));
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
             (StartTime.AddMinutes(24), eventId, ScaleChangeType.ScaleOutStarted),
-            (StartTime.AddMinutes(28), eventId, ScaleChangeType.ScaleIssue),
-            (StartTime.AddMinutes(36), eventId, ScaleChangeType.ScaleOutComplete),
+            (StartTime.AddMinutes(30), eventId, ScaleChangeType.ScaleIssue),
+            (StartTime.AddMinutes(38), eventId, ScaleChangeType.ScaleOutComplete),
             (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInStarted),
-            (StartTime.AddMinutes(60), eventId, ScaleChangeType.ScaleInComplete),
+            (StartTime.AddMinutes(62), eventId, ScaleChangeType.ScaleInComplete),
         };
         events.Should().BeEquivalentTo(expected);
     }
@@ -158,13 +159,13 @@ public class ScaleChangedDomainEventTests : BaseApiTests
         var expected = new List<(DateTimeOffset time, Guid id, ScaleChangeType type)>
         {
             (start.AddMinutes(20), eventId1, ScaleChangeType.ScaleOutStarted),
-            (start.AddMinutes(42), eventId1, ScaleChangeType.ScaleOutComplete),
+            (start.AddMinutes(44), eventId1, ScaleChangeType.ScaleOutComplete),
             (start.AddMinutes(100), eventId1, ScaleChangeType.ScaleInStarted),
-            (start.AddMinutes(108), eventId1, ScaleChangeType.ScaleInComplete),
+            (start.AddMinutes(120), eventId1, ScaleChangeType.ScaleInComplete),
             (start.AddMinutes(30), eventId2, ScaleChangeType.ScaleOutStarted),
-            (start.AddMinutes(42), eventId2, ScaleChangeType.ScaleOutComplete),
+            (start.AddMinutes(44), eventId2, ScaleChangeType.ScaleOutComplete),
             (start.AddMinutes(110), eventId2, ScaleChangeType.ScaleInStarted),
-            (start.AddMinutes(118), eventId2, ScaleChangeType.ScaleInComplete),
+            (start.AddMinutes(120), eventId2, ScaleChangeType.ScaleInComplete),
         };
         events.Should().BeEquivalentTo(expected);
     }

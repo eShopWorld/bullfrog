@@ -10,17 +10,20 @@ namespace Bullfrog.Actors.ResourceScalers
     public class ResourceScalerFactory : IResourceScalerFactory
     {
         private readonly Func<ScaleSetConfiguration, ScaleSetScaler> _scaleSetScalerFactory;
+        private readonly Func<RunbookVmssScalerConfiguration, RunbookVmssScaler> _runbookVmssScalerFactory;
         private readonly Func<CosmosDbDataPlaneConnection, ICosmosThroughputClient> _cosmosDataPlaneClientFactory;
         private readonly Func<CosmosConfiguration, ControlPlaneCosmosScaler> _controlPlaneCosmosScalerFactory;
         private readonly Func<ICosmosThroughputClient, CosmosConfiguration, CosmosScaler> _cosmosScalerFactory;
 
         public ResourceScalerFactory(
             Func<ScaleSetConfiguration, ScaleSetScaler> scaleSetScalerFactory,
+            Func<RunbookVmssScalerConfiguration, RunbookVmssScaler> runbookVmssScalerFactory,
             Func<CosmosDbDataPlaneConnection, ICosmosThroughputClient> cosmosDataPlaneClientFactory,
             Func<CosmosConfiguration, ControlPlaneCosmosScaler> controlPlaneCosmosScalerFactory,
             Func<ICosmosThroughputClient, CosmosConfiguration, CosmosScaler> cosmosScalerFactory)
         {
             _scaleSetScalerFactory = scaleSetScalerFactory;
+            _runbookVmssScalerFactory = runbookVmssScalerFactory;
             _cosmosDataPlaneClientFactory = cosmosDataPlaneClientFactory;
             _controlPlaneCosmosScalerFactory = controlPlaneCosmosScalerFactory;
             _cosmosScalerFactory = cosmosScalerFactory;
@@ -45,7 +48,16 @@ namespace Bullfrog.Actors.ResourceScalers
 
             var scaleSetConfiguration = configuration.ScaleSetConfigurations.FirstOrDefault(x => x.Name == name);
             if (scaleSetConfiguration != null)
-                return _scaleSetScalerFactory(scaleSetConfiguration);
+                return scaleSetConfiguration.Runbook == null
+                    ? (ResourceScaler)_scaleSetScalerFactory(scaleSetConfiguration)
+                    : _runbookVmssScalerFactory(new RunbookVmssScalerConfiguration
+                    {
+                        Region = configuration.Region,
+                        ScaleGroup = configuration.ScaleGroup,
+                        ScaleSet = scaleSetConfiguration,
+                        AutomationAccountResourceId = configuration.AutomationAccounts
+                            .First(x=>x.Name == scaleSetConfiguration.Runbook.AutomationAccountName).ResourceId,
+                    });
 
             throw new BullfrogException($"Configuration for {name} not found.");
         }
