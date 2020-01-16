@@ -141,16 +141,11 @@ namespace Bullfrog.Actors
                         {
                             actorState.OperationCompleted = true;
                             actorState.FinalThroughput = result.Value;
-                            actorState.ResourceScalerState = resourceScaler.SerializedState;
                         }
                     }
                     else
                     {
-                        var completed = await resourceScaler.ScaleIn();
-                        if (completed)
-                        {
-                            actorState.OperationCompleted = true;
-                        }
+                        actorState.OperationCompleted = await resourceScaler.ScaleIn();
                     }
 
                     actorState.ResourceScalerState = resourceScaler.SerializedState;
