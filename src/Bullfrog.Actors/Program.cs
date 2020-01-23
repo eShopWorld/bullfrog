@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,11 +7,8 @@ using Autofac.Integration.ServiceFabric;
 using Bullfrog.Actors.Helpers;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common.DependencyInjection;
-using Eshopworld.DevOps;
 using Eshopworld.Telemetry;
-using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.DependencyCollector;
-using Microsoft.ApplicationInsights.Extensibility;
+using Eshopworld.Telemetry.Configuration;
 using Microsoft.Extensions.Configuration;
 
 namespace Bullfrog.Actors
@@ -40,10 +36,9 @@ namespace Bullfrog.Actors
                 builder.RegisterType<RunbookClient>().As<IRunbookClient>();
                 builder.RegisterType<AutoscaleSettingsHandlerFactory>().As<IAutoscaleSettingsHandlerFactory>();
 
-                builder.RegisterType<OperationCorrelationTelemetryInitializer>().As<ITelemetryInitializer>();
-                builder.RegisterType<HttpDependenciesParsingTelemetryInitializer>().As<ITelemetryInitializer>();
-                builder.RegisterType<DependencyTrackingTelemetryModule>().As<ITelemetryModule>();
-
+                builder.AddStatefullServiceTelemetry();
+                builder.RegisterModule<TelemetryModule>();
+                builder.RegisterModule<ServiceFabricTelemetryModule>();
                 builder.Register(c =>
                 {
                     var insKey = c.Resolve<IConfigurationRoot>()["BBInstrumentationKey"];
@@ -54,34 +49,10 @@ namespace Bullfrog.Actors
                     };
                 });
 
-                builder.Register(c =>
-                {
-                    var telemetrySettings = c.Resolve<TelemetrySettings>();
-                    var configuration = new TelemetryConfiguration(telemetrySettings.InstrumentationKey);
-                    foreach (var initializer in c.Resolve<IEnumerable<ITelemetryInitializer>>())
-                    {
-                        configuration.TelemetryInitializers.Add(initializer);
-                    }
-
-                    foreach (var modules in c.Resolve<IEnumerable<ITelemetryModule>>())
-                    {
-                        modules.Initialize(configuration);
-                    }
-
-                    return configuration;
-                });
-                builder.RegisterType<TelemetryClient>().SingleInstance().OnActivated(env =>
-                    {
-                        env.Instance.Context.GlobalProperties["AspNetCoreEnvironment"]
-                            = Environment.GetEnvironmentVariable("AspNetCore_Environment");
-                    });
-
-                builder.RegisterServiceFabricSupport();
-
-                builder.RegisterActor<ScaleManager>(typeof(MonitoredActorService));
-                builder.RegisterActor<ConfigurationManager>(typeof(MonitoredActorService));
-                builder.RegisterActor<ScaleEventStateReporter>(typeof(MonitoredActorService));
-                builder.RegisterActor<ResourceScalingActor>(typeof(MonitoredActorService));
+                builder.RegisterActor<ScaleManager>();
+                builder.RegisterActor<ConfigurationManager>();
+                builder.RegisterActor<ScaleEventStateReporter>();
+                builder.RegisterActor<ResourceScalingActor>();
 
                 using (var container = builder.Build())
                 {

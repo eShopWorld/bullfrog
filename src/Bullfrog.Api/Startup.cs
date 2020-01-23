@@ -11,8 +11,8 @@ using Bullfrog.Api.Models.EventModels;
 using Bullfrog.Common;
 using Bullfrog.Common.DependencyInjection;
 using Eshopworld.Core;
-using Eshopworld.DevOps;
 using Eshopworld.Telemetry;
+using Eshopworld.Telemetry.Configuration;
 using Eshopworld.Web;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -44,7 +44,7 @@ namespace Bullfrog.Api
         {
             try
             {
-                _configuration = EswDevOpsSdk.BuildConfiguration(env.ContentRootPath, env.EnvironmentName);
+                _configuration = Eshopworld.DevOps.EswDevOpsSdk.BuildConfiguration(env.ContentRootPath, env.EnvironmentName);
                 var internalKey = _configuration["BBInstrumentationKey"];
                 if (string.IsNullOrEmpty(internalKey))
                 {
@@ -172,6 +172,8 @@ namespace Bullfrog.Api
             builder.RegisterModule<AzureManagementFluentModule>();
             builder.RegisterModule<ServiceFabricModule>();
             builder.RegisterModule<ThroughputClientModule>();
+            builder.RegisterModule<TelemetryModule>();
+            builder.RegisterModule<ServiceFabricTelemetryModule>();
         }
 
         /// <summary>

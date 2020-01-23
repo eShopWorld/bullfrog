@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using Autofac;
-using Bullfrog.Common.Telemetry;
-using Eshopworld.Core;
 using Eshopworld.DevOps;
 using Eshopworld.Messaging;
 using Eshopworld.Telemetry;
-using Microsoft.ApplicationInsights;
-using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Configuration;
 using Microsoft.ServiceFabric.Actors.Client;
 
@@ -27,25 +23,16 @@ namespace Bullfrog.Common.DependencyInjection
                    .As<IConfigurationRoot>()
                    .SingleInstance();
 
-            builder.Register<IBigBrother>(c =>
+            builder.ConfigureBigBrother((bb, context) =>
             {
-                var configuration = c.Resolve<IConfigurationRoot>();
-
-                var telemetryClient = c.Resolve<TelemetryClient>();
-                var telemetrySettings = c.Resolve<TelemetrySettings>();
-                var bb = new BigBrother(telemetryClient, telemetrySettings.InternalKey);
-
+                var configuration = context.Resolve<IConfigurationRoot>();
                 var serviceBusConnectionString = configuration["SB:eda:ConnectionString"];
                 var subscriptionId = configuration["Environment:SubscriptionId"];
                 bb.PublishEventsToTopics(new Messenger(serviceBusConnectionString, subscriptionId));
-
-                return bb;
-            })
-            .SingleInstance();
+            });
 
             builder.RegisterType<ActorProxyFactory>().As<IActorProxyFactory>().SingleInstance();
             builder.RegisterType<DateTimeProvider>().As<IDateTimeProvider>().SingleInstance();
-            builder.RegisterInstance(LogicalCallTelemetryInitializer.Instance).As<ITelemetryInitializer>();
         }
 
         private class DateTimeProvider : IDateTimeProvider

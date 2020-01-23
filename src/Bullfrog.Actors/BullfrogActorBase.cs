@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Bullfrog.Actors.EventModels;
-using Bullfrog.Common.Telemetry;
 using Eshopworld.Core;
+using Eshopworld.Telemetry.Configuration;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Runtime;
 
