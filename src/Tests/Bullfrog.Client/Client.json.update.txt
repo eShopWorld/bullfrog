@@ -1,0 +1,6 @@
+﻿To update the client code (and the file Client.json) please follow the following procedure:
+1. Run the test SwaggerIsNotAccidentallyChanged in debug mode to get the content of the variable 'json'.
+2. Replace the content of the file Client.json with the content of 'json' variable.
+3. In the folder Bullfrog.CLient run the command from the file AutoRestRebuild.txt
+
+After performing the above procedure both SwaggerIsNotAccidentallyChanged should execute successfully and the new API features should be available to the test projects.

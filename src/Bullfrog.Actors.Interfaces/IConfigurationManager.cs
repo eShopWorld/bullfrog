@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models;
+using Bullfrog.Common.Models;
 using Microsoft.ServiceFabric.Actors;
 
 namespace Bullfrog.Actors.Interfaces
@@ -77,5 +78,18 @@ namespace Bullfrog.Actors.Interfaces
         /// </summary>
         /// <returns>The state of the scale manager.</returns>
         Task<ScaleGroupState> GetScaleState(string scaleGroup);
+
+        /// <summary>
+        /// Gets the current state of feature flags.
+        /// </summary>
+        /// <returns></returns>
+        Task<FeatureFlagsConfiguration> GetFeatureFlags();
+
+        /// <summary>
+        /// Attempts to set feature flags.
+        /// </summary>
+        /// <param name="featureFlags">New feature flags</param>
+        /// <returns>The resulting feature flags.</returns>
+        Task<FeatureFlagsConfiguration> SetFeatureFlags(FeatureFlagsConfiguration featureFlags);
     }
 }

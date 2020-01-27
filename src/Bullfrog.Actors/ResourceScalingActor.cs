@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Bullfrog.Actors.EventModels;
 using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.Models;
@@ -55,6 +56,11 @@ namespace Bullfrog.Actors
                 await Disable();
             else
                 await Enable(configuration);
+
+            BigBrother.Publish(new ResourceScalingActorConfigured
+            {
+                Enabled = configuration != null,
+            });
         }
 
         private async Task Disable()
@@ -71,7 +77,7 @@ namespace Bullfrog.Actors
 
         async Task<ScalingResult<bool>> IResourceScalingActor.ScaleIn()
         {
-            var state = await _state.Get();
+            var state = (await _state.TryGet()).Value;
             if (state == null)
             {
                 BigBrother.Publish(new BullfrogException("The actor {Id} is not enabled and the ScaleIn operation cannot be performed.").ToExceptionEvent());
@@ -97,7 +103,7 @@ namespace Bullfrog.Actors
 
         async Task<ScalingResult<int?>> IResourceScalingActor.ScaleOut(int throughput, DateTimeOffset endsAt)
         {
-            var state = await _state.Get();
+            var state = (await _state.TryGet()).Value;
             if (state == null)
             {
                 BigBrother.Publish(new BullfrogException("The actor {Id} is not enabled and the ScaleOut operation cannot be performed.").ToExceptionEvent());
@@ -154,7 +160,7 @@ namespace Bullfrog.Actors
                     if (!actorState.OperationCompleted)
                         await WakeMe(OperationPeriod);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     actorState.ExceptionMessaage = ex.Message;
                     await _state.Set(actorState);
