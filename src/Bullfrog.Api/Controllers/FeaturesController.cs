@@ -2,7 +2,6 @@
 using System.Fabric;
 using System.Threading.Tasks;
 using Bullfrog.Common.Models;
-using Eshopworld.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -18,18 +17,15 @@ namespace Bullfrog.Api.Controllers
     [Authorize(Policy = AuthenticationPolicies.AdminScope)]
     public class FeaturesController : BaseManagementController
     {
-        private readonly IBigBrother _bigBrother;
-
         /// <summary>
         /// Creates an instance of <see cref="ConfigurationsController"/>.
         /// </summary>
         /// <param name="statelessServiceContext">The instance of <see cref="StatelessServiceContext"/>.</param>
         /// <param name="proxyFactory">A factory used to create actor proxies.</param>
         /// <param name="bigBrother">Telemetry client.</param>
-        public FeaturesController(StatelessServiceContext statelessServiceContext, IActorProxyFactory proxyFactory, IBigBrother bigBrother)
+        public FeaturesController(StatelessServiceContext statelessServiceContext, IActorProxyFactory proxyFactory)
             : base(statelessServiceContext, proxyFactory)
         {
-            _bigBrother = bigBrother;
         }
 
         /// <summary>
