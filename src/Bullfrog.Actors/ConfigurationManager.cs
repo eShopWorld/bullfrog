@@ -8,6 +8,7 @@ using Bullfrog.Actors.Interfaces;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Actors.Models;
 using Bullfrog.Common;
+using Bullfrog.Common.Models;
 using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
@@ -20,6 +21,7 @@ namespace Bullfrog.Actors
     {
         private const string ScaleGroupKeyPrefix = "scaleGroup:";
         private const string EventsListKeyPrefix = "events:";
+        private readonly StateItem<FeatureFlagsConfiguration> _featureFlags;
         private readonly IDateTimeProvider _dateTimeProvider;
         private readonly IActorProxyFactory _proxyFactory;
 
@@ -40,6 +42,7 @@ namespace Bullfrog.Actors
         {
             _dateTimeProvider = dateTimeProvider;
             _proxyFactory = proxyFactory;
+            _featureFlags = new StateItem<FeatureFlagsConfiguration>(StateManager, "featureFlags");
         }
 
         /// <summary>
@@ -395,6 +398,17 @@ namespace Bullfrog.Actors
             };
         }
 
+        async Task<FeatureFlagsConfiguration> IConfigurationManager.GetFeatureFlags()
+        {
+            return (await _featureFlags.TryGet()).Value ?? new FeatureFlagsConfiguration();
+        }
+
+        async Task<FeatureFlagsConfiguration> IConfigurationManager.SetFeatureFlags(FeatureFlagsConfiguration featureFlags)
+        {
+            await _featureFlags.Set(featureFlags);
+            return featureFlags;
+        }
+
         private StateItem<ScaleGroupDefinition> GetScaleGroupState(string name)
         {
             return new StateItem<ScaleGroupDefinition>(StateManager, ScaleGroupKeyPrefix + name);
@@ -457,6 +471,8 @@ namespace Bullfrog.Actors
 
         private async Task UpdateScaleManagers(string name, ScaleGroupDefinition definition, Microsoft.ServiceFabric.Data.ConditionalValue<ScaleGroupDefinition> existingGroup)
         {
+            var featureFlags = (await _featureFlags.TryGet()).Value ?? new FeatureFlagsConfiguration();
+
             foreach (var region in definition.Regions)
             {
                 var actor = _proxyFactory.GetActor<IScaleManager>(name, region.RegionName);
@@ -468,7 +484,7 @@ namespace Bullfrog.Actors
                     ScaleSetPrescaleLeadTime = region.ScaleSetPrescaleLeadTime,
                     AutomationAccounts = definition.AutomationAccounts,
                 };
-                await actor.Configure(configuration);
+                await actor.Configure(configuration, featureFlags);
             }
 
             if (definition.HasSharedCosmosDb)
@@ -480,7 +496,7 @@ namespace Bullfrog.Actors
                     CosmosConfigurations = definition.Cosmos,
                     CosmosDbPrescaleLeadTime = definition.CosmosDbPrescaleLeadTime,
                 };
-                await actor.Configure(configuration);
+                await actor.Configure(configuration, featureFlags);
             }
 
             if (existingGroup.HasValue)

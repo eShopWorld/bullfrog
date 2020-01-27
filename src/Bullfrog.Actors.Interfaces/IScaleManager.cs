@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Bullfrog.Actors.Interfaces.Models;
+using Bullfrog.Common.Models;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Remoting.FabricTransport;
 using Microsoft.ServiceFabric.Services.Remoting;
@@ -57,7 +58,14 @@ namespace Bullfrog.Actors.Interfaces
         /// Configures the scale manager.
         /// </summary>
         /// <param name="configuration">The new configuration of the scale manager.</param>
+        /// <param name="featureFlags">The current feature flags</param>
         /// <returns></returns>
-        Task Configure(ScaleManagerConfiguration configuration);
+        Task Configure(ScaleManagerConfiguration configuration, FeatureFlagsConfiguration featureFlags);
+ 
+        /// <summary>
+        /// Updates feature flags.
+        /// </summary>
+        /// <param name="featureFlags">New feature flags</param>
+        Task SetFeatureFlags(FeatureFlagsConfiguration featureFlags);
     }
 }

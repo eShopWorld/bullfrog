@@ -122,6 +122,54 @@ namespace Client
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
+            public static FeatureFlagsConfiguration GetFeatureFlags(this IBullfrogApi operations)
+            {
+                return operations.GetFeatureFlagsAsync().GetAwaiter().GetResult();
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='cancellationToken'>
+            /// The cancellation token.
+            /// </param>
+            public static async Task<FeatureFlagsConfiguration> GetFeatureFlagsAsync(this IBullfrogApi operations, CancellationToken cancellationToken = default(CancellationToken))
+            {
+                using (var _result = await operations.GetFeatureFlagsWithHttpMessagesAsync(null, cancellationToken).ConfigureAwait(false))
+                {
+                    return _result.Body;
+                }
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='body'>
+            /// </param>
+            public static FeatureFlagsConfiguration SetFeatures(this IBullfrogApi operations, FeatureFlagsConfiguration body)
+            {
+                return operations.SetFeaturesAsync(body).GetAwaiter().GetResult();
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
+            /// <param name='body'>
+            /// </param>
+            /// <param name='cancellationToken'>
+            /// The cancellation token.
+            /// </param>
+            public static async Task<FeatureFlagsConfiguration> SetFeaturesAsync(this IBullfrogApi operations, FeatureFlagsConfiguration body, CancellationToken cancellationToken = default(CancellationToken))
+            {
+                using (var _result = await operations.SetFeaturesWithHttpMessagesAsync(body, null, cancellationToken).ConfigureAwait(false))
+                {
+                    return _result.Body;
+                }
+            }
+
+            /// <param name='operations'>
+            /// The operations group for this extension method.
+            /// </param>
             public static void Get(this IBullfrogApi operations)
             {
                 operations.GetAsync().GetAwaiter().GetResult();

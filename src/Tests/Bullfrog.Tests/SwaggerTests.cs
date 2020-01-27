@@ -15,6 +15,13 @@ public class SwaggerTests : BaseApiTests
         obj.Should().NotBeNull();
     }
 
+    /// <summary>
+    /// Validates that no unintendent changes has been made to json
+    /// </summary>
+    /// <remarks>
+    /// Please see the file Client.json.update.txt in the project Bullfrog.Client for more details
+    /// how to fix this test.
+    /// </remarks>
     [Fact, IsLayer0]
     public async Task SwaggerIsNotAccidentallyChanged()
     {

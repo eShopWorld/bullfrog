@@ -193,6 +193,12 @@ public class ScaleChangedDomainEventTests : BaseApiTests
 
     private void CreateScaleGroup()
     {
+        ApiClient.SetFeatures(new FeatureFlagsConfiguration
+        {
+            ResourceScallersEnabled = true,
+        });
+
+
         ApiClient.SetDefinition("sg", body: new ScaleGroupDefinition
         {
             Regions = new List<ScaleGroupRegion>

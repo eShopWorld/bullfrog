@@ -12,6 +12,7 @@ using Bullfrog.Actors.Models;
 using Bullfrog.Actors.ResourceScalers;
 using Bullfrog.Common;
 using Bullfrog.Common.Helpers;
+using Bullfrog.Common.Models;
 using Bullfrog.DomainEvents;
 using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
@@ -30,6 +31,7 @@ namespace Bullfrog.Actors
         private readonly StateItem<ScaleManagerConfiguration> _configuration;
         private readonly StateItem<Dictionary<Guid, ScaleChangeType>> _reportedEventStates;
         private readonly StateItem<ScalingState> _scaleState;
+        private readonly StateItem<ScaleManagerFeatureFlags> _featureFlags;
         private readonly IResourceScalerFactory _scalerFactory;
         private readonly ScaleSetMonitor _scaleSetMonitor;
         private readonly IDateTimeProvider _dateTimeProvider;
@@ -63,6 +65,7 @@ namespace Bullfrog.Actors
             _configuration = new StateItem<ScaleManagerConfiguration>(StateManager, "configuration");
             _reportedEventStates = new StateItem<Dictionary<Guid, ScaleChangeType>>(StateManager, "reportedEventStates");
             _scaleState = new StateItem<ScalingState>(StateManager, "scaleState");
+            _featureFlags = new StateItem<ScaleManagerFeatureFlags>(StateManager, "featureFlags");
             _scalerFactory = scalerFactory;
             _scaleSetMonitor = scaleSetMonitor;
             _dateTimeProvider = dateTimeProvider;
@@ -268,17 +271,21 @@ namespace Bullfrog.Actors
             }
         }
 
-        async Task IScaleManager.Configure(ScaleManagerConfiguration configuration)
+        async Task IScaleManager.Configure(ScaleManagerConfiguration configuration, FeatureFlagsConfiguration featureFlags)
         {
             try
             {
                 var oldConfiguration = await _configuration.TryGet();
+                var scaleManagerFeatureFlags = new ScaleManagerFeatureFlags
+                {
+                    UseScalingActors = featureFlags.ResourceScallersEnabled ?? false,
+                };
 
                 await ConfigureResourceScalingActors(oldConfiguration.Value, configuration);
 
                 configuration.ScaleGroup = _scaleGroupName;
                 configuration.Region = _regionName;
-                configuration.UseScalingActors = true;
+                configuration.UseScalingActors = featureFlags.ResourceScallersEnabled ?? false;
                 await _configuration.Set(configuration);
 
                 var estimatedScaleTime = TimeSpan.FromTicks(Math.Max(configuration.CosmosDbPrescaleLeadTime.Ticks,
@@ -289,8 +296,7 @@ namespace Bullfrog.Actors
                     ev.EstimatedScaleUpAt = ev.RequiredScaleAt - estimatedScaleTime;
                 }
                 await _events.Set(events);
-
-
+                await _featureFlags.Set(scaleManagerFeatureFlags);
                 await ScheduleStateUpdate();
             }
             catch (Exception ex)
@@ -298,6 +304,14 @@ namespace Bullfrog.Actors
                 BigBrother.Publish(ex.ToExceptionEvent());
                 throw;
             }
+        }
+
+        async Task IScaleManager.SetFeatureFlags(FeatureFlagsConfiguration featureFlags)
+        {
+            await _featureFlags.Set(new ScaleManagerFeatureFlags
+            {
+                UseScalingActors = featureFlags.ResourceScallersEnabled ?? false,
+            });
         }
 
         private async Task ConfigureResourceScalingActors(ScaleManagerConfiguration oldConfiguration, ScaleManagerConfiguration newConfiguration)
@@ -757,6 +771,7 @@ namespace Bullfrog.Actors
 
             return scaler;
         }
+
 
         /// <summary>
         /// The state of the scaling actor.

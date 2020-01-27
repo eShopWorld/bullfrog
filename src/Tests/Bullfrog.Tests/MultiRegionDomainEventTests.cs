@@ -17,6 +17,11 @@ public class MultiRegionDomainEventTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task ScaleOutStartedIsReported()
     {
+        await ApiClient.SetFeaturesAsync(new FeatureFlagsConfiguration
+        {
+            ResourceScallersEnabled = true,
+        });
+
         var start = UtcNow;
         CreateScaleGroup();
         var eventId = AddEvent(10, 20);
@@ -57,6 +62,11 @@ public class MultiRegionDomainEventTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task EventRegionStateChangesAreReported()
     {
+        await ApiClient.SetFeaturesAsync(new FeatureFlagsConfiguration
+        {
+            ResourceScallersEnabled = true,
+        });
+
         var start = StartTime;
         CreateScaleGroup();
         var eventId = AddEvent(10, 20);

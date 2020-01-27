@@ -148,6 +148,74 @@
         }
       }
     },
+    "/api/Features": {
+      "get": {
+        "tags": [
+          "Features"
+        ],
+        "operationId": "GetFeatureFlags",
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/FeatureFlagsConfiguration"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/ProblemDetails"
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Features"
+        ],
+        "operationId": "SetFeatures",
+        "consumes": [
+          "application/json-patch+json",
+          "application/json",
+          "text/json",
+          "application/*+json"
+        ],
+        "produces": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/FeatureFlagsConfiguration"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/FeatureFlagsConfiguration"
+            }
+          },
+          "default": {
+            "description": "Error",
+            "schema": {
+              "$ref": "#/definitions/ProblemDetails"
+            }
+          }
+        }
+      }
+    },
     "/probe": {
       "get": {
         "tags": [
@@ -627,6 +695,14 @@
         "oldEventsAge": {
           "format": "date-span",
           "type": "string"
+        }
+      }
+    },
+    "FeatureFlagsConfiguration": {
+      "type": "object",
+      "properties": {
+        "resourceScallersEnabled": {
+          "type": "boolean"
         }
       }
     },
