@@ -13,6 +13,7 @@ using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors.Runtime;
+using Newtonsoft.Json;
 
 namespace Bullfrog.Actors
 {
@@ -406,6 +407,10 @@ namespace Bullfrog.Actors
         async Task<FeatureFlagsConfiguration> IConfigurationManager.SetFeatureFlags(FeatureFlagsConfiguration featureFlags)
         {
             await _featureFlags.Set(featureFlags);
+            BigBrother.Publish(new FeatureFlagsUpdated
+            {
+                FeatureFlags = JsonConvert.SerializeObject(featureFlags),
+            });
             return featureFlags;
         }
 
