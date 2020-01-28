@@ -886,6 +886,12 @@ namespace Bullfrog.Actors
             public DateTimeOffset OperationStarted { get; set; }
 
             /// <summary>
+            /// The optional serialized state of the resource scaler that should be preserved between executions.
+            /// </summary>
+            [DataMember]
+            public string SerializedResourceScalerState { get; set; }
+
+            /// <summary>
             /// Informs whether scaling operation is still in progress.
             /// </summary>
             public abstract bool IsExecuting { get; }
@@ -941,7 +947,7 @@ namespace Bullfrog.Actors
 
                 try
                 {
-                    await ProcessRequest(getScaler());
+                    await PerformScaling(getScaler());
                     ResetError();
 
                     if (!IsExecuting)
@@ -982,6 +988,17 @@ namespace Bullfrog.Actors
             /// <param name="scaler">The scaler.</param>
             /// <returns>Task.</returns>
             protected abstract Task ProcessRequest(ResourceScaler scaler);
+
+            /// <summary>
+            /// Executes scaling operation.
+            /// </summary>
+            /// <param name="scaler">The scaler</param>
+            private async Task PerformScaling(ResourceScaler scaler)
+            {
+                scaler.SerializedState = SerializedResourceScalerState;
+                await ProcessRequest(scaler);
+                SerializedResourceScalerState = scaler.SerializedState;
+            }
 
             /// <summary>
             /// Sets the time of the next attempt to scale a resource after receiving an error.

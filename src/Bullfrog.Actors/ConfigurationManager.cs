@@ -65,15 +65,6 @@ namespace Bullfrog.Actors
                 throw new ArgumentException("The name parameter is invalid", nameof(name));
             }
 
-            if (definition?.AutomationAccounts != null && definition.AutomationAccounts.Count != 0)
-            {
-                var featureFlags = (await _featureFlags.TryGet()).Value;
-                if (!(featureFlags?.ResourceScallersEnabled ?? false))
-                {
-                    throw new InvalidRequestException($"The {nameof(featureFlags.ResourceScallersEnabled)} feature must be enabled to use runbooks.");
-                }
-            }
-
             var state = GetScaleGroupState(name);
 
             var existingGroups = await state.TryGet();
