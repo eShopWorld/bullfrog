@@ -80,7 +80,7 @@ namespace Bullfrog.Actors
             var state = (await _state.TryGet()).Value;
             if (state == null)
             {
-                BigBrother.Publish(new BullfrogException("The actor {Id} is not enabled and the ScaleIn operation cannot be performed.").ToExceptionEvent());
+                BigBrother.Publish(new BullfrogException($"The actor {Id} is not enabled and the ScaleIn operation cannot be performed.").ToExceptionEvent());
                 // Pretend that the operation completed to prevent repeating calls.
                 return ScalingResult.FromValue(true);
             }
@@ -106,7 +106,7 @@ namespace Bullfrog.Actors
             var state = (await _state.TryGet()).Value;
             if (state == null)
             {
-                BigBrother.Publish(new BullfrogException("The actor {Id} is not enabled and the ScaleOut operation cannot be performed.").ToExceptionEvent());
+                BigBrother.Publish(new BullfrogException($"The actor {Id} is not enabled and the ScaleOut operation cannot be performed.").ToExceptionEvent());
                 // Pretend that the operation completed to prevent repeating calls.
                 return ScalingResult.FromValue<int?>(0);
             }
