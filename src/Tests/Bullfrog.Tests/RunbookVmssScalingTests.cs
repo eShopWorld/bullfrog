@@ -13,6 +13,7 @@ public class RunbookVmssScalingTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task RunbookConfigurationIsAccepted()
     {
+        await ApiClient.SetFeaturesAsync(new FeatureFlagsConfiguration { ResourceScallersEnabled = true });
         var scaleGroupDefinition = GetScaleGroupWithRunbook();
 
         //act
@@ -23,6 +24,7 @@ public class RunbookVmssScalingTests : BaseApiTests
     [Fact, IsLayer0]
     public void MissingAutomationAccountsDefinitions()
     {
+        ApiClient.SetFeatures(new FeatureFlagsConfiguration { ResourceScallersEnabled = true });
         var scaleGroupDefinition = GetScaleGroupWithRunbook();
         scaleGroupDefinition.AutomationAccounts = null;
 
@@ -36,6 +38,7 @@ public class RunbookVmssScalingTests : BaseApiTests
     [Fact, IsLayer0]
     public void ReferencedAccountNotDefined()
     {
+        ApiClient.SetFeatures(new FeatureFlagsConfiguration { ResourceScallersEnabled = true });
         var scaleGroupDefinition = GetScaleGroupWithRunbook();
         scaleGroupDefinition.AutomationAccounts[0].Name = "bad";
 
@@ -49,6 +52,7 @@ public class RunbookVmssScalingTests : BaseApiTests
     [Fact, IsLayer0]
     public void DuplicatedNamesOfReferencedAccount()
     {
+        ApiClient.SetFeatures(new FeatureFlagsConfiguration { ResourceScallersEnabled = true });
         var scaleGroupDefinition = GetScaleGroupWithRunbook();
         scaleGroupDefinition.AutomationAccounts.Add(new AutomationAccount
         {
@@ -66,6 +70,7 @@ public class RunbookVmssScalingTests : BaseApiTests
     [Fact, IsLayer0]
     public void DuplicatedResourceIdsOfReferencedAccount()
     {
+        ApiClient.SetFeatures(new FeatureFlagsConfiguration { ResourceScallersEnabled = true });
         var scaleGroupDefinition = GetScaleGroupWithRunbook();
         scaleGroupDefinition.AutomationAccounts.Add(new AutomationAccount
         {
@@ -83,6 +88,7 @@ public class RunbookVmssScalingTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task ScaleRunbookVsss()
     {
+        ApiClient.SetFeatures(new FeatureFlagsConfiguration { ResourceScallersEnabled = true });
         await ApiClient.SetDefinitionAsync("sg", body: GetScaleGroupWithRunbook());
         var eventId = Guid.NewGuid();
         await ApiClient.SaveScaleEventAsync("sg", eventId, NewScaleEvent(1, 3));

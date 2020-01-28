@@ -223,6 +223,7 @@ namespace Bullfrog.Actors.ResourceScalers
                     RunbookName = _configuration.ScaleSet.Runbook.RunbookName,
                     Vmss = _configuration.ScaleSet.Runbook.ScaleSetName ?? _configuration.ScaleSet.Name,
                 });
+                state.Job = null;
                 return true;
             }
         }

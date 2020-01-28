@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Bullfrog.Actors.EventModels;
 using Bullfrog.Actors.Interfaces;
@@ -62,6 +63,15 @@ namespace Bullfrog.Actors
             if (string.IsNullOrWhiteSpace(name) || name.Trim() != name)
             {
                 throw new ArgumentException("The name parameter is invalid", nameof(name));
+            }
+
+            if (definition?.AutomationAccounts != null && definition.AutomationAccounts.Count != 0)
+            {
+                var featureFlags = (await _featureFlags.TryGet()).Value;
+                if (!(featureFlags?.ResourceScallersEnabled ?? false))
+                {
+                    throw new InvalidRequestException($"The {nameof(featureFlags.ResourceScallersEnabled)} feature must be enabled to use runbooks.");
+                }
             }
 
             var state = GetScaleGroupState(name);
@@ -406,6 +416,8 @@ namespace Bullfrog.Actors
 
         async Task<FeatureFlagsConfiguration> IConfigurationManager.SetFeatureFlags(FeatureFlagsConfiguration featureFlags)
         {
+            var oldFeatureFlags = (await _featureFlags.TryGet()).Value;
+            featureFlags.ResourceScallersEnabled ??= oldFeatureFlags?.ResourceScallersEnabled;
             await _featureFlags.Set(featureFlags);
             BigBrother.Publish(new FeatureFlagsUpdated
             {
