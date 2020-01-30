@@ -281,7 +281,15 @@ namespace Bullfrog.Actors
                     UseScalingActors = featureFlags.ResourceScallersEnabled ?? false,
                 };
 
-                await ConfigureResourceScalingActors(oldConfiguration.Value, configuration);
+                if (scaleManagerFeatureFlags.UseScalingActors)
+                {
+                    await ConfigureResourceScalingActors(oldConfiguration.Value, configuration);
+                }
+                else if (oldConfiguration.Value != null && (await _featureFlags.TryGet()).Value?.UseScalingActors == true)
+                {
+                    // Deactivate actors if they were previously active.
+                    await ConfigureResourceScalingActors(oldConfiguration.Value, null);
+                }
 
                 configuration.ScaleGroup = _scaleGroupName;
                 configuration.Region = _regionName;

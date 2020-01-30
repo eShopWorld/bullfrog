@@ -60,6 +60,10 @@ namespace Bullfrog.Common.Helpers
                 return new ValidationResult("The DipAvailability metric contains empty time series.",
                     new[] { nameof(configuration.HealthProbePort) });
 
+            if (!metricCollection.Metrics[0].Timeseries.Any(t => t.Data.Last().Average > 95))
+                return new ValidationResult("The load balancer doesn't report any working instance.",
+                    new[] { nameof(configuration.HealthProbePort) });
+
             return ValidationResult.Success;
         }
 
