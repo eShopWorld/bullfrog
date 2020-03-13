@@ -113,18 +113,15 @@ namespace Bullfrog.Api.Controllers
         {
             try
             {
-                var result = await GetConfigurationManager().SaveScaleEvent(scaleGroup, eventId, scaleEvent);
-                switch (result.Result)
+                var response = await GetConfigurationManager().SaveScaleEvent(scaleGroup, eventId, scaleEvent);
+
+                return response.Result switch
                 {
-                    case SaveScaleEventResult.Created:
-                        return CreatedAtAction(nameof(GetScheduledEvent), new { scaleGroup, eventId }, result.ScheduledScaleEvent);
-                    case SaveScaleEventResult.ReplacedExecuting:
-                        return Accepted();
-                    case SaveScaleEventResult.ReplacedWaiting:
-                        return NoContent();
-                    default:
-                        throw new NotSupportedException($"The {result} value is not supported.");
-                }
+                    SaveScaleEventResult.Created => CreatedAtAction(nameof(GetScheduledEvent), new { scaleGroup, eventId }, response.ScheduledScaleEvent),
+                    SaveScaleEventResult.ReplacedExecuting => Accepted(),
+                    SaveScaleEventResult.ReplacedWaiting => NoContent(),
+                    _ => throw new NotSupportedException($"The {response} value is not supported.")
+                };
             }
             catch (AggregateException agEx) when (agEx.InnerException is ScaleEventSaveException ex)
             {
@@ -161,17 +158,14 @@ namespace Bullfrog.Api.Controllers
             try
             {
                 var state = await GetConfigurationManager().DeleteScaleEvent(scaleGroup, eventId);
-                switch (state)
+
+                return state switch
                 {
-                    case ScaleEventState.Waiting:
-                        return NoContent();
-                    case ScaleEventState.Executing:
-                        return Accepted();
-                    case ScaleEventState.Completed:
-                        return NoContent();
-                    default:
-                        throw new BullfrogException($"The invalid value of scale event state '{state}'");
-                }
+                    ScaleEventState.Waiting => NoContent(),
+                    ScaleEventState.Executing => Accepted(),
+                    ScaleEventState.Completed => NoContent(),
+                    _ => throw new BullfrogException($"The invalid value of scale event state '{state}'")
+                };
             }
             catch (AggregateException agEx) when (agEx.InnerException is ScaleGroupNotFoundException)
             {
