@@ -12,7 +12,6 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.ServiceFabric.Actors" Version="4.0.470" />
     <PackageReference Include="System.ComponentModel.Annotations" Version="4.7.0" />
-    <PackageReference Include="System.Text.Json" Version="4.7.1" />
   </ItemGroup>
 
   <ItemGroup>
