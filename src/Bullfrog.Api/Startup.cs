@@ -178,7 +178,7 @@ namespace Bullfrog.Api
         /// </summary>
         /// <param name="app">The mechanisms to configure an application's request pipeline.</param>
         /// <param name="env">The information about the web hosting environment an application is running in.</param>
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, StatelessServiceContext statelessServiceContext)
         {
             try
             {
