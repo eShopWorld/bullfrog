@@ -189,7 +189,7 @@ public class ScaleManagerTests : BaseApiTests
     }
 
     [Fact, IsLayer0]
-    public async Task ListReturnsEventsFromSelectedRegion()
+    public void ListReturnsEventsFromSelectedRegion()
     {
         CreateScaleGroup();
         var events = new (int start, int end, string regions)[] { (2, 8, "eu"), (4, 5, "eu1,eu"), (3, 7, "eu1"), (6, 7, "eu") };

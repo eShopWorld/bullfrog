@@ -1,7 +1,6 @@
 ﻿using Bullfrog.Api;
 using Bullfrog.Api.Helpers;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 
@@ -9,14 +8,13 @@ public class TestServerStartup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddMvc()
-            .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Bullfrog Api", Version = "v1" });
             c.OperationFilter<OperationIdFilter>();
         });
+
+        services.AddControllers();
 
         services.AddAuthorization(options =>
         {
@@ -33,7 +31,10 @@ public class TestServerStartup
     public void Configure(IApplicationBuilder app)
     {
         app.UseFakeAuthentication();
-        app.UseMvc();
+        app.UseRouting();
+        app.UseEndpoints(endpoints => {
+            endpoints.MapControllers();
+        });
         app.UseSwagger(c => c.SerializeAsV2 = true);
         app.UseSwaggerUI();
     }

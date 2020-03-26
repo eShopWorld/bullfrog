@@ -357,6 +357,11 @@ public class BaseApiTests : IDisposable
         {
             throw new NotImplementedException();
         }
+
+        public IKustoClusterBuilder UseKusto()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     #region IDisposable Support

@@ -92,9 +92,9 @@ namespace Bullfrog.Actors.Interfaces.Models
         {
             get
             {
-                var regionNames = Regions.Select(x => x.RegionName);
+                var regionNames = Regions?.Select(x => x.RegionName);
                 if (HasSharedCosmosDb)
-                    regionNames = regionNames.Concat(new[] { SharedCosmosRegion });
+                    regionNames = regionNames?.Concat(new[] { SharedCosmosRegion });
                 return regionNames;
             }
         }
