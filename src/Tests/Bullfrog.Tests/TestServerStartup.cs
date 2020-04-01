@@ -8,13 +8,12 @@ public class TestServerStartup
 {
     public void ConfigureServices(IServiceCollection services)
     {
+        services.AddControllers();
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Bullfrog Api", Version = "v1" });
             c.OperationFilter<OperationIdFilter>();
         });
-
-        services.AddControllers();
 
         services.AddAuthorization(options =>
         {
@@ -30,8 +29,8 @@ public class TestServerStartup
 
     public void Configure(IApplicationBuilder app)
     {
-        app.UseFakeAuthentication();
         app.UseRouting();
+        app.UseFakeAuthentication();      
         app.UseEndpoints(endpoints => {
             endpoints.MapControllers();
         });
