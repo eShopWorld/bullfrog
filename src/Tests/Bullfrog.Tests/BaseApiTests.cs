@@ -68,11 +68,10 @@ public class BaseApiTests : IDisposable
     public BaseApiTests()
     {
         var hostBuilder = new HostBuilder()
-            .ConfigureServices(ConfigureServices)
             .ConfigureWebHost(x =>
             {
                 x.UseTestServer();
-                // x.ConfigureTestServices(ConfigureServices);
+                x.ConfigureTestServices(ConfigureServices);
                 x.UseStartup<TestServerStartup>();
             });
 
