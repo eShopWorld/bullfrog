@@ -23,6 +23,7 @@ using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.Monitor.Fluent;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Rest;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
@@ -66,11 +67,22 @@ public class BaseApiTests : IDisposable
         => "/subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg/providers/microsoft.insights/autoscalesettings/as";
     public BaseApiTests()
     {
-        var builder = new WebHostBuilder()
-            .ConfigureServices(ConfigureServices)
-            .UseStartup<TestServerStartup>();
-        _server = new TestServer(builder);
+        var hostBuilder = new HostBuilder()
+            .ConfigureWebHost(x =>
+            {
+                x.UseTestServer();
+                x.ConfigureTestServices(ConfigureServices);
+                x.UseStartup<TestServerStartup>();
+            });
+
+        // Build and start the IHost
+        var host = hostBuilder.StartAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+
+        _server = host.GetTestServer();
+
+        // Create an HttpClient to send requests to the TestServer
         HttpClient = _server.CreateClient();
+
         ApiClient = new BullfrogApi(new TokenCredentials("aa"), HttpClient, false);
         UtcNow = StartTime;
     }

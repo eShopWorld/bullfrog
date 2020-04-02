@@ -8,13 +8,15 @@ public class TestServerStartup
 {
     public void ConfigureServices(IServiceCollection services)
     {
+        services.AddControllers()
+            .AddNewtonsoftJson()
+            .AddApplicationPart(typeof(Startup).Assembly);
+
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Bullfrog Api", Version = "v1" });
             c.OperationFilter<OperationIdFilter>();
         });
-
-        services.AddControllers();
 
         services.AddAuthorization(options =>
         {
@@ -25,14 +27,15 @@ public class TestServerStartup
             options.AddPolicy(AuthenticationPolicies.EventsReaderScope, policy =>
                 policy.RequireClaim("scope", "bullfrog.api.events.read", "bullfrog.api.events.all", "bullfrog.api.all"));
         });
-
     }
 
     public void Configure(IApplicationBuilder app)
     {
-        app.UseFakeAuthentication();
         app.UseRouting();
-        app.UseEndpoints(endpoints => {
+        app.UseFakeAuthentication();
+        app.UseAuthorization();
+        app.UseEndpoints(endpoints =>
+        {
             endpoints.MapControllers();
         });
         app.UseSwagger(c => c.SerializeAsV2 = true);

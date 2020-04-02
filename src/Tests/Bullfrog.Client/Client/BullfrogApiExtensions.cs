@@ -17,9 +17,6 @@ namespace Client
     /// </summary>
     public static partial class BullfrogApiExtensions
     {
-            /// <summary>
-            /// Lists names of all configured scale groups.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
@@ -28,9 +25,6 @@ namespace Client
                 return operations.ListScaleGroupsAsync().GetAwaiter().GetResult();
             }
 
-            /// <summary>
-            /// Lists names of all configured scale groups.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
@@ -45,28 +39,20 @@ namespace Client
                 }
             }
 
-            /// <summary>
-            /// Gets the definition of the specified scale group.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The scale group name.
             /// </param>
             public static ScaleGroupDefinition GetDefinition(this IBullfrogApi operations, string scaleGroup)
             {
                 return operations.GetDefinitionAsync(scaleGroup).GetAwaiter().GetResult();
             }
 
-            /// <summary>
-            /// Gets the definition of the specified scale group.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The scale group name.
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
@@ -79,40 +65,28 @@ namespace Client
                 }
             }
 
-            /// <summary>
-            /// Configures the specified scale group.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The name of the scale group to configure.
             /// </param>
             /// <param name='validateOnly'>
-            /// When enabled only validates the new configuration but not saves it.
             /// </param>
             /// <param name='body'>
-            /// The new or updated configuration of the scale group.
             /// </param>
             public static void SetDefinition(this IBullfrogApi operations, string scaleGroup, bool? validateOnly = default(bool?), ScaleGroupDefinition body = default(ScaleGroupDefinition))
             {
                 operations.SetDefinitionAsync(scaleGroup, validateOnly, body).GetAwaiter().GetResult();
             }
 
-            /// <summary>
-            /// Configures the specified scale group.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The name of the scale group to configure.
             /// </param>
             /// <param name='validateOnly'>
-            /// When enabled only validates the new configuration but not saves it.
             /// </param>
             /// <param name='body'>
-            /// The new or updated configuration of the scale group.
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
@@ -122,28 +96,20 @@ namespace Client
                 (await operations.SetDefinitionWithHttpMessagesAsync(scaleGroup, validateOnly, body, null, cancellationToken).ConfigureAwait(false)).Dispose();
             }
 
-            /// <summary>
-            /// Removes the scale group.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The name of the scale group.
             /// </param>
             public static void RemoveDefinition(this IBullfrogApi operations, string scaleGroup)
             {
                 operations.RemoveDefinitionAsync(scaleGroup).GetAwaiter().GetResult();
             }
 
-            /// <summary>
-            /// Removes the scale group.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The name of the scale group.
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
@@ -153,9 +119,6 @@ namespace Client
                 (await operations.RemoveDefinitionWithHttpMessagesAsync(scaleGroup, null, cancellationToken).ConfigureAwait(false)).Dispose();
             }
 
-            /// <summary>
-            /// probe endpoint
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
@@ -164,9 +127,6 @@ namespace Client
                 operations.GetAsync().GetAwaiter().GetResult();
             }
 
-            /// <summary>
-            /// probe endpoint
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
@@ -178,40 +138,28 @@ namespace Client
                 (await operations.GetWithHttpMessagesAsync(null, cancellationToken).ConfigureAwait(false)).Dispose();
             }
 
-            /// <summary>
-            /// Lists all scheduled events from the specified scale group.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The name of the scale group.
             /// </param>
             /// <param name='activeOnly'>
-            /// If true only not completed events are returned.
             /// </param>
             /// <param name='fromRegion'>
-            /// Returns events from the specified region.
             /// </param>
             public static IList<ScheduledScaleEvent> ListScheduledEvents(this IBullfrogApi operations, string scaleGroup, bool? activeOnly = false, string fromRegion = default(string))
             {
                 return operations.ListScheduledEventsAsync(scaleGroup, activeOnly, fromRegion).GetAwaiter().GetResult();
             }
 
-            /// <summary>
-            /// Lists all scheduled events from the specified scale group.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The name of the scale group.
             /// </param>
             /// <param name='activeOnly'>
-            /// If true only not completed events are returned.
             /// </param>
             /// <param name='fromRegion'>
-            /// Returns events from the specified region.
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
@@ -224,34 +172,24 @@ namespace Client
                 }
             }
 
-            /// <summary>
-            /// Gets the specified scale event.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The scale group which own the event.
             /// </param>
             /// <param name='eventId'>
-            /// The scale event ID.
             /// </param>
             public static ScheduledScaleEvent GetScheduledEvent(this IBullfrogApi operations, string scaleGroup, System.Guid eventId)
             {
                 return operations.GetScheduledEventAsync(scaleGroup, eventId).GetAwaiter().GetResult();
             }
 
-            /// <summary>
-            /// Gets the specified scale event.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The scale group which own the event.
             /// </param>
             /// <param name='eventId'>
-            /// The scale event ID.
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
@@ -264,40 +202,28 @@ namespace Client
                 }
             }
 
-            /// <summary>
-            /// Creates or updates the scale event.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The scale group.
             /// </param>
             /// <param name='eventId'>
-            /// The scale event ID.
             /// </param>
             /// <param name='body'>
-            /// The new definition of the scale group.
             /// </param>
             public static ScheduledScaleEvent SaveScaleEvent(this IBullfrogApi operations, string scaleGroup, System.Guid eventId, ScaleEvent body = default(ScaleEvent))
             {
                 return operations.SaveScaleEventAsync(scaleGroup, eventId, body).GetAwaiter().GetResult();
             }
 
-            /// <summary>
-            /// Creates or updates the scale event.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The scale group.
             /// </param>
             /// <param name='eventId'>
-            /// The scale event ID.
             /// </param>
             /// <param name='body'>
-            /// The new definition of the scale group.
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
@@ -310,34 +236,24 @@ namespace Client
                 }
             }
 
-            /// <summary>
-            /// Deletes the scale event.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The scale group which owns the event.
             /// </param>
             /// <param name='eventId'>
-            /// The ID of the event to delete.
             /// </param>
             public static void DeleteScaleEvent(this IBullfrogApi operations, string scaleGroup, System.Guid eventId)
             {
                 operations.DeleteScaleEventAsync(scaleGroup, eventId).GetAwaiter().GetResult();
             }
 
-            /// <summary>
-            /// Deletes the scale event.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The scale group which owns the event.
             /// </param>
             /// <param name='eventId'>
-            /// The ID of the event to delete.
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.
@@ -347,28 +263,20 @@ namespace Client
                 (await operations.DeleteScaleEventWithHttpMessagesAsync(scaleGroup, eventId, null, cancellationToken).ConfigureAwait(false)).Dispose();
             }
 
-            /// <summary>
-            /// Gets the current state of the specified scale group.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The name of the scale group.
             /// </param>
             public static ScaleGroupState GetCurrentState(this IBullfrogApi operations, string scaleGroup)
             {
                 return operations.GetCurrentStateAsync(scaleGroup).GetAwaiter().GetResult();
             }
 
-            /// <summary>
-            /// Gets the current state of the specified scale group.
-            /// </summary>
             /// <param name='operations'>
             /// The operations group for this extension method.
             /// </param>
             /// <param name='scaleGroup'>
-            /// The name of the scale group.
             /// </param>
             /// <param name='cancellationToken'>
             /// The cancellation token.

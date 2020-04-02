@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "Bullfrog Api",
-    "version": "0.2"
+    "version": "v1"
   },
   "paths": {
     "/api/Configurations": {
@@ -10,7 +10,6 @@
         "tags": [
           "Configurations"
         ],
-        "summary": "Lists names of all configured scale groups.",
         "operationId": "ListScaleGroups",
         "produces": [
           "text/plain",
@@ -41,7 +40,6 @@
         "tags": [
           "Configurations"
         ],
-        "summary": "Gets the definition of the specified scale group.",
         "operationId": "GetDefinition",
         "produces": [
           "text/plain",
@@ -52,7 +50,6 @@
           {
             "in": "path",
             "name": "scaleGroup",
-            "description": "The scale group name.",
             "required": true,
             "type": "string"
           }
@@ -76,7 +73,6 @@
         "tags": [
           "Configurations"
         ],
-        "summary": "Configures the specified scale group.",
         "operationId": "SetDefinition",
         "consumes": [
           "application/json-patch+json",
@@ -93,20 +89,17 @@
           {
             "in": "path",
             "name": "scaleGroup",
-            "description": "The name of the scale group to configure.",
             "required": true,
             "type": "string"
           },
           {
             "in": "query",
             "name": "validateOnly",
-            "description": "When enabled only validates the new configuration but not saves it.",
             "type": "boolean"
           },
           {
             "in": "body",
             "name": "body",
-            "description": "The new or updated configuration of the scale group.",
             "schema": {
               "$ref": "#/definitions/ScaleGroupDefinition"
             }
@@ -128,7 +121,6 @@
         "tags": [
           "Configurations"
         ],
-        "summary": "Removes the scale group.",
         "operationId": "RemoveDefinition",
         "produces": [
           "text/plain",
@@ -139,7 +131,6 @@
           {
             "in": "path",
             "name": "scaleGroup",
-            "description": "The name of the scale group.",
             "required": true,
             "type": "string"
           }
@@ -162,7 +153,6 @@
         "tags": [
           "Probe"
         ],
-        "summary": "probe endpoint",
         "operationId": "Get",
         "responses": {
           "200": {
@@ -176,7 +166,6 @@
         "tags": [
           "ScaleEvents"
         ],
-        "summary": "Lists all scheduled events from the specified scale group.",
         "operationId": "ListScheduledEvents",
         "produces": [
           "text/plain",
@@ -187,21 +176,18 @@
           {
             "in": "path",
             "name": "scaleGroup",
-            "description": "The name of the scale group.",
             "required": true,
             "type": "string"
           },
           {
             "in": "query",
             "name": "activeOnly",
-            "description": "If true only not completed events are returned.",
             "type": "boolean",
             "default": false
           },
           {
             "in": "query",
             "name": "fromRegion",
-            "description": "Returns events from the specified region.",
             "type": "string"
           }
         ],
@@ -229,7 +215,6 @@
         "tags": [
           "ScaleEvents"
         ],
-        "summary": "Gets the specified scale event.",
         "operationId": "GetScheduledEvent",
         "produces": [
           "text/plain",
@@ -240,14 +225,12 @@
           {
             "in": "path",
             "name": "scaleGroup",
-            "description": "The scale group which own the event.",
             "required": true,
             "type": "string"
           },
           {
             "in": "path",
             "name": "eventId",
-            "description": "The scale event ID.",
             "required": true,
             "type": "string",
             "format": "uuid"
@@ -272,7 +255,6 @@
         "tags": [
           "ScaleEvents"
         ],
-        "summary": "Creates or updates the scale event.",
         "operationId": "SaveScaleEvent",
         "consumes": [
           "application/json-patch+json",
@@ -289,14 +271,12 @@
           {
             "in": "path",
             "name": "scaleGroup",
-            "description": "The scale group.",
             "required": true,
             "type": "string"
           },
           {
             "in": "path",
             "name": "eventId",
-            "description": "The scale event ID.",
             "required": true,
             "type": "string",
             "format": "uuid"
@@ -304,7 +284,6 @@
           {
             "in": "body",
             "name": "body",
-            "description": "The new definition of the scale group.",
             "schema": {
               "$ref": "#/definitions/ScaleEvent"
             }
@@ -335,7 +314,6 @@
         "tags": [
           "ScaleEvents"
         ],
-        "summary": "Deletes the scale event.",
         "operationId": "DeleteScaleEvent",
         "produces": [
           "text/plain",
@@ -346,14 +324,12 @@
           {
             "in": "path",
             "name": "scaleGroup",
-            "description": "The scale group which owns the event.",
             "required": true,
             "type": "string"
           },
           {
             "in": "path",
             "name": "eventId",
-            "description": "The ID of the event to delete.",
             "required": true,
             "type": "string",
             "format": "uuid"
@@ -380,7 +356,6 @@
         "tags": [
           "ScaleGroups"
         ],
-        "summary": "Gets the current state of the specified scale group.",
         "operationId": "GetCurrentState",
         "produces": [
           "text/plain",
@@ -391,7 +366,6 @@
           {
             "in": "path",
             "name": "scaleGroup",
-            "description": "The name of the scale group.",
             "required": true,
             "type": "string"
           }
@@ -439,7 +413,6 @@
       }
     },
     "ScaleSetConfiguration": {
-      "description": "Configuration of virtual machine scale set which is part of the scale group.",
       "required": [
         "autoscaleSettingsResourceId",
         "loadBalancerResourceId",
@@ -449,45 +422,37 @@
       "type": "object",
       "properties": {
         "name": {
-          "description": "The name used as an identifier of this VM scale set configuration.",
           "type": "string"
         },
         "autoscaleSettingsResourceId": {
-          "description": "The resource id of the autoscale settings which controls virtual machine scale set scaling.",
           "type": "string"
         },
         "profileName": {
-          "description": "The name of the profile of autoscale settings which is used to control VMSS scaling.",
           "type": "string"
         },
         "loadBalancerResourceId": {
-          "description": "The resource id of a load balancer of virtual machine scale set.",
           "type": "string"
         },
         "healthPortPort": {
           "format": "int32",
-          "description": "The port used for health probes by a load balancer which should be used to check\r\navailability of VMs in the scale set.",
           "maximum": 65535,
           "minimum": 1,
           "type": "integer"
         },
         "requestsPerInstance": {
           "format": "int32",
-          "description": "The number of requests per VMSS instance",
           "maximum": 1000000000,
           "minimum": 0,
           "type": "integer"
         },
         "minInstanceCount": {
           "format": "int32",
-          "description": "The minimal number of instances defined in the profile.",
           "maximum": 1000,
           "minimum": 1,
           "type": "integer"
         },
         "reservedInstances": {
           "format": "double",
-          "description": "The number (might be partial) of VM instances which are not used to handle requests.",
           "type": "number"
         }
       }
@@ -529,14 +494,12 @@
       }
     },
     "CosmosConfiguration": {
-      "description": "Defines a Cosmos DB database or a container which is should be scaled to handle requested throughput.",
       "required": [
         "name"
       ],
       "type": "object",
       "properties": {
         "name": {
-          "description": "The name used as an identifier of this Cosmos DB instance.",
           "type": "string"
         },
         "dataPlaneConnection": {
@@ -547,17 +510,14 @@
         },
         "requestUnitsPerRequest": {
           "format": "double",
-          "description": "The number of Request Units used on average by each request.",
           "type": "number"
         },
         "minimumRU": {
           "format": "int32",
-          "description": "The minimal value of RU used when there are no active events.",
           "type": "integer"
         },
         "maximumRU": {
           "format": "int32",
-          "description": "The maximal value of RU. No scaling operation will exceed it.",
           "type": "integer"
         }
       }
@@ -623,7 +583,6 @@
       }
     },
     "ScaleGroupRegion": {
-      "description": "The scale group's region configuration.",
       "required": [
         "regionName",
         "scaleSets"
@@ -631,19 +590,16 @@
       "type": "object",
       "properties": {
         "regionName": {
-          "description": "The name of the region.",
           "pattern": "^[\\d\\w\\s-]*$",
           "type": "string"
         },
         "scaleSets": {
-          "description": "The configurations of scaling of VM scale sets.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/ScaleSetConfiguration"
           }
         },
         "cosmos": {
-          "description": "The configuration of scaling of Cosmos DB databases or containers.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/CosmosConfiguration"
@@ -657,7 +613,6 @@
         },
         "maxScale": {
           "format": "int32",
-          "description": "The maximum scale supported for this region.",
           "type": "integer"
         },
         "maxLeadTime": {
@@ -666,14 +621,12 @@
       }
     },
     "ScaleGroupDefinition": {
-      "description": "Defines the configuration of a scale group.",
       "required": [
         "regions"
       ],
       "type": "object",
       "properties": {
         "regions": {
-          "description": "The configurations of scale group's regions.",
           "minLength": 1,
           "type": "array",
           "items": {
@@ -681,7 +634,6 @@
           }
         },
         "cosmos": {
-          "description": "The configuration of scaling of Cosmos DB databases or containers.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/CosmosConfiguration"
@@ -694,12 +646,10 @@
           "$ref": "#/definitions/TimeSpan"
         },
         "hasSharedCosmosDb": {
-          "description": "Checks whether shared Cosmos databases are defined.",
           "type": "boolean",
           "readOnly": true
         },
         "allRegionNames": {
-          "description": "Returns names of all regions (including shared Cosmos region if it exists).",
           "type": "array",
           "items": {
             "type": "string"
@@ -709,19 +659,16 @@
       }
     },
     "RegionScaleValue": {
-      "description": "Defines the scale requirements for the specified region.",
       "required": [
         "name"
       ],
       "type": "object",
       "properties": {
         "name": {
-          "description": "The region name.",
           "type": "string"
         },
         "scale": {
           "format": "int32",
-          "description": "The number of requests that the region should be able to handle during the scale event.",
           "maximum": 1000000,
           "minimum": 1,
           "type": "integer"
@@ -729,35 +676,28 @@
       }
     },
     "ScheduledScaleEvent": {
-      "description": "Describes an existing scale event.",
       "type": "object",
       "properties": {
         "id": {
           "format": "uuid",
-          "description": "Identifier of the scale event.",
           "type": "string"
         },
         "name": {
-          "description": "Name of the scale event.",
           "type": "string"
         },
         "requiredScaleAt": {
           "format": "date-time",
-          "description": "The time when all resources should be scaled to the level which allows to handle the requested traffic.",
           "type": "string"
         },
         "estimatedScaleUpAt": {
           "format": "date-time",
-          "description": "The estimated time when the scaling of resources start.",
           "type": "string"
         },
         "startScaleDownAt": {
           "format": "date-time",
-          "description": "The time when the scale event ends and all resources can be scaled in.",
           "type": "string"
         },
         "regionConfig": {
-          "description": "The list of regions which require scaling.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/RegionScaleValue"
@@ -766,7 +706,6 @@
       }
     },
     "ScaleEvent": {
-      "description": "Defines a new scale event.",
       "required": [
         "name",
         "regionConfig"
@@ -774,21 +713,17 @@
       "type": "object",
       "properties": {
         "name": {
-          "description": "The scale event name.",
           "type": "string"
         },
         "requiredScaleAt": {
           "format": "date-time",
-          "description": "The time when all resources should be scaled to the level which allows to handle the requested traffic.",
           "type": "string"
         },
         "startScaleDownAt": {
           "format": "date-time",
-          "description": "The time when the scale event ends and all resources can be scaled in.",
           "type": "string"
         },
         "regionConfig": {
-          "description": "The list of regions which require scaling.",
           "minLength": 1,
           "type": "array",
           "items": {
@@ -798,35 +733,28 @@
       }
     },
     "ScaleRegionState": {
-      "description": "Describes the current state of the region of a scale group.",
       "type": "object",
       "properties": {
         "name": {
-          "description": "The name of the region.",
           "type": "string"
         },
         "wasScaledUpAt": {
           "format": "date-time",
-          "description": "The time when the resources ware scaled out.",
           "type": "string"
         },
         "willScaleDownAt": {
           "format": "date-time",
-          "description": "The time when the resources will be scaled in to the minimal value.",
           "type": "string"
         },
         "scale": {
           "format": "double",
-          "description": "The number of requests which can be processed currently.",
           "type": "number"
         },
         "requestedScale": {
           "format": "int32",
-          "description": "The scale which is requested by scale events.",
           "type": "integer"
         },
         "scaleSetState": {
-          "description": "State of each scale set.",
           "type": "object",
           "additionalProperties": {
             "format": "double",
@@ -836,11 +764,9 @@
       }
     },
     "ScaleGroupState": {
-      "description": "Describes the current state of the scale group.",
       "type": "object",
       "properties": {
         "regions": {
-          "description": "The list of scale group's regions which currently are scaled out.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/ScaleRegionState"
@@ -848,18 +774,5 @@
         }
       }
     }
-  },
-  "securityDefinitions": {
-    "Bearer": {
-      "type": "apiKey",
-      "name": "Authorization",
-      "in": "header",
-      "description": "Please insert JWT with Bearer into field"
-    }
-  },
-  "security": [
-    {
-      "Bearer": []
-    }
-  ]
+  }
 }

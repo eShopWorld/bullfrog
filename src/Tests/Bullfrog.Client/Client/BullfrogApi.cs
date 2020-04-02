@@ -308,9 +308,6 @@ namespace Client
             };
             CustomInitialize();
         }
-        /// <summary>
-        /// Lists names of all configured scale groups.
-        /// </summary>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
         /// </param>
@@ -441,11 +438,7 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Gets the definition of the specified scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The scale group name.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -589,17 +582,11 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Configures the specified scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The name of the scale group to configure.
         /// </param>
         /// <param name='validateOnly'>
-        /// When enabled only validates the new configuration but not saves it.
         /// </param>
         /// <param name='body'>
-        /// The new or updated configuration of the scale group.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -681,7 +668,7 @@ namespace Client
             {
                 _requestContent = SafeJsonConvert.SerializeObject(body, SerializationSettings);
                 _httpRequest.Content = new StringContent(_requestContent, System.Text.Encoding.UTF8);
-                _httpRequest.Content.Headers.ContentType =System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json-patch+json; charset=utf-8");
+                _httpRequest.Content.Headers.ContentType =System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json; charset=utf-8");
             }
             // Set Credentials
             if (Credentials != null)
@@ -743,11 +730,7 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Removes the scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The name of the scale group.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -870,9 +853,6 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// probe endpoint
-        /// </summary>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
         /// </param>
@@ -975,17 +955,11 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Lists all scheduled events from the specified scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The name of the scale group.
         /// </param>
         /// <param name='activeOnly'>
-        /// If true only not completed events are returned.
         /// </param>
         /// <param name='fromRegion'>
-        /// Returns events from the specified region.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -1144,14 +1118,9 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Gets the specified scale event.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The scale group which own the event.
         /// </param>
         /// <param name='eventId'>
-        /// The scale event ID.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -1297,17 +1266,11 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Creates or updates the scale event.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The scale group.
         /// </param>
         /// <param name='eventId'>
-        /// The scale event ID.
         /// </param>
         /// <param name='body'>
-        /// The new definition of the scale group.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -1384,7 +1347,7 @@ namespace Client
             {
                 _requestContent = SafeJsonConvert.SerializeObject(body, SerializationSettings);
                 _httpRequest.Content = new StringContent(_requestContent, System.Text.Encoding.UTF8);
-                _httpRequest.Content.Headers.ContentType =System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json-patch+json; charset=utf-8");
+                _httpRequest.Content.Headers.ContentType =System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json; charset=utf-8");
             }
             // Set Credentials
             if (Credentials != null)
@@ -1464,14 +1427,9 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Deletes the scale event.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The scale group which owns the event.
         /// </param>
         /// <param name='eventId'>
-        /// The ID of the event to delete.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
@@ -1596,11 +1554,7 @@ namespace Client
             return _result;
         }
 
-        /// <summary>
-        /// Gets the current state of the specified scale group.
-        /// </summary>
         /// <param name='scaleGroup'>
-        /// The name of the scale group.
         /// </param>
         /// <param name='customHeaders'>
         /// Headers that will be added to request.
