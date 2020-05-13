@@ -17,6 +17,7 @@ using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors.Runtime;
+using Newtonsoft.Json;
 
 namespace Bullfrog.Actors
 {
@@ -387,7 +388,7 @@ namespace Bullfrog.Actors
             await ReportEventState(events, state.Changes, now, maxLeadTime,
                 finalScale,
                 state.ScaleRequests.Any(o => o.Value.Status == ScaleRequestStatus.Failing));
-
+            
             // Find out when to wake up the next time.
             var nextWakeUpTime = state.IsRefreshRequired
                 ? _dateTimeProvider.UtcNow.Add(ScanPeriod)
@@ -396,6 +397,16 @@ namespace Bullfrog.Actors
                     now,
                     configuration.ScaleSetPrescaleLeadTime,
                     configuration.CosmosDbPrescaleLeadTime);
+
+            BigBrother.Publish(new FindNextWakeUpTimeEvent
+            {
+                ScaleEvents = JsonConvert.SerializeObject(events),
+                ScaleSetPrescaleLeadTime = configuration.ScaleSetPrescaleLeadTime,
+                CosmosDbPrescaleLeadTime = configuration.CosmosDbPrescaleLeadTime,
+                IsRefreshRequired = state.IsRefreshRequired,
+                NextWakeUpTime = nextWakeUpTime
+            });
+
             await WakeMeAt(nextWakeUpTime);
 
             if (!isScaledOut && state.ScaleRequests.All(x => !x.Value.IsExecuting))

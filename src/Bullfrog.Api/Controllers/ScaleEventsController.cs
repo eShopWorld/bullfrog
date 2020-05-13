@@ -9,6 +9,8 @@ using Microsoft.ServiceFabric.Actors.Client;
 using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common;
 using System.Linq;
+using Eshopworld.Core;
+using Newtonsoft.Json;
 
 namespace Bullfrog.Api.Controllers
 {
@@ -20,16 +22,21 @@ namespace Bullfrog.Api.Controllers
     [Authorize(Policy = AuthenticationPolicies.EventsReaderScope)]
     public class ScaleEventsController : BaseManagementController
     {
+        private readonly IBigBrother _bigBrother;
+
         /// <summary>
         /// Creates an instance of the <see cref="ScaleEventsController"/>.
         /// </summary>
         /// <param name="sfContext">The Service Fabric context.</param>
         /// <param name="proxyFactory">The actor proxy factory.</param>
+        /// <param name="bigBrother">Telemetry client.</param>
         public ScaleEventsController(
             StatelessServiceContext sfContext,
-            IActorProxyFactory proxyFactory)
+            IActorProxyFactory proxyFactory,
+            IBigBrother bigBrother)
             : base(sfContext, proxyFactory)
         {
+            _bigBrother = bigBrother;
         }
 
         /// <summary>
@@ -114,6 +121,16 @@ namespace Bullfrog.Api.Controllers
             try
             {
                 var response = await GetConfigurationManager().SaveScaleEvent(scaleGroup, eventId, scaleEvent);
+
+                _bigBrother.Publish(new Models.EventModels.ScaleEventSaved
+                {
+                    ScaleGroup = scaleGroup,
+                    EventId = eventId,
+                    Name = scaleEvent.Name,
+                    RegionConfig = JsonConvert.SerializeObject(scaleEvent.RegionConfig),
+                    RequiredScaleAt = scaleEvent.RequiredScaleAt,
+                    StartScaleDownAt = scaleEvent.StartScaleDownAt
+                });
 
                 return response.Result switch
                 {
