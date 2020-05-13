@@ -17,6 +17,7 @@ using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors.Runtime;
+using Newtonsoft.Json;
 
 namespace Bullfrog.Actors
 {
@@ -399,7 +400,7 @@ namespace Bullfrog.Actors
 
             BigBrother.Publish(new FindNextWakeUpTimeEvent
             {
-                ScaleEvents = events,
+                ScaleEvents = JsonConvert.SerializeObject(events),
                 ScaleSetPrescaleLeadTime = configuration.ScaleSetPrescaleLeadTime,
                 CosmosDbPrescaleLeadTime = configuration.CosmosDbPrescaleLeadTime,
                 IsRefreshRequired = state.IsRefreshRequired,

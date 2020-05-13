@@ -126,7 +126,7 @@ namespace Bullfrog.Api.Controllers
                     ScaleGroup = scaleGroup,
                     EventId = eventId,
                     Name = scaleEvent.Name,
-                    RegionConfig = scaleEvent.RegionConfig,
+                    RegionConfig = JsonConvert.SerializeObject(scaleEvent.RegionConfig),
                     RequiredScaleAt = scaleEvent.RequiredScaleAt,
                     StartScaleDownAt = scaleEvent.StartScaleDownAt
                 });

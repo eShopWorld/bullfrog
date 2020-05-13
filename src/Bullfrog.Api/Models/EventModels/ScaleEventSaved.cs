@@ -28,7 +28,7 @@ namespace Bullfrog.Api.Models.EventModels
         /// <summary>
         /// The list of regions which require scaling.
         /// </summary>
-        public List<RegionScaleValue> RegionConfig { get; set; }
+        public string RegionConfig { get; set; }
 
         /// <summary>
         /// The time when all resources should be scaled out
