@@ -10,6 +10,7 @@ using Bullfrog.Actors.Interfaces.Models;
 using Bullfrog.Common;
 using System.Linq;
 using Eshopworld.Core;
+using Newtonsoft.Json;
 
 namespace Bullfrog.Api.Controllers
 {
