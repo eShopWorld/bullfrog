@@ -120,7 +120,10 @@ namespace Bullfrog.Actors
             var toRemove = events.ToHashSet();
             var removed = knownEvents.RemoveAll(x => toRemove.Contains(x.Id));
             if (removed > 0)
+            {
+                LogActorStateEventsSavedEvent("PurgeScaleEvents", knownEvents);
                 await _events.Set(knownEvents);
+            }
 
             var state = await _scaleState.Get();
             var removedFromState = state.Changes.RemoveAll(x => toRemove.Contains(x.EventId));
@@ -225,9 +228,19 @@ namespace Bullfrog.Actors
                 events.RemoveAll(e => e.StartScaleDownAt < completedBefore);
             }
 
+            LogActorStateEventsSavedEvent("ScheduleScaleEvent", events);
             await _events.Set(events);
 
             await ScheduleStateUpdate();
+        }
+
+        private void LogActorStateEventsSavedEvent(string methodName, List<ManagedScaleEvent> events)
+        {
+            BigBrother.Publish(new ActorStateEventsSavedEvent
+            {
+                MethodName = methodName,
+                ScaleEvents = JsonConvert.SerializeObject(events)
+            });
         }
 
         async Task<List<RegionScaleEvent>> IScaleManager.ListEvents()
@@ -265,6 +278,8 @@ namespace Bullfrog.Actors
             {
                 ev.EstimatedScaleUpAt = ev.RequiredScaleAt - estimatedScaleTime;
             }
+
+            LogActorStateEventsSavedEvent("Configure", events);
             await _events.Set(events);
 
             await ScheduleStateUpdate();
