@@ -159,6 +159,17 @@
             "description": "Success"
           }
         }
+      },
+      "head": {
+        "tags": [
+          "Probe"
+        ],
+        "operationId": "Get",
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
       }
     },
     "/api/ScaleEvents/{scaleGroup}": {
