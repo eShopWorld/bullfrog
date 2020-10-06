@@ -14,6 +14,7 @@ namespace Bullfrog.Api.Controllers
         /// probe endpoint
         /// </summary>
         [HttpGet]
+        [HttpHead]
         public IActionResult Get()
         {
             return Ok();
