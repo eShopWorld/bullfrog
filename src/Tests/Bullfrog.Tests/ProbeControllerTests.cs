@@ -8,7 +8,7 @@ public class ProbeControllerTests : BaseApiTests
     [Fact, IsLayer0]
     public async Task ProbeEndpointTest()
     {
-        var response = await HttpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "http://a/probe"));
+        var response = await HttpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, "http://test/probe"));
 
         response.EnsureSuccessStatusCode();
         response.Dispose();

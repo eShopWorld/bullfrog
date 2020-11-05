@@ -424,7 +424,7 @@ namespace Bullfrog.Actors
             var oldEvents = events.Where(kv => kv.Value.StartScaleDownAt < completedBefore).ToList();
             if (oldEvents.Count > 0)
             {
-                await DeleteEventsFromOtherActors(scaleGroup, regionNames, events.Select(x => x.Key));
+                await DeleteEventsFromOtherActors(scaleGroup, regionNames, oldEvents.Select(x => x.Key));
 
                 foreach (var e in oldEvents)
                 {

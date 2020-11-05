@@ -611,6 +611,66 @@
         }
       }
     },
+    "TimeSpan": {
+      "type": "object",
+      "properties": {
+        "ticks": {
+          "format": "int64",
+          "type": "integer",
+          "readOnly": true
+        },
+        "days": {
+          "format": "int32",
+          "type": "integer",
+          "readOnly": true
+        },
+        "hours": {
+          "format": "int32",
+          "type": "integer",
+          "readOnly": true
+        },
+        "milliseconds": {
+          "format": "int32",
+          "type": "integer",
+          "readOnly": true
+        },
+        "minutes": {
+          "format": "int32",
+          "type": "integer",
+          "readOnly": true
+        },
+        "seconds": {
+          "format": "int32",
+          "type": "integer",
+          "readOnly": true
+        },
+        "totalDays": {
+          "format": "double",
+          "type": "number",
+          "readOnly": true
+        },
+        "totalHours": {
+          "format": "double",
+          "type": "number",
+          "readOnly": true
+        },
+        "totalMilliseconds": {
+          "format": "double",
+          "type": "number",
+          "readOnly": true
+        },
+        "totalMinutes": {
+          "format": "double",
+          "type": "number",
+          "readOnly": true
+        },
+        "totalSeconds": {
+          "format": "double",
+          "type": "number",
+          "readOnly": true
+        }
+      }
+    },
     "ScaleGroupRegion": {
       "required": [
         "regionName",
@@ -645,6 +705,9 @@
         "maxScale": {
           "format": "int32",
           "type": "integer"
+        },
+        "maxLeadTime": {
+          "$ref": "#/definitions/TimeSpan"
         }
       }
     },

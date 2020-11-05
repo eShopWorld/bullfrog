@@ -40,7 +40,7 @@ namespace Bullfrog.Api
         /// Creates an instance of the <see cref="Startup"/> class.
         /// </summary>
         /// <param name="env">The hosting environment.</param>
-        public Startup(IHostingEnvironment env)
+        public Startup(IWebHostEnvironment env)
         {
             try
             {
@@ -136,8 +136,7 @@ namespace Bullfrog.Api
                     x.ApiName = _configuration["STSConfig:ApiName"];
                     x.Authority = _configuration["STSConfig:Authority"];
                 });
-
-                services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+                services.AddControllers().AddNewtonsoftJson();
                 services.PostConfigure<ApiBehaviorOptions>(options =>
                 {
                     // Log model validation errors. It's a temporary workaround for short connection timeouts
@@ -179,8 +178,7 @@ namespace Bullfrog.Api
         /// </summary>
         /// <param name="app">The mechanisms to configure an application's request pipeline.</param>
         /// <param name="env">The information about the web hosting environment an application is running in.</param>
-        /// <param name="statelessServiceContext">The context of Service Fabric stateless service.</param>
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, StatelessServiceContext statelessServiceContext)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             try
             {
@@ -190,10 +188,17 @@ namespace Bullfrog.Api
                 app.UseAuthentication();
 #endif
                 if (Debugger.IsAttached)
+                {
                     app.UseDeveloperExceptionPage();
+                }
+
                 app.UseBigBrotherExceptionHandler();
 
-                app.UseMvc();
+                app.UseRouting();
+                app.UseAuthorization();
+                app.UseEndpoints(endpoints => {
+                    endpoints.MapControllers();
+                });
 
                 // Use V2 OpenAPI as long as AutoREST only supports V2.
                 app.UseSwagger(c => c.SerializeAsV2 = UseOpenApiV2);

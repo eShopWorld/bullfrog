@@ -18,6 +18,7 @@ using Eshopworld.Core;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors.Runtime;
+using Newtonsoft.Json;
 
 namespace Bullfrog.Actors
 {
@@ -114,7 +115,10 @@ namespace Bullfrog.Actors
             var toRemove = events.ToHashSet();
             var removed = knownEvents.RemoveAll(x => toRemove.Contains(x.Id));
             if (removed > 0)
+            {
+                LogActorStateEventsSavedEvent("PurgeScaleEvents", knownEvents);
                 await _events.Set(knownEvents);
+            }
 
             var state = await _scaleState.Get();
             var removedFromState = state.Changes.RemoveAll(x => toRemove.Contains(x.EventId));
@@ -230,6 +234,15 @@ namespace Bullfrog.Actors
                 BigBrother.Publish(ex.ToExceptionEvent());
                 throw;
             }
+        }
+
+        private void LogActorStateEventsSavedEvent(string methodName, List<ManagedScaleEvent> events)
+        {
+            BigBrother.Publish(new ActorStateEventsSavedEvent
+            {
+                MethodName = methodName,
+                ScaleEvents = JsonConvert.SerializeObject(events)
+            });
         }
 
         async Task<List<RegionScaleEvent>> IScaleManager.ListEvents()
@@ -498,7 +511,7 @@ namespace Bullfrog.Actors
             await ReportEventState(events, state.Changes, now, maxLeadTime,
                 finalScale,
                 state.ScaleRequests.Any(o => o.Value.Status == ScaleRequestStatus.Failing));
-
+            
             // Find out when to wake up the next time.
             var nextWakeUpTime = state.IsRefreshRequired
                 ? _dateTimeProvider.UtcNow.Add(ScanPeriod) // some operations are in progress. Wake up to monitor and report their state.

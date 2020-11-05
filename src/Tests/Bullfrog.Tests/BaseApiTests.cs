@@ -24,6 +24,7 @@ using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.Monitor.Fluent;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Rest;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
@@ -82,6 +83,7 @@ public class BaseApiTests : IDisposable
             .UseStartup<TestServerStartup>();
         _server = new TestServer(builder);
         HttpClient = _server.CreateClient();
+
         ApiClient = new BullfrogApi(new TokenCredentials("aa"), HttpClient, false);
         UtcNow = StartTime;
     }
@@ -397,6 +399,11 @@ public class BaseApiTests : IDisposable
         }
 
         public IBigBrother UseKusto(string kustoEngineName, string kustoEngineLocation, string kustoDb, string tenantId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public IKustoClusterBuilder UseKusto()
         {
             throw new NotImplementedException();
         }

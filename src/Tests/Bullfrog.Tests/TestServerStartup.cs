@@ -1,7 +1,6 @@
 ﻿using Bullfrog.Api;
 using Bullfrog.Api.Helpers;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 
@@ -9,8 +8,9 @@ public class TestServerStartup
 {
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddMvc()
-            .SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+        services.AddControllers()
+            .AddNewtonsoftJson()
+            .AddApplicationPart(typeof(Startup).Assembly);
 
         services.AddSwaggerGen(c =>
         {
@@ -27,13 +27,17 @@ public class TestServerStartup
             options.AddPolicy(AuthenticationPolicies.EventsReaderScope, policy =>
                 policy.RequireClaim("scope", "bullfrog.api.events.read", "bullfrog.api.events.all", "bullfrog.api.all"));
         });
-
     }
 
     public void Configure(IApplicationBuilder app)
     {
+        app.UseRouting();
         app.UseFakeAuthentication();
-        app.UseMvc();
+        app.UseAuthorization();
+        app.UseEndpoints(endpoints =>
+        {
+            endpoints.MapControllers();
+        });
         app.UseSwagger(c => c.SerializeAsV2 = true);
         app.UseSwaggerUI();
     }

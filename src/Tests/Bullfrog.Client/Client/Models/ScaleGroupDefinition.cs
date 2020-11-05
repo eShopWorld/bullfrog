@@ -8,10 +8,14 @@ namespace Client.Models
 {
     using Microsoft.Rest;
     using Newtonsoft.Json;
+    using System;
     using System.Collections;
     using System.Collections.Generic;
     using System.Linq;
 
+    /// <summary>
+    /// Defines the configuration of a scale group.
+    /// </summary>
     public partial class ScaleGroupDefinition
     {
         /// <summary>
@@ -32,6 +36,8 @@ namespace Client.Models
             CosmosDbPrescaleLeadTime = cosmosDbPrescaleLeadTime;
             AutomationAccounts = automationAccounts;
             OldEventsAge = oldEventsAge;
+            HasSharedCosmosDb = hasSharedCosmosDb;
+            AllRegionNames = allRegionNames;
             CustomInit();
         }
 
@@ -41,11 +47,14 @@ namespace Client.Models
         partial void CustomInit();
 
         /// <summary>
+        /// Gets or sets the configurations of scale group's regions.
         /// </summary>
         [JsonProperty(PropertyName = "regions")]
         public IList<ScaleGroupRegion> Regions { get; set; }
 
         /// <summary>
+        /// Gets or sets the configuration of scaling of Cosmos DB databases or
+        /// containers.
         /// </summary>
         [JsonProperty(PropertyName = "cosmos")]
         public IList<CosmosConfiguration> Cosmos { get; set; }
@@ -64,6 +73,19 @@ namespace Client.Models
         /// </summary>
         [JsonProperty(PropertyName = "oldEventsAge")]
         public string OldEventsAge { get; set; }
+
+        /// <summary>
+        /// Gets checks whether shared Cosmos databases are defined.
+        /// </summary>
+        [JsonProperty(PropertyName = "hasSharedCosmosDb")]
+        public bool? HasSharedCosmosDb { get; private set; }
+
+        /// <summary>
+        /// Gets returns names of all regions (including shared Cosmos region
+        /// if it exists).
+        /// </summary>
+        [JsonProperty(PropertyName = "allRegionNames")]
+        public IList<string> AllRegionNames { get; private set; }
 
         /// <summary>
         /// Validate the object.
