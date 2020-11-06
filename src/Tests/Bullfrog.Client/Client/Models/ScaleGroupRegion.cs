@@ -9,13 +9,8 @@ namespace Client.Models
     using Microsoft.Rest;
     using Newtonsoft.Json;
     using System;
-    using System.Collections;
     using System.Collections.Generic;
-    using System.Linq;
 
-    /// <summary>
-    /// The scale group's region configuration.
-    /// </summary>
     public partial class ScaleGroupRegion
     {
         /// <summary>
@@ -29,14 +24,7 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleGroupRegion class.
         /// </summary>
-        /// <param name="regionName">The name of the region.</param>
-        /// <param name="scaleSets">The configurations of scaling of VM scale
-        /// sets.</param>
-        /// <param name="cosmos">The configuration of scaling of Cosmos DB
-        /// databases or containers.</param>
-        /// <param name="maxScale">The maximum scale supported for this
-        /// region.</param>
-        public ScaleGroupRegion(string regionName, IList<ScaleSetConfiguration> scaleSets, IList<CosmosConfiguration> cosmos = default(IList<CosmosConfiguration>), string scaleSetPrescaleLeadTime = default(string), string cosmosDbPrescaleLeadTime = default(string), int? maxScale = default(int?), string maxLeadTime = default(string))
+        public ScaleGroupRegion(string regionName, IList<ScaleSetConfiguration> scaleSets, IList<CosmosConfiguration> cosmos = default(IList<CosmosConfiguration>), TimeSpan scaleSetPrescaleLeadTime = default(TimeSpan), TimeSpan cosmosDbPrescaleLeadTime = default(TimeSpan), int? maxScale = default(int?), TimeSpan maxLeadTime = default(TimeSpan))
         {
             RegionName = regionName;
             ScaleSets = scaleSets;
@@ -54,20 +42,16 @@ namespace Client.Models
         partial void CustomInit();
 
         /// <summary>
-        /// Gets or sets the name of the region.
         /// </summary>
         [JsonProperty(PropertyName = "regionName")]
         public string RegionName { get; set; }
 
         /// <summary>
-        /// Gets or sets the configurations of scaling of VM scale sets.
         /// </summary>
         [JsonProperty(PropertyName = "scaleSets")]
         public IList<ScaleSetConfiguration> ScaleSets { get; set; }
 
         /// <summary>
-        /// Gets or sets the configuration of scaling of Cosmos DB databases or
-        /// containers.
         /// </summary>
         [JsonProperty(PropertyName = "cosmos")]
         public IList<CosmosConfiguration> Cosmos { get; set; }
@@ -75,15 +59,14 @@ namespace Client.Models
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "scaleSetPrescaleLeadTime")]
-        public string ScaleSetPrescaleLeadTime { get; set; }
+        public TimeSpan ScaleSetPrescaleLeadTime { get; set; }
 
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "cosmosDbPrescaleLeadTime")]
-        public string CosmosDbPrescaleLeadTime { get; set; }
+        public TimeSpan CosmosDbPrescaleLeadTime { get; set; }
 
         /// <summary>
-        /// Gets or sets the maximum scale supported for this region.
         /// </summary>
         [JsonProperty(PropertyName = "maxScale")]
         public int? MaxScale { get; set; }
@@ -91,7 +74,7 @@ namespace Client.Models
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "maxLeadTime")]
-        public string MaxLeadTime { get; set; }
+        public TimeSpan MaxLeadTime { get; set; }
 
         /// <summary>
         /// Validate the object.

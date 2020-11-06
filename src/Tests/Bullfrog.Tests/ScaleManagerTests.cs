@@ -484,8 +484,8 @@ public class ScaleManagerTests : BaseApiTests
                             RequestsPerInstance = 100,
                         },
                     },
-                    CosmosDbPrescaleLeadTime = _cosmosDbPrescaleLeadTime.ToString(),
-                    ScaleSetPrescaleLeadTime = _scaleSetPrescaleLeadTime.ToString(),
+                    CosmosDbPrescaleLeadTime = _cosmosDbPrescaleLeadTime,
+                    ScaleSetPrescaleLeadTime = _scaleSetPrescaleLeadTime,
                 },
                 new ScaleGroupRegion
                 {
@@ -502,8 +502,8 @@ public class ScaleManagerTests : BaseApiTests
                             RequestsPerInstance = 100,
                         },
                     },
-                    CosmosDbPrescaleLeadTime = _cosmosDbPrescaleLeadTime.ToString(),
-                    ScaleSetPrescaleLeadTime = _scaleSetPrescaleLeadTime.ToString(),
+                    CosmosDbPrescaleLeadTime = _cosmosDbPrescaleLeadTime,
+                    ScaleSetPrescaleLeadTime = _scaleSetPrescaleLeadTime,
                 }
             },
         });

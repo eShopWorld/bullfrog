@@ -10,10 +10,6 @@ namespace Client.Models
     using Newtonsoft.Json;
     using System.Linq;
 
-    /// <summary>
-    /// Defines a Cosmos DB database or a container which is should be scaled
-    /// to handle requested throughput.
-    /// </summary>
     public partial class CosmosConfiguration
     {
         /// <summary>
@@ -27,14 +23,6 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the CosmosConfiguration class.
         /// </summary>
-        /// <param name="name">The name used as an identifier of this Cosmos DB
-        /// instance.</param>
-        /// <param name="requestUnitsPerRequest">The number of Request Units
-        /// used on average by each request.</param>
-        /// <param name="minimumRU">The minimal value of RU used when there are
-        /// no active events.</param>
-        /// <param name="maximumRU">The maximal value of RU. No scaling
-        /// operation will exceed it.</param>
         public CosmosConfiguration(string name, CosmosDbDataPlaneConnection dataPlaneConnection = default(CosmosDbDataPlaneConnection), CosmosDbControlPlaneConnection controlPlaneConnection = default(CosmosDbControlPlaneConnection), double? requestUnitsPerRequest = default(double?), int? minimumRU = default(int?), int? maximumRU = default(int?))
         {
             Name = name;
@@ -52,8 +40,6 @@ namespace Client.Models
         partial void CustomInit();
 
         /// <summary>
-        /// Gets or sets the name used as an identifier of this Cosmos DB
-        /// instance.
         /// </summary>
         [JsonProperty(PropertyName = "name")]
         public string Name { get; set; }
@@ -69,22 +55,16 @@ namespace Client.Models
         public CosmosDbControlPlaneConnection ControlPlaneConnection { get; set; }
 
         /// <summary>
-        /// Gets or sets the number of Request Units used on average by each
-        /// request.
         /// </summary>
         [JsonProperty(PropertyName = "requestUnitsPerRequest")]
         public double? RequestUnitsPerRequest { get; set; }
 
         /// <summary>
-        /// Gets or sets the minimal value of RU used when there are no active
-        /// events.
         /// </summary>
         [JsonProperty(PropertyName = "minimumRU")]
         public int? MinimumRU { get; set; }
 
         /// <summary>
-        /// Gets or sets the maximal value of RU. No scaling operation will
-        /// exceed it.
         /// </summary>
         [JsonProperty(PropertyName = "maximumRU")]
         public int? MaximumRU { get; set; }

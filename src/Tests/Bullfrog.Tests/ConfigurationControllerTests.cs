@@ -239,11 +239,11 @@ public class ConfigurationControllerTests : BaseApiTests
                     RegionName = "eu",
                     Cosmos = new List<CosmosConfiguration>(),
                     ScaleSets = new List<ScaleSetConfiguration>(),
-                    ScaleSetPrescaleLeadTime = TimeSpan.Zero.ToString(),
-                    CosmosDbPrescaleLeadTime = TimeSpan.Zero.ToString(),
+                    ScaleSetPrescaleLeadTime = TimeSpan.Zero,
+                    CosmosDbPrescaleLeadTime = TimeSpan.Zero,
                 }
             },
-            CosmosDbPrescaleLeadTime = TimeSpan.Zero.ToString(),
+            CosmosDbPrescaleLeadTime = TimeSpan.Zero,
         };
         returnedScaleGroup.Should().BeEquivalentTo(expectedScaleGroup);
     }

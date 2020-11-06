@@ -24,7 +24,7 @@ public class SharedCosmosDbTests : BaseApiTests
     public void SharedCosmosLeadTimeShouldBeTakenIntoAccount()
     {
         var scaleGroup = NewScaleGroupDefinition();
-        scaleGroup.Regions[0].ScaleSetPrescaleLeadTime = TimeSpan.FromMinutes(10).ToString();
+        scaleGroup.Regions[0].ScaleSetPrescaleLeadTime = TimeSpan.FromMinutes(10);
         CreateScaleGroup(scaleGroup);
 
         var created = ApiClient.SaveScaleEvent("sg", Guid.NewGuid(), NewScaleEvent(10, 20, regions: new[] { ("eu1", 10), }));
@@ -136,7 +136,7 @@ public class SharedCosmosDbTests : BaseApiTests
                 }
             },
         },
-        CosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(30).ToString(),
+        CosmosDbPrescaleLeadTime = TimeSpan.FromMinutes(30),
         Regions = new List<ScaleGroupRegion>
             {
                 new ScaleGroupRegion
@@ -155,8 +155,8 @@ public class SharedCosmosDbTests : BaseApiTests
                             ReservedInstances = 0,
                         },
                     },
-                    CosmosDbPrescaleLeadTime = TimeSpan.Zero.ToString(),
-                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(1).ToString(),
+                    CosmosDbPrescaleLeadTime = TimeSpan.Zero,
+                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(1),
                 },
                 new ScaleGroupRegion
                 {
@@ -174,8 +174,8 @@ public class SharedCosmosDbTests : BaseApiTests
                             ReservedInstances = 0,
                         },
                     },
-                    CosmosDbPrescaleLeadTime = TimeSpan.Zero.ToString(),
-                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(2).ToString(),
+                    CosmosDbPrescaleLeadTime = TimeSpan.Zero,
+                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(2),
                 },
                 new ScaleGroupRegion
                 {
@@ -193,8 +193,8 @@ public class SharedCosmosDbTests : BaseApiTests
                             ReservedInstances = 0,
                         },
                     },
-                    CosmosDbPrescaleLeadTime = TimeSpan.Zero.ToString(),
-                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(3).ToString(),
+                    CosmosDbPrescaleLeadTime = TimeSpan.Zero,
+                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(3),
                 }
            },
     };

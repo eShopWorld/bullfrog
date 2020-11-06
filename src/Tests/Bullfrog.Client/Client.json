@@ -695,12 +695,10 @@
           }
         },
         "scaleSetPrescaleLeadTime": {
-          "format": "date-span",
-          "type": "string"
+          "$ref": "#/definitions/TimeSpan"
         },
         "cosmosDbPrescaleLeadTime": {
-          "format": "date-span",
-          "type": "string"
+          "$ref": "#/definitions/TimeSpan"
         },
         "maxScale": {
           "format": "int32",
@@ -746,8 +744,7 @@
           }
         },
         "cosmosDbPrescaleLeadTime": {
-          "format": "date-span",
-          "type": "string"
+          "$ref": "#/definitions/TimeSpan"
         },
         "automationAccounts": {
           "type": "array",
@@ -756,8 +753,18 @@
           }
         },
         "oldEventsAge": {
-          "format": "date-span",
-          "type": "string"
+          "$ref": "#/definitions/TimeSpan"
+        },
+        "hasSharedCosmosDb": {
+          "type": "boolean",
+          "readOnly": true
+        },
+        "allRegionNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "readOnly": true
         }
       }
     },

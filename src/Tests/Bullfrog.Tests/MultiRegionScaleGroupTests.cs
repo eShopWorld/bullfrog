@@ -167,7 +167,7 @@ public class MultiRegionScaleGroupTests : BaseApiTests
                             RequestsPerInstance = 100,
                         },
                     },
-                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(1).ToString(),
+                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(1),
                 },
                 new ScaleGroupRegion
                 {
@@ -199,7 +199,7 @@ public class MultiRegionScaleGroupTests : BaseApiTests
                             RequestsPerInstance = 100,
                         },
                     },
-                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(2).ToString(),
+                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(2),
                 },
                 new ScaleGroupRegion
                 {
@@ -231,7 +231,7 @@ public class MultiRegionScaleGroupTests : BaseApiTests
                             RequestsPerInstance = 100,
                         },
                     },
-                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(3).ToString(),
+                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(3),
                 }
            },
         };
