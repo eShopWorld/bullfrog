@@ -120,6 +120,7 @@ namespace Bullfrog.Api
 
                     c.OperationFilter<OperationIdFilter>();
                 });
+                services.AddSwaggerGenNewtonsoftSupport();
 
                 services.AddAuthorization(options =>
                 {

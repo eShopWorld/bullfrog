@@ -17,7 +17,8 @@ public class TestServerStartup
             c.SwaggerDoc("v1", new OpenApiInfo { Title = "Bullfrog Api", Version = "v1" });
             c.OperationFilter<OperationIdFilter>();
         });
-
+        services.AddSwaggerGenNewtonsoftSupport();
+        
         services.AddAuthorization(options =>
         {
             options.AddPolicy(AuthenticationPolicies.AdminScope, policy =>
