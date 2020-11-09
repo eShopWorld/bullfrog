@@ -233,8 +233,8 @@ public class ScaleChangedDomainEventTests : BaseApiTests
                             RequestsPerInstance = 100,
                         },
                     },
-                    CosmosDbPrescaleLeadTime = _cosmosDbPrescaleLeadTime,
-                    ScaleSetPrescaleLeadTime = _scaleSetPrescaleLeadTime,
+                    CosmosDbPrescaleLeadTime = _cosmosDbPrescaleLeadTime.ToString(),
+                    ScaleSetPrescaleLeadTime = _scaleSetPrescaleLeadTime.ToString(),
                 }
             },
         });

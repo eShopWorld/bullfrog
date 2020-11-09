@@ -10,6 +10,10 @@ namespace Client.Models
     using Newtonsoft.Json;
     using System.Linq;
 
+    /// <summary>
+    /// Configuration of virtual machine scale set which is part of the scale
+    /// group.
+    /// </summary>
     public partial class ScaleSetConfiguration
     {
         /// <summary>
@@ -43,41 +47,57 @@ namespace Client.Models
         partial void CustomInit();
 
         /// <summary>
+        /// Gets or sets the name used as an identifier of this VM scale set
+        /// configuration.
         /// </summary>
         [JsonProperty(PropertyName = "name")]
         public string Name { get; set; }
 
         /// <summary>
+        /// Gets or sets the resource id of the autoscale settings which
+        /// controls virtual machine scale set scaling.
         /// </summary>
         [JsonProperty(PropertyName = "autoscaleSettingsResourceId")]
         public string AutoscaleSettingsResourceId { get; set; }
 
         /// <summary>
+        /// Gets or sets the name of the profile of autoscale settings which is
+        /// used to control VMSS scaling.
         /// </summary>
         [JsonProperty(PropertyName = "profileName")]
         public string ProfileName { get; set; }
 
         /// <summary>
+        /// Gets or sets the resource id of a load balancer of virtual machine
+        /// scale set.
         /// </summary>
         [JsonProperty(PropertyName = "loadBalancerResourceId")]
         public string LoadBalancerResourceId { get; set; }
 
         /// <summary>
+        /// Gets or sets the port used for health probes by a load balancer
+        /// which should be used to check
+        /// availability of VMs in the scale set.
         /// </summary>
         [JsonProperty(PropertyName = "healthPortPort")]
         public int? HealthPortPort { get; set; }
 
         /// <summary>
+        /// Gets or sets the number of requests per VMSS instance
         /// </summary>
         [JsonProperty(PropertyName = "requestsPerInstance")]
         public int? RequestsPerInstance { get; set; }
 
         /// <summary>
+        /// Gets or sets the minimal number of instances defined in the
+        /// profile.
         /// </summary>
         [JsonProperty(PropertyName = "minInstanceCount")]
         public int? MinInstanceCount { get; set; }
 
         /// <summary>
+        /// Gets or sets the number (might be partial) of VM instances which
+        /// are not used to handle requests.
         /// </summary>
         [JsonProperty(PropertyName = "reservedInstances")]
         public double? ReservedInstances { get; set; }

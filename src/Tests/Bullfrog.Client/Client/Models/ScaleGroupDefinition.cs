@@ -13,6 +13,9 @@ namespace Client.Models
     using System.Collections.Generic;
     using System.Linq;
 
+    /// <summary>
+    /// Defines the configuration of a scale group.
+    /// </summary>
     public partial class ScaleGroupDefinition
     {
         /// <summary>
@@ -26,7 +29,7 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleGroupDefinition class.
         /// </summary>
-        public ScaleGroupDefinition(IList<ScaleGroupRegion> regions, IList<CosmosConfiguration> cosmos = default(IList<CosmosConfiguration>), TimeSpan cosmosDbPrescaleLeadTime = default(TimeSpan), IList<AutomationAccount> automationAccounts = default(IList<AutomationAccount>), TimeSpan oldEventsAge = default(TimeSpan), bool? hasSharedCosmosDb = default(bool?), IList<string> allRegionNames = default(IList<string>))
+        public ScaleGroupDefinition(IList<ScaleGroupRegion> regions, IList<CosmosConfiguration> cosmos = default(IList<CosmosConfiguration>), string cosmosDbPrescaleLeadTime = default(string), IList<AutomationAccount> automationAccounts = default(IList<AutomationAccount>), string oldEventsAge = default(string))
         {
             Regions = regions;
             Cosmos = cosmos;
@@ -44,11 +47,14 @@ namespace Client.Models
         partial void CustomInit();
 
         /// <summary>
+        /// Gets or sets the configurations of scale group's regions.
         /// </summary>
         [JsonProperty(PropertyName = "regions")]
         public IList<ScaleGroupRegion> Regions { get; set; }
 
         /// <summary>
+        /// Gets or sets the configuration of scaling of Cosmos DB databases or
+        /// containers.
         /// </summary>
         [JsonProperty(PropertyName = "cosmos")]
         public IList<CosmosConfiguration> Cosmos { get; set; }
@@ -56,7 +62,7 @@ namespace Client.Models
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "cosmosDbPrescaleLeadTime")]
-        public TimeSpan CosmosDbPrescaleLeadTime { get; set; }
+        public string CosmosDbPrescaleLeadTime { get; set; }
 
         /// <summary>
         /// </summary>
@@ -66,14 +72,17 @@ namespace Client.Models
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "oldEventsAge")]
-        public TimeSpan OldEventsAge { get; set; }
+        public string OldEventsAge { get; set; }
 
         /// <summary>
+        /// Gets checks whether shared Cosmos databases are defined.
         /// </summary>
         [JsonProperty(PropertyName = "hasSharedCosmosDb")]
         public bool? HasSharedCosmosDb { get; private set; }
 
         /// <summary>
+        /// Gets returns names of all regions (including shared Cosmos region
+        /// if it exists).
         /// </summary>
         [JsonProperty(PropertyName = "allRegionNames")]
         public IList<string> AllRegionNames { get; private set; }

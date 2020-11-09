@@ -135,7 +135,7 @@ public class ScaleEventOperationsTests : BaseApiTests
     {
         RegisterDefaultScalers();
         var scaleGroupDefinition = NewScaleGroupDefinition();
-        scaleGroupDefinition.Regions[0].ScaleSetPrescaleLeadTime = TimeSpan.FromHours(2);
+        scaleGroupDefinition.Regions[0].ScaleSetPrescaleLeadTime = TimeSpan.FromHours(2).ToString();
         CreateScaleGroup(scaleGroupDefinition);
         var eventId = Guid.NewGuid();
         ApiClient.SaveScaleEvent("sg", eventId, NewScaleEvent(3, 8));
@@ -196,7 +196,7 @@ public class ScaleEventOperationsTests : BaseApiTests
     {
         RegisterDefaultScalers();
         var scaleGroup = NewScaleGroupDefinition();
-        scaleGroup.OldEventsAge = TimeSpan.FromDays(1);
+        scaleGroup.OldEventsAge = TimeSpan.FromDays(1).ToString();
         CreateScaleGroup(scaleGroup);
         var eventId1 = SaveNewEvent("sg", NewScaleEvent(1, 4)).Id.Value;
         var eventId2 = SaveNewEvent("sg", NewScaleEvent(10, 23)).Id.Value;

@@ -11,6 +11,9 @@ namespace Client.Models
     using System.Collections.Generic;
     using System.Linq;
 
+    /// <summary>
+    /// Describes an existing scale event.
+    /// </summary>
     public partial class ScheduledScaleEvent
     {
         /// <summary>
@@ -24,6 +27,17 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScheduledScaleEvent class.
         /// </summary>
+        /// <param name="id">Identifier of the scale event.</param>
+        /// <param name="name">Name of the scale event.</param>
+        /// <param name="requiredScaleAt">The time when all resources should be
+        /// scaled to the level which allows to handle the requested
+        /// traffic.</param>
+        /// <param name="estimatedScaleUpAt">The estimated time when the
+        /// scaling of resources start.</param>
+        /// <param name="startScaleDownAt">The time when the scale event ends
+        /// and all resources can be scaled in.</param>
+        /// <param name="regionConfig">The list of regions which require
+        /// scaling.</param>
         public ScheduledScaleEvent(System.Guid? id = default(System.Guid?), string name = default(string), System.DateTimeOffset? requiredScaleAt = default(System.DateTimeOffset?), System.DateTimeOffset? estimatedScaleUpAt = default(System.DateTimeOffset?), System.DateTimeOffset? startScaleDownAt = default(System.DateTimeOffset?), IList<RegionScaleValue> regionConfig = default(IList<RegionScaleValue>))
         {
             Id = id;
@@ -41,31 +55,40 @@ namespace Client.Models
         partial void CustomInit();
 
         /// <summary>
+        /// Gets or sets identifier of the scale event.
         /// </summary>
         [JsonProperty(PropertyName = "id")]
         public System.Guid? Id { get; set; }
 
         /// <summary>
+        /// Gets or sets name of the scale event.
         /// </summary>
         [JsonProperty(PropertyName = "name")]
         public string Name { get; set; }
 
         /// <summary>
+        /// Gets or sets the time when all resources should be scaled to the
+        /// level which allows to handle the requested traffic.
         /// </summary>
         [JsonProperty(PropertyName = "requiredScaleAt")]
         public System.DateTimeOffset? RequiredScaleAt { get; set; }
 
         /// <summary>
+        /// Gets or sets the estimated time when the scaling of resources
+        /// start.
         /// </summary>
         [JsonProperty(PropertyName = "estimatedScaleUpAt")]
         public System.DateTimeOffset? EstimatedScaleUpAt { get; set; }
 
         /// <summary>
+        /// Gets or sets the time when the scale event ends and all resources
+        /// can be scaled in.
         /// </summary>
         [JsonProperty(PropertyName = "startScaleDownAt")]
         public System.DateTimeOffset? StartScaleDownAt { get; set; }
 
         /// <summary>
+        /// Gets or sets the list of regions which require scaling.
         /// </summary>
         [JsonProperty(PropertyName = "regionConfig")]
         public IList<RegionScaleValue> RegionConfig { get; set; }

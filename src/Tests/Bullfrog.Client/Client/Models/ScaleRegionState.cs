@@ -11,6 +11,9 @@ namespace Client.Models
     using System.Collections.Generic;
     using System.Linq;
 
+    /// <summary>
+    /// Describes the current state of the region of a scale group.
+    /// </summary>
     public partial class ScaleRegionState
     {
         /// <summary>
@@ -24,6 +27,16 @@ namespace Client.Models
         /// <summary>
         /// Initializes a new instance of the ScaleRegionState class.
         /// </summary>
+        /// <param name="name">The name of the region.</param>
+        /// <param name="wasScaledUpAt">The time when the resources ware scaled
+        /// out.</param>
+        /// <param name="willScaleDownAt">The time when the resources will be
+        /// scaled in to the minimal value.</param>
+        /// <param name="scale">The number of requests which can be processed
+        /// currently.</param>
+        /// <param name="requestedScale">The scale which is requested by scale
+        /// events.</param>
+        /// <param name="scaleSetState">State of each scale set.</param>
         public ScaleRegionState(string name = default(string), System.DateTimeOffset? wasScaledUpAt = default(System.DateTimeOffset?), System.DateTimeOffset? willScaleDownAt = default(System.DateTimeOffset?), double? scale = default(double?), int? requestedScale = default(int?), IDictionary<string, double?> scaleSetState = default(IDictionary<string, double?>))
         {
             Name = name;
@@ -41,31 +54,39 @@ namespace Client.Models
         partial void CustomInit();
 
         /// <summary>
+        /// Gets or sets the name of the region.
         /// </summary>
         [JsonProperty(PropertyName = "name")]
         public string Name { get; set; }
 
         /// <summary>
+        /// Gets or sets the time when the resources ware scaled out.
         /// </summary>
         [JsonProperty(PropertyName = "wasScaledUpAt")]
         public System.DateTimeOffset? WasScaledUpAt { get; set; }
 
         /// <summary>
+        /// Gets or sets the time when the resources will be scaled in to the
+        /// minimal value.
         /// </summary>
         [JsonProperty(PropertyName = "willScaleDownAt")]
         public System.DateTimeOffset? WillScaleDownAt { get; set; }
 
         /// <summary>
+        /// Gets or sets the number of requests which can be processed
+        /// currently.
         /// </summary>
         [JsonProperty(PropertyName = "scale")]
         public double? Scale { get; set; }
 
         /// <summary>
+        /// Gets or sets the scale which is requested by scale events.
         /// </summary>
         [JsonProperty(PropertyName = "requestedScale")]
         public int? RequestedScale { get; set; }
 
         /// <summary>
+        /// Gets or sets state of each scale set.
         /// </summary>
         [JsonProperty(PropertyName = "scaleSetState")]
         public IDictionary<string, double?> ScaleSetState { get; set; }

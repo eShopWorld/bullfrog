@@ -145,7 +145,7 @@ public class MultiRegionDomainEventTests : BaseApiTests
                         }
                     },
                 },
-            CosmosDbPrescaleLeadTime = TimeSpan.FromHours(0.5),
+            CosmosDbPrescaleLeadTime = TimeSpan.FromHours(0.5).ToString(),
             Regions = new List<ScaleGroupRegion>
             {
                 new ScaleGroupRegion
@@ -163,7 +163,7 @@ public class MultiRegionDomainEventTests : BaseApiTests
                             RequestsPerInstance = 100,
                         },
                     },
-                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(1),
+                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(1).ToString(),
                 },
                 new ScaleGroupRegion
                 {
@@ -180,7 +180,7 @@ public class MultiRegionDomainEventTests : BaseApiTests
                             RequestsPerInstance = 100,
                         },
                     },
-                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(2),
+                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(2).ToString(),
                 },
                 new ScaleGroupRegion
                 {
@@ -197,7 +197,7 @@ public class MultiRegionDomainEventTests : BaseApiTests
                             RequestsPerInstance = 100,
                         },
                     },
-                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(3),
+                    ScaleSetPrescaleLeadTime = TimeSpan.FromHours(3).ToString(),
                 }
            },
         };
