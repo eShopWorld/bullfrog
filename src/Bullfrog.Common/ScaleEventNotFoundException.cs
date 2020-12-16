@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Bullfrog.Common
 {
     [Serializable]
+    [ExcludeFromCodeCoverage]
     public class ScaleEventNotFoundException : BullfrogException
     {
         public ScaleEventNotFoundException() { }

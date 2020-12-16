@@ -1,10 +1,12 @@
-﻿using Eshopworld.Core;
+﻿using System.Diagnostics.CodeAnalysis;
+using Eshopworld.Core;
 
 namespace Bullfrog.Api.Models.EventModels
 {
     /// <summary>
     /// Reports API validation errors.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public class ApiValidationFailed : TelemetryEvent
     {
         /// <summary>

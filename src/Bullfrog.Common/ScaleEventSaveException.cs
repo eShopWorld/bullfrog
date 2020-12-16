@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 namespace Bullfrog.Common
 {
     [Serializable]
+    [ExcludeFromCodeCoverage]
     public class ScaleEventSaveException : BullfrogException
     {
         public ScaleEventSaveException(string message, ScaleEventSaveFailureReason reason)
