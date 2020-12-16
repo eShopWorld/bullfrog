@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace Bullfrog.Actors.ResourceScalers
@@ -6,6 +7,7 @@ namespace Bullfrog.Actors.ResourceScalers
     /// <summary>
     /// Represents a module responsible for long running throughput change operations.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public abstract class ResourceScaler
     {
         /// <summary>
