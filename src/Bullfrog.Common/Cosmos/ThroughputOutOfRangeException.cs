@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
 
 namespace Bullfrog.Common.Cosmos
 {
     [Serializable]
+    [ExcludeFromCodeCoverage]
     public class ThroughputOutOfRangeException : BullfrogException
     {
         public int MinimumThroughput { get; }
