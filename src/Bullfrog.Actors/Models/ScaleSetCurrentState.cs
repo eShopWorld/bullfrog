@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace Bullfrog.Actors.Models
 {
+    [ExcludeFromCodeCoverage]
     public class ScaleSetCurrentState
     {
         /// <summary>
