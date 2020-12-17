@@ -1,7 +1,9 @@
-﻿using Eshopworld.Core;
+﻿using System.Diagnostics.CodeAnalysis;
+using Eshopworld.Core;
 
 namespace Bullfrog.Actors.EventModels
 {
+    [ExcludeFromCodeCoverage]
     public class ScaleSetThroughput : TelemetryEvent
     {
         public string ScalerName { get; set; }

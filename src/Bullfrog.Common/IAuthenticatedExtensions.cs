@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Azure.Management.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 
@@ -7,6 +8,7 @@ namespace Bullfrog.Common
     /// <summary>
     /// Azure.IAuthenticated extension methods.
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public static class IAuthenticatedExtensions
     {
         /// <summary>

@@ -1,5 +1,8 @@
-﻿namespace Bullfrog.Common.Events
+﻿using System.Diagnostics.CodeAnalysis;
+
+namespace Bullfrog.Common.Events
 {
+    [ExcludeFromCodeCoverage]
     public class AzureOperationDurationEvent : Eshopworld.Core.TimedTelemetryEvent
     {
         public string ResourceId { get; set; }
