@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Fabric;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using Autofac;
 using Bullfrog.Api.Helpers;
 using Bullfrog.Api.Models.EventModels;
-using Bullfrog.Common;
 using Bullfrog.Common.DependencyInjection;
 using Eshopworld.Core;
 using Eshopworld.DevOps;
@@ -45,8 +43,8 @@ namespace Bullfrog.Api
             try
             {
                 _configuration = EswDevOpsSdk.BuildConfiguration(env.ContentRootPath, env.EnvironmentName);
-                var internalKey = _configuration["InternalKey"];
-                var instrumentationKey = _configuration["InstrumentationKey"];
+                var internalKey = _configuration[nameof(TelemetrySettings.InternalKey)];
+                var instrumentationKey = _configuration[nameof(TelemetrySettings.InstrumentationKey)];
                 _bb = BigBrother.CreateDefault(internalKey, instrumentationKey);
                 _bb.UseEventSourceSink().ForExceptions();
             }
@@ -66,8 +64,8 @@ namespace Bullfrog.Api
         {
             try
             {
-                var internalKey = _configuration["InternalKey"];
-                var instrumentationKey = _configuration["InstrumentationKey"];
+                var internalKey = _configuration[nameof(TelemetrySettings.InternalKey)];
+                var instrumentationKey = _configuration[nameof(TelemetrySettings.InstrumentationKey)];
                 services.AddSingleton(new TelemetrySettings
                 {
                     InternalKey = internalKey,

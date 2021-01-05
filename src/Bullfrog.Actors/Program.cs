@@ -43,8 +43,8 @@ namespace Bullfrog.Actors
                 builder.Register(c =>
                 {
                     var configRoot = c.Resolve<IConfigurationRoot>();
-                    var internalKey = configRoot["InternalKey"];
-                    var instrumentationKey = configRoot["InstrumentationKey"];
+                    var internalKey = configRoot[nameof(TelemetrySettings.InternalKey)];
+                    var instrumentationKey = configRoot[nameof(TelemetrySettings.InstrumentationKey)];
                     return new TelemetrySettings
                     {
                         InternalKey = internalKey,
