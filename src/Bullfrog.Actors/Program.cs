@@ -42,11 +42,13 @@ namespace Bullfrog.Actors
 
                 builder.Register(c =>
                 {
-                    var insKey = c.Resolve<IConfigurationRoot>()["BBInstrumentationKey"];
+                    var configRoot = c.Resolve<IConfigurationRoot>();
+                    var internalKey = configRoot["InternalKey"];
+                    var instrumentationKey = configRoot["InstrumentationKey"];
                     return new TelemetrySettings
                     {
-                        InstrumentationKey = insKey,
-                        InternalKey = insKey,
+                        InternalKey = internalKey,
+                        InstrumentationKey = instrumentationKey
                     };
                 });
 

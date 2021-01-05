@@ -45,13 +45,9 @@ namespace Bullfrog.Api
             try
             {
                 _configuration = EswDevOpsSdk.BuildConfiguration(env.ContentRootPath, env.EnvironmentName);
-                var internalKey = _configuration["BBInstrumentationKey"];
-                if (string.IsNullOrEmpty(internalKey))
-                {
-                    throw new BullfrogException($"BBIntrumentationKey not found for environment {env.EnvironmentName}");
-                }
-
-                _bb = new BigBrother(internalKey, internalKey);
+                var internalKey = _configuration["InternalKey"];
+                var instrumentationKey = _configuration["InstrumentationKey"];
+                _bb = BigBrother.CreateDefault(internalKey, instrumentationKey);
                 _bb.UseEventSourceSink().ForExceptions();
             }
             catch (Exception e)
@@ -70,13 +66,14 @@ namespace Bullfrog.Api
         {
             try
             {
-                var internalKey = _configuration["BBInstrumentationKey"];
+                var internalKey = _configuration["InternalKey"];
+                var instrumentationKey = _configuration["InstrumentationKey"];
                 services.AddSingleton(new TelemetrySettings
                 {
-                    InstrumentationKey = internalKey,
                     InternalKey = internalKey,
+                    InstrumentationKey = instrumentationKey
                 });
-                services.AddApplicationInsightsTelemetry(internalKey);
+                services.AddApplicationInsightsTelemetry(instrumentationKey);
                 services.AddSwaggerGen(c =>
                 {
                     c.SwaggerDoc(BullfrogVersion.LatestApi, new OpenApiInfo { Title = "Bullfrog Api", Version = BullfrogVersion.Bullfrog });
