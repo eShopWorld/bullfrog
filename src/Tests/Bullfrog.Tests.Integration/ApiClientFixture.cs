@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using Client;
 using Eshopworld.Core;
+using Eshopworld.DevOps;
 using EShopworld.Security.Services.Rest;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,7 +17,14 @@ public class ApiClientFixture
 
     public ApiClientFixture()
     {
-        _configuration = Eshopworld.DevOps.EswDevOpsSdk.BuildConfiguration();
+        _configuration = new ConfigurationBuilder()
+            .UseDefaultConfigs()
+            .AddKeyVaultSecrets(new Dictionary<string, string>
+            {
+                { "sts--sts-secret--bullfrog-api-admin-client", "Bullfrog:Testing:Clients:admin:ClientSecret" },
+                { "sts--sts-secret--bullfrog-api-events-manager-client", "Bullfrog:Testing:Clients:eventsManager:ClientSecret" }
+            })
+            .Build();
     }
 
     public TokenCredentials GetAuthToken(string user)

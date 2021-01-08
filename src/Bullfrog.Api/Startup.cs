@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -9,9 +10,11 @@ using Bullfrog.Api.Helpers;
 using Bullfrog.Api.Models.EventModels;
 using Bullfrog.Common.DependencyInjection;
 using Eshopworld.Core;
-using Eshopworld.DevOps;
 using Eshopworld.Telemetry;
+using Eshopworld.Telemetry.Configuration;
+using Eshopworld.Telemetry.Processors;
 using Eshopworld.Web;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -29,9 +32,8 @@ namespace Bullfrog.Api
     [ExcludeFromCodeCoverage]
     public class Startup
     {
-        // TODO: Review BB code after fixing its extension methods
-        private readonly BigBrother _bb;
         private readonly IConfigurationRoot _configuration;
+        private readonly TelemetrySettings _telemetrySettings;
         private bool UseOpenApiV2 => _configuration["Bullfrog:OpenApi"] == "V2";
 
         /// <summary>
@@ -42,15 +44,19 @@ namespace Bullfrog.Api
         {
             try
             {
-                _configuration = EswDevOpsSdk.BuildConfiguration(env.ContentRootPath, env.EnvironmentName);
-                var internalKey = _configuration[nameof(TelemetrySettings.InternalKey)];
-                var instrumentationKey = _configuration[nameof(TelemetrySettings.InstrumentationKey)];
-                _bb = BigBrother.CreateDefault(internalKey, instrumentationKey);
-                _bb.UseEventSourceSink().ForExceptions();
+                _configuration = new ConfigurationBuilder()
+                    .UseDefaultConfigs(environment: env.EnvironmentName)
+                    .AddKeyVaultSecrets(new Dictionary<string, string>
+                    {
+                        { "cm--ai-telemetry--instrumentation", "Telemetry:InstrumentationKey" },
+                        { "cm--ai-telemetry--internal", "Telemetry:InternalKey" }
+                    }).Build();
+
+                _telemetrySettings = _configuration.GetSection("Telemetry").Get<TelemetrySettings>();
             }
             catch (Exception e)
             {
-                BigBrother.Write(e);
+                BigBrother.Write(e.ToExceptionEvent());
                 throw;
             }
         }
@@ -64,14 +70,9 @@ namespace Bullfrog.Api
         {
             try
             {
-                var internalKey = _configuration[nameof(TelemetrySettings.InternalKey)];
-                var instrumentationKey = _configuration[nameof(TelemetrySettings.InstrumentationKey)];
-                services.AddSingleton(new TelemetrySettings
-                {
-                    InternalKey = internalKey,
-                    InstrumentationKey = instrumentationKey
-                });
-                services.AddApplicationInsightsTelemetry(instrumentationKey);
+                services.AddSingleton(_telemetrySettings);
+                services.AddApplicationInsightsTelemetry(_telemetrySettings.InstrumentationKey);
+                services.AddApplicationInsightsTelemetryProcessor<TelemetryFilterProcessor>();
                 services.AddSwaggerGen(c =>
                 {
                     c.SwaggerDoc(BullfrogVersion.LatestApi, new OpenApiInfo { Title = "Bullfrog Api", Version = BullfrogVersion.Bullfrog });
@@ -149,8 +150,7 @@ namespace Bullfrog.Api
             }
             catch (Exception e)
             {
-                _bb.Publish(e.ToExceptionEvent());
-                _bb.Flush();
+                BigBrother.Write(e.ToExceptionEvent());
                 throw;
             }
         }
@@ -160,8 +160,11 @@ namespace Bullfrog.Api
         ///     Use this to setup specific AutoFac dependencies that don't have <see cref="IServiceCollection"/> extension methods.
         /// </summary>
         /// <param name="builder">The builder for an <see cref="Autofac.IContainer" /> from component registrations.</param>
+        [UsedImplicitly]
         public void ConfigureContainer(ContainerBuilder builder)
         {
+            builder.RegisterInstance(_telemetrySettings).SingleInstance();
+            builder.RegisterModule<TelemetryModule>();
             builder.RegisterModule<CoreModule>();
             builder.RegisterModule<AzureManagementFluentModule>();
             builder.RegisterModule<ServiceFabricModule>();
@@ -173,6 +176,7 @@ namespace Bullfrog.Api
         /// </summary>
         /// <param name="app">The mechanisms to configure an application's request pipeline.</param>
         /// <param name="env">The information about the web hosting environment an application is running in.</param>
+        [UsedImplicitly]
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             try
@@ -204,8 +208,7 @@ namespace Bullfrog.Api
             }
             catch (Exception e)
             {
-                _bb.Publish(e.ToExceptionEvent());
-                _bb.Flush();
+                BigBrother.Write(e.ToExceptionEvent());
                 throw;
             }
         }

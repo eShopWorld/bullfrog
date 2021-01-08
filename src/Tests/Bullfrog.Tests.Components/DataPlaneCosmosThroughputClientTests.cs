@@ -57,7 +57,7 @@ public class DataPlaneCosmosThroughputClientTests
         var configurationBuilder = new ConfigurationBuilder();
         configurationBuilder.AddInMemoryCollection(new[]
         {
-            new KeyValuePair<string, string>("Bullfrog:Cosmos:account1", cosmos.ConnectionString),
+            new KeyValuePair<string, string>("cm:cosmos-connection:account1", cosmos.ConnectionString),
         });
         return new DataPlaneCosmosThroughputClient(connection, configurationBuilder.Build());
     }
