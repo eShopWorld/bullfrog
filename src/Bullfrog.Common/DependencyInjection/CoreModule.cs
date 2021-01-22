@@ -1,15 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Autofac;
+using Bullfrog.Common.Telemetry;
 using Eshopworld.Core;
 using Eshopworld.DevOps;
 using Eshopworld.Messaging;
-using Eshopworld.Telemetry.Configuration;
+using Eshopworld.Telemetry;
+using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.Configuration;
 using Microsoft.ServiceFabric.Actors.Client;
-using TelemetrySettings = Eshopworld.Telemetry.Configuration.TelemetrySettings;
 
 namespace Bullfrog.Common.DependencyInjection
 {
@@ -21,28 +21,27 @@ namespace Bullfrog.Common.DependencyInjection
     {
         protected override void Load(ContainerBuilder builder)
         {
-            var configuration = new ConfigurationBuilder()
-                .UseDefaultConfigs()
-                .AddKeyVaultSecrets(new Dictionary<string, string>
-                {
-                    { "cm--ai-telemetry--instrumentation", "Telemetry:InstrumentationKey" },
-                    { "cm--ai-telemetry--internal", "Telemetry:InternalKey" }
-                }).Build();
+            var config = EswDevOpsSdk.BuildConfiguration();
 
-            var telemetrySettings = configuration.GetSection("Telemetry").Get<TelemetrySettings>();
-            builder.RegisterInstance(telemetrySettings).SingleInstance();
+            builder.RegisterInstance(config)
+                   .As<IConfigurationRoot>()
+                   .SingleInstance();
 
-            var serviceBusSettings = configuration.BindSection<ServiceBusSettings>();
-            configuration.Bind(serviceBusSettings);
-            builder.RegisterInstance(serviceBusSettings).SingleInstance();
+            builder.Register<IBigBrother>(c =>
+            {
+                var configuration = c.Resolve<IConfigurationRoot>();
 
-            builder.RegisterInstance(EswDevOpsSdk.BuildConfiguration())
-                .As<IConfigurationRoot>()
-                .SingleInstance();
+                var telemetryClient = c.Resolve<TelemetryClient>();
+                var telemetrySettings = c.Resolve<TelemetrySettings>();
+                var bb = new BigBrother(telemetryClient, telemetrySettings.InternalKey);
 
-            builder.RegisterInstance(new Messenger(serviceBusSettings.ConnectionString, serviceBusSettings.SubscriptionId))
-                .As<IPublishEvents>()
-                .SingleInstance();
+                var serviceBusConnectionString = configuration["SB:eda:ConnectionString"];
+                var subscriptionId = configuration["Environment:SubscriptionId"];
+                bb.PublishEventsToTopics(new Messenger(serviceBusConnectionString, subscriptionId));
+
+                return bb;
+            })
+            .SingleInstance();
 
             builder.RegisterType<ActorProxyFactory>().As<IActorProxyFactory>().SingleInstance();
             builder.RegisterType<DateTimeProvider>().As<IDateTimeProvider>().SingleInstance();

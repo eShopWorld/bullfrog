@@ -34,9 +34,10 @@ namespace Bullfrog.Common.DependencyInjection
 
             builder.Register(c =>
             {
-                var serviceBusSettings = c.Resolve<ServiceBusSettings>();
+                var configuration = c.Resolve<IConfigurationRoot>();
                 var authenticated = c.Resolve<Azure.IAuthenticated>();
-                return authenticated.WithSubscription(serviceBusSettings.SubscriptionId);
+                var subscriptionId = configuration["Environment:SubscriptionId"];
+                return authenticated.WithSubscription(subscriptionId);
             });
 
             builder.Register(c =>
