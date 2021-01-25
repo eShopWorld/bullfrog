@@ -36,7 +36,7 @@ namespace Bullfrog.Common
         {
             string GetConfig()
             {
-                var cosmosConnectionStringsSection = configuration.GetSection("cm:cosmos-connection");
+                var cosmosConnectionStringsSection = configuration.GetSection("Bullfrog:Cosmos");
                 return cosmosConnectionStringsSection[accountName];
             }
 

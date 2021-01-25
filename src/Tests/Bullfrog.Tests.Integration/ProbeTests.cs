@@ -1,6 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Client;
 using Eshopworld.Tests.Core;
+using FluentAssertions;
 using Xunit;
 
 [Collection(ApiClientCollection.TestFixtureName)]

@@ -144,7 +144,7 @@ public class BaseApiTests : IDisposable
 
         var configurationValues = new Dictionary<string, string>
         {
-            ["cm:cosmos-connection:ac"] = "/cosmos",
+            ["Bullfrog:Cosmos:ac"] = "/cosmos",
         };
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configurationValues)

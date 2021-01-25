@@ -32,7 +32,7 @@ namespace Bullfrog.Tests.Components
             var configurationBuilder = new ConfigurationBuilder();
             configurationBuilder.AddInMemoryCollection(new[]
             {
-                new KeyValuePair<string, string>("cm:cosmos-connection:account", db.ConnectionString),
+                new KeyValuePair<string, string>("Bullfrog:Cosmos:account", db.ConnectionString),
             });
             var validator = new CosmosDataPlaneAccessValidator(configurationBuilder.Build());
 
@@ -72,7 +72,7 @@ namespace Bullfrog.Tests.Components
             var configurationBuilder = new ConfigurationBuilder();
             configurationBuilder.AddInMemoryCollection(new[]
             {
-                new KeyValuePair<string, string>("cm:cosmos-connection:account", badConnectionString),
+                new KeyValuePair<string, string>("Bullfrog:Cosmos:account", badConnectionString),
             });
             var validator = new CosmosDataPlaneAccessValidator(configurationBuilder.Build());
 
@@ -94,7 +94,7 @@ namespace Bullfrog.Tests.Components
             var configurationBuilder = new ConfigurationBuilder();
             configurationBuilder.AddInMemoryCollection(new[]
             {
-                new KeyValuePair<string, string>("cm:cosmos-connection:account", db.ConnectionString),
+                new KeyValuePair<string, string>("Bullfrog:Cosmos:account", db.ConnectionString),
             });
             var validator = new CosmosDataPlaneAccessValidator(configurationBuilder.Build());
 
@@ -117,7 +117,7 @@ namespace Bullfrog.Tests.Components
             var configurationBuilder = new ConfigurationBuilder();
             configurationBuilder.AddInMemoryCollection(new[]
             {
-                new KeyValuePair<string, string>("cm:cosmos-connection:account", db.ConnectionString),
+                new KeyValuePair<string, string>("Bullfrog:Cosmos:account", db.ConnectionString),
             });
             var validator = new CosmosDataPlaneAccessValidator(configurationBuilder.Build());
 
@@ -140,7 +140,7 @@ namespace Bullfrog.Tests.Components
             var configurationBuilder = new ConfigurationBuilder();
             configurationBuilder.AddInMemoryCollection(new[]
             {
-                new KeyValuePair<string, string>("cm:cosmos-connection:account", db.ConnectionString),
+                new KeyValuePair<string, string>("Bullfrog:Cosmos:account", db.ConnectionString),
             });
             var validator = new CosmosDataPlaneAccessValidator(configurationBuilder.Build());
 
